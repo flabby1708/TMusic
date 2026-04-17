@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "fe": "npm run dev",
+    "admin": "vite --open /admin",
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",

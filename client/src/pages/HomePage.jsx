@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import {
   ArrowIcon,
   ChevronLeftSmallIcon,
@@ -25,6 +25,7 @@ import {
   trackMockImages,
 } from '../features/home/homeData.js'
 import { useHomePageData } from '../features/home/useHomePageData.js'
+import { useAuthSession } from '../features/auth/useAuthSession.js'
 
 function SectionMoreLink({ href }) {
   return (
@@ -38,15 +39,42 @@ function SectionMoreLink({ href }) {
         className="e-10310-text encore-text-body-small-bold encore-internal-color-text-subdued"
         data-encore-id="text"
       >
-        Hien tat ca
+        Hiện tất cả
       </span>
     </a>
   )
 }
 
+function getUserDisplayName(user) {
+  if (user?.displayName) {
+    return user.displayName
+  }
+
+  if (user?.email) {
+    return user.email.split('@')[0]
+  }
+
+  return 'bạn'
+}
+
+function getUserInitials(user) {
+  const source = getUserDisplayName(user)
+  const segments = source
+    .split(' ')
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, 2)
+
+  return segments.map((item) => item[0]?.toUpperCase() || '').join('') || 'TM'
+}
+
 function HomePage() {
   const artistCarouselRef = useRef(null)
-  const { homeContent, isLive, statusClassName, statusText } = useHomePageData()
+  const { health, homeContent, isLive } = useHomePageData()
+  const { user, loading: authLoading, isAuthenticated, logout } = useAuthSession()
+
+  const userDisplayName = useMemo(() => getUserDisplayName(user), [user])
+  const userInitials = useMemo(() => getUserInitials(user), [user])
 
   const scrollArtistsPrev = () => {
     artistCarouselRef.current?.scrollBy({
@@ -62,24 +90,46 @@ function HomePage() {
     })
   }
 
+  const handleLogout = () => {
+    logout()
+    window.location.assign('/')
+  }
+
+  const heroStatusText = authLoading
+    ? 'Đang khôi phục phiên đăng nhập...'
+    : isAuthenticated
+      ? `Chào ${userDisplayName}, tiếp tục khám phá âm nhạc dành cho bạn.`
+      : homeContent.loading
+        ? 'Đang tải danh sách...'
+        : health.error
+          ? 'Đang hiển thị dữ liệu mẫu.'
+          : 'Không gian phát dành cho bạn'
+
   return (
     <div className="min-h-screen bg-[color:var(--bg-app)] px-2.5 py-2.5 text-[color:var(--text-primary)]">
       <div className="mx-auto flex min-h-[calc(100vh-1.25rem)] w-full max-w-[1920px] flex-col gap-2.5">
         <header className="top-shell flex flex-wrap items-center justify-between gap-2.5 px-3 py-2.5 sm:px-4">
           <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
-            <button className="brand-badge hidden sm:inline-flex" aria-label="TMusic home">
+            <a href="/" className="brand-badge hidden sm:inline-flex" aria-label="TMusic home">
               <SpotifyIcon />
-            </button>
+            </a>
 
-            <button className="icon-frame" aria-label="Trang chu">
+            <a href="/" className="icon-frame" aria-label="Trang chủ">
               <HomeIcon />
-            </button>
+            </a>
 
             <div className="search-shell min-w-0 flex-1">
               <SearchIcon />
-              <input className="search-input" type="text" placeholder="Ban muon phat noi dung gi?" />
+              <input
+                className="search-input"
+                type="text"
+                placeholder="Bạn muốn phát nội dung gì?"
+              />
               <div className="search-divider" />
-              <button className="text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]" aria-label="Thu vien">
+              <button
+                className="text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
+                aria-label="Tìm kiếm nâng cao"
+              >
                 <SearchTrailingIcon />
               </button>
             </div>
@@ -88,7 +138,12 @@ function HomePage() {
           <div className="flex items-center gap-2.5 sm:gap-3.5">
             <nav className="hidden items-center gap-4 text-[0.92rem] font-semibold text-[color:var(--text-secondary)] lg:flex">
               {menuLinks.map((item) => (
-                <a key={item} href="/" onClick={(event) => event.preventDefault()} className="transition hover:text-[color:var(--text-primary)]">
+                <a
+                  key={item}
+                  href="/"
+                  onClick={(event) => event.preventDefault()}
+                  className="transition hover:text-[color:var(--text-primary)]"
+                >
                   {item}
                 </a>
               ))}
@@ -96,39 +151,71 @@ function HomePage() {
 
             <div className="hidden h-7 w-px bg-white/10 lg:block" />
 
-            <a href="/admin" className="secondary-button hidden md:inline-flex">
-              Admin
-            </a>
-
             <button className="download-link hidden items-center gap-2 md:inline-flex">
               <DownloadIcon />
-              Cai dat ung dung
+              Cài đặt ứng dụng
             </button>
 
-            <button className="secondary-button hidden sm:inline-flex">Dang ky</button>
-            <button className="primary-button">Dang nhap</button>
+            {isAuthenticated ? (
+              <>
+                <div className="hidden items-center gap-3 rounded-full border border-white/10 bg-white/[0.04] px-2 py-1.5 md:flex">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[color:rgba(219,114,2,0.22)] font-display text-sm font-extrabold text-[color:var(--text-primary)]">
+                    {userInitials}
+                  </div>
+                  <div className="max-w-[11rem] pr-1">
+                    <p className="text-[0.68rem] font-bold uppercase tracking-[0.18em] text-[color:var(--text-dim)]">
+                      Đang đăng nhập
+                    </p>
+                    <p className="truncate text-sm font-bold text-[color:var(--text-primary)]">
+                      {userDisplayName}
+                    </p>
+                  </div>
+                </div>
+
+                <button type="button" className="secondary-button" onClick={handleLogout}>
+                  Đăng xuất
+                </button>
+              </>
+            ) : (
+              <>
+                <a href="/register" className="secondary-button hidden sm:inline-flex">
+                  Đăng ký
+                </a>
+                <a href="/login" className="primary-button">
+                  Đăng nhập
+                </a>
+              </>
+            )}
           </div>
         </header>
 
-        <div className="grid flex-1 gap-2.5 pb-[86px] xl:grid-cols-[372px_minmax(0,1fr)]">
+        <div
+          className={`grid flex-1 gap-2.5 ${isAuthenticated ? 'pb-0' : 'pb-[86px]'} xl:grid-cols-[372px_minmax(0,1fr)]`}
+        >
           <aside className="panel-surface flex min-h-[320px] flex-col overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4.5">
               <div className="flex items-center gap-3 text-[color:var(--text-primary)]">
                 <LibraryIcon />
-                <h2 className="font-display text-[1.3rem] font-extrabold tracking-tight">Thu vien</h2>
+                <h2 className="font-display text-[1.3rem] font-extrabold tracking-tight">
+                  Thư viện
+                </h2>
               </div>
 
               <button className="secondary-button inline-flex items-center gap-2">
                 <PlusIcon />
-                Tao
+                Tạo
               </button>
             </div>
 
             <div className="hide-scrollbar flex-1 space-y-3.5 overflow-y-auto px-3.5 pb-4">
               {libraryPrompts.map((item) => (
                 <section key={item.title} className="library-card">
-                  <h3 className="font-display text-[1rem] font-bold leading-7 text-[color:var(--text-primary)]">{item.title}</h3>
-                  <p className="mt-2.5 max-w-[17rem] text-[0.92rem] leading-7 text-[color:var(--text-secondary)]">{item.description}</p>
+                  <h3 className="font-display text-[1rem] font-bold leading-7 text-[color:var(--text-primary)]">
+                    {item.title}
+                  </h3>
+                  <p className="mt-2.5 max-w-[17rem] text-[0.92rem] leading-7 text-[color:var(--text-secondary)]">
+                    {item.description}
+                  </p>
                   <button className="primary-button mt-6">{item.action}</button>
                 </section>
               ))}
@@ -137,7 +224,12 @@ function HomePage() {
             <div className="space-y-5 px-5 pb-5 pt-2">
               <div className="flex flex-wrap gap-x-4 gap-y-2 text-[0.84rem] leading-6 text-[color:var(--text-secondary)]">
                 {footerLinks.map((item) => (
-                  <a key={item} href="/" onClick={(event) => event.preventDefault()} className="transition hover:text-[color:var(--text-primary)]">
+                  <a
+                    key={item}
+                    href="/"
+                    onClick={(event) => event.preventDefault()}
+                    className="transition hover:text-[color:var(--text-primary)]"
+                  >
                     {item}
                   </a>
                 ))}
@@ -145,7 +237,7 @@ function HomePage() {
 
               <button className="language-button">
                 <GlobeIcon />
-                Tieng Viet
+                Tiếng Việt
               </button>
             </div>
           </aside>
@@ -159,17 +251,18 @@ function HomePage() {
                   <div>
                     <p className="section-kicker">Amber Earth & Electric Blue</p>
                     <div className="mt-3 flex flex-wrap items-center gap-3">
-                      <span className={statusClassName}>
-                        <span className="status-dot" />
-                        {statusText}
-                      </span>
                       <span className="text-sm text-[color:var(--text-secondary)]">
-                        {homeContent.loading ? 'Dang tai danh sach...' : 'Khong gian phat danh cho ban'}
+                        {heroStatusText}
                       </span>
+                      {isAuthenticated ? (
+                        <span className="text-sm text-[color:var(--text-dim)]">
+                          {user?.email}
+                        </span>
+                      ) : null}
                     </div>
 
                     <h1 className="font-display text-[1.82rem] font-extrabold tracking-tight text-[color:var(--text-primary)] sm:text-[2.45rem]">
-                      Nhung bai hat thinh hanh
+                      Những bài hát thịnh hành
                     </h1>
                   </div>
 
@@ -179,12 +272,22 @@ function HomePage() {
                 <div className="hide-scrollbar -mx-2 overflow-x-auto pb-7">
                   <div className="flex min-w-max gap-2 px-1">
                     {homeContent.songs.map((track, index) => (
-                      <article key={`${track.title}-${index}`} className="track-card group w-[176px] shrink-0 p-2.5">
+                      <article
+                        key={`${track.title}-${index}`}
+                        className="track-card group w-[176px] shrink-0 p-2.5"
+                      >
                         <div className="relative overflow-hidden rounded-[18px] border border-white/6">
                           {track.coverUrl || trackMockImages[index] ? (
-                            <img src={track.coverUrl || trackMockImages[index]} alt={track.title} className="aspect-square h-[168px] w-full object-cover" />
+                            <img
+                              src={track.coverUrl || trackMockImages[index]}
+                              alt={track.title}
+                              className="aspect-square h-[168px] w-full object-cover"
+                            />
                           ) : (
-                            <div className="album-art aspect-square h-[168px] w-full" style={{ backgroundImage: track.artwork }}>
+                            <div
+                              className="album-art aspect-square h-[168px] w-full"
+                              style={{ backgroundImage: track.artwork }}
+                            >
                               <div className="album-overlay" />
                               <div className="album-shine" />
                               <div className="album-caption">
@@ -194,14 +297,16 @@ function HomePage() {
                             </div>
                           )}
 
-                          <button className="play-chip" aria-label={`Phat ${track.title}`}>
+                          <button className="play-chip" aria-label={`Phát ${track.title}`}>
                             <PlayIcon />
                           </button>
                         </div>
 
                         <div className="mt-3.5 flex items-start justify-between gap-3">
                           <div>
-                            <h3 className="font-display text-[0.98rem] font-bold leading-6 text-[color:var(--text-primary)]">{track.title}</h3>
+                            <h3 className="font-display text-[0.98rem] font-bold leading-6 text-[color:var(--text-primary)]">
+                              {track.title}
+                            </h3>
                             <p className="mt-1 text-[0.88rem] leading-6 text-[color:var(--text-secondary)]">
                               {track.explicit ? (
                                 <span className="mr-2 rounded-[6px] bg-white/12 px-1 py-[1px] text-[0.68rem] font-bold text-[color:var(--text-primary)]">
@@ -212,7 +317,9 @@ function HomePage() {
                             </p>
                           </div>
 
-                          <span className="text-[0.78rem] font-semibold text-[color:var(--text-dim)]">{track.duration}</span>
+                          <span className="text-[0.78rem] font-semibold text-[color:var(--text-dim)]">
+                            {track.duration}
+                          </span>
                         </div>
                       </article>
                     ))}
@@ -223,9 +330,11 @@ function HomePage() {
               <section className="mt-5">
                 <div className="mb-5 flex items-center justify-between gap-4">
                   <div>
-                    <p className="section-kicker">{isLive ? 'Blue state active' : 'Curated picks'}</p>
+                    <p className="section-kicker">
+                      {isLive ? 'Đang đồng bộ từ cloud' : 'Gợi ý tuyển chọn'}
+                    </p>
                     <h2 className="font-display text-[1.7rem] font-extrabold tracking-tight text-[color:var(--text-primary)] sm:text-[2.1rem]">
-                      Nghe si pho bien
+                      Nghệ sĩ phổ biến
                     </h2>
                   </div>
 
@@ -233,31 +342,55 @@ function HomePage() {
                 </div>
 
                 <div className="artist-carousel-shell">
-                  <button type="button" className="artist-scroll-button artist-scroll-button-left hidden lg:inline-flex" aria-label="Tro ve nghe si truoc" onClick={scrollArtistsPrev}>
+                  <button
+                    type="button"
+                    className="artist-scroll-button artist-scroll-button-left hidden lg:inline-flex"
+                    aria-label="Trở về nghệ sĩ trước"
+                    onClick={scrollArtistsPrev}
+                  >
                     <ChevronLeftSmallIcon />
                   </button>
 
                   <div ref={artistCarouselRef} className="hide-scrollbar -mx-3 overflow-x-auto">
                     <div className="flex min-w-max gap-2 px-1 pb-2">
                       {homeContent.artists.map((artist, index) => (
-                        <article key={artist.name} className="artist-card group w-[186px] shrink-0 p-2.5">
+                        <article
+                          key={artist.name}
+                          className="artist-card group w-[186px] shrink-0 p-2.5"
+                        >
                           {artist.imageUrl || artistMockImages[index] ? (
-                            <img src={artist.imageUrl || artistMockImages[index]} alt={artist.name} className="artist-portrait aspect-square w-full object-cover" />
+                            <img
+                              src={artist.imageUrl || artistMockImages[index]}
+                              alt={artist.name}
+                              className="artist-portrait aspect-square w-full object-cover"
+                            />
                           ) : (
-                            <div className="artist-portrait aspect-square w-full" style={{ backgroundImage: artist.artwork }}>
+                            <div
+                              className="artist-portrait aspect-square w-full"
+                              style={{ backgroundImage: artist.artwork }}
+                            >
                               <div className="artist-glow" />
                               <div className="artist-initials">{artist.initials}</div>
                             </div>
                           )}
 
-                          <h3 className="mt-4 font-display text-[1rem] font-bold text-[color:var(--text-primary)]">{artist.name}</h3>
-                          <p className="mt-1 text-[0.88rem] text-[color:var(--text-secondary)]">{artist.meta}</p>
+                          <h3 className="mt-4 font-display text-[1rem] font-bold text-[color:var(--text-primary)]">
+                            {artist.name}
+                          </h3>
+                          <p className="mt-1 text-[0.88rem] text-[color:var(--text-secondary)]">
+                            {artist.meta}
+                          </p>
                         </article>
                       ))}
                     </div>
                   </div>
 
-                  <button type="button" className="artist-scroll-button artist-scroll-button-right hidden lg:inline-flex" aria-label="Xem them nghe si" onClick={scrollArtistsNext}>
+                  <button
+                    type="button"
+                    className="artist-scroll-button artist-scroll-button-right hidden lg:inline-flex"
+                    aria-label="Xem thêm nghệ sĩ"
+                    onClick={scrollArtistsNext}
+                  >
                     <ChevronRightSmallIcon />
                   </button>
                 </div>
@@ -265,26 +398,42 @@ function HomePage() {
 
               <section className="mt-8">
                 <div className="mb-5 flex items-center justify-between gap-4">
-                  <h2 className="font-display text-[1.7rem] font-extrabold tracking-tight text-[color:var(--text-primary)] sm:text-[2.1rem]">Album va dia don noi tieng</h2>
+                  <h2 className="font-display text-[1.7rem] font-extrabold tracking-tight text-[color:var(--text-primary)] sm:text-[2.1rem]">
+                    Album và đĩa đơn nổi tiếng
+                  </h2>
                   <SectionMoreLink href="/section/albums" />
                 </div>
 
                 <div className="hide-scrollbar -mx-2 overflow-x-auto pb-4">
                   <div className="flex min-w-max gap-2 px-1">
                     {homeContent.albums.map((album, index) => (
-                      <article key={album.title} className="track-card group w-[186px] shrink-0 p-2.5">
+                      <article
+                        key={album.title}
+                        className="track-card group w-[186px] shrink-0 p-2.5"
+                      >
                         {album.coverUrl || albumMockImages[index] ? (
-                          <img src={album.coverUrl || albumMockImages[index]} alt={album.title} className="aspect-square h-[168px] w-full rounded-[18px] border border-white/6 object-cover" />
+                          <img
+                            src={album.coverUrl || albumMockImages[index]}
+                            alt={album.title}
+                            className="aspect-square h-[168px] w-full rounded-[18px] border border-white/6 object-cover"
+                          />
                         ) : (
-                          <div className="album-art album-cover aspect-square h-[168px] w-full rounded-[18px] border border-white/6" style={{ backgroundImage: album.artwork }}>
+                          <div
+                            className="album-art album-cover aspect-square h-[168px] w-full rounded-[18px] border border-white/6"
+                            style={{ backgroundImage: album.artwork }}
+                          >
                             <div className="album-overlay" />
                             <div className="album-shine" />
                           </div>
                         )}
 
                         <div className="mt-3.5">
-                          <h3 className="font-display text-[0.98rem] font-bold leading-6 text-[color:var(--text-primary)]">{album.title}</h3>
-                          <p className="mt-1 text-[0.88rem] leading-6 text-[color:var(--text-secondary)]">{album.artist}</p>
+                          <h3 className="font-display text-[0.98rem] font-bold leading-6 text-[color:var(--text-primary)]">
+                            {album.title}
+                          </h3>
+                          <p className="mt-1 text-[0.88rem] leading-6 text-[color:var(--text-secondary)]">
+                            {album.artist}
+                          </p>
                         </div>
                       </article>
                     ))}
@@ -294,14 +443,19 @@ function HomePage() {
 
               <section className="mt-8">
                 <div className="mb-5 flex items-center justify-between gap-4">
-                  <h2 className="font-display text-[1.7rem] font-extrabold tracking-tight text-[color:var(--text-primary)] sm:text-[2.1rem]">Radio pho bien</h2>
+                  <h2 className="font-display text-[1.7rem] font-extrabold tracking-tight text-[color:var(--text-primary)] sm:text-[2.1rem]">
+                    Radio phổ biến
+                  </h2>
                   <SectionMoreLink href="/section/radio" />
                 </div>
 
                 <div className="hide-scrollbar -mx-2 overflow-x-auto pb-4">
                   <div className="flex min-w-max gap-2 px-1">
                     {homeContent.radios.map((radio, index) => (
-                      <article key={radio.title} className="radio-card group w-[238px] shrink-0 p-2.5">
+                      <article
+                        key={radio.title}
+                        className="radio-card group w-[238px] shrink-0 p-2.5"
+                      >
                         <div className="radio-surface" style={{ backgroundImage: radio.tone }}>
                           <div className="radio-brand">
                             <SpotifyIcon />
@@ -309,25 +463,34 @@ function HomePage() {
                           </div>
 
                           {radio.imageUrl || radioMockImages[index] ? (
-                            <img src={radio.imageUrl || radioMockImages[index]} alt={radio.title} className="radio-image" />
+                            <img
+                              src={radio.imageUrl || radioMockImages[index]}
+                              alt={radio.title}
+                              className="radio-image"
+                            />
                           ) : (
                             <div className="radio-avatars">
                               {radio.initials.map((item, avatarIndex) => (
-                                <div key={`${radio.title}-${item}`} className={`radio-avatar ${avatarIndex === 1 ? 'radio-avatar-main' : ''}`}>
+                                <div
+                                  key={`${radio.title}-${item}`}
+                                  className={`radio-avatar ${avatarIndex === 1 ? 'radio-avatar-main' : ''}`}
+                                >
                                   {item}
                                 </div>
                               ))}
                             </div>
                           )}
 
-                          <button className="radio-play" aria-label={`Phat radio ${radio.title}`}>
+                          <button className="radio-play" aria-label={`Phát radio ${radio.title}`}>
                             <PlayIcon />
                           </button>
 
                           <h3 className="radio-title">{radio.title}</h3>
                         </div>
 
-                        <p className="mt-3 text-[0.88rem] leading-6 text-[color:var(--text-secondary)]">{radio.description}</p>
+                        <p className="mt-3 text-[0.88rem] leading-6 text-[color:var(--text-secondary)]">
+                          {radio.description}
+                        </p>
                       </article>
                     ))}
                   </div>
@@ -336,20 +499,26 @@ function HomePage() {
 
               <section className="mt-8">
                 <div className="mb-5 flex items-center justify-between gap-4">
-                  <h2 className="font-display text-[1.7rem] font-extrabold tracking-tight text-[color:var(--text-primary)] sm:text-[2.1rem]">Bang xep hang noi bat</h2>
+                  <h2 className="font-display text-[1.7rem] font-extrabold tracking-tight text-[color:var(--text-primary)] sm:text-[2.1rem]">
+                    Bảng xếp hạng nổi bật
+                  </h2>
                   <SectionMoreLink href="/section/charts" />
                 </div>
 
                 <div className="hide-scrollbar -mx-2 overflow-x-auto pb-4">
                   <div className="flex min-w-max gap-2 px-1">
                     {homeContent.charts.map((chart, index) => (
-                      <article key={chart.title} className="track-card group w-[218px] shrink-0 p-2.5">
+                      <article
+                        key={chart.title}
+                        className="track-card group w-[218px] shrink-0 p-2.5"
+                      >
                         <div
                           className="chart-surface"
                           style={{
-                            backgroundImage: chart.coverUrl || chartMockImages[index]
-                              ? `url(${chart.coverUrl || chartMockImages[index]})`
-                              : chart.artwork,
+                            backgroundImage:
+                              chart.coverUrl || chartMockImages[index]
+                                ? `url(${chart.coverUrl || chartMockImages[index]})`
+                                : chart.artwork,
                           }}
                         >
                           <div className="chart-badge">
@@ -360,7 +529,9 @@ function HomePage() {
                           </div>
                         </div>
 
-                        <p className="mt-3 text-[0.88rem] leading-6 text-[color:var(--text-secondary)]">{chart.subtitle}</p>
+                        <p className="mt-3 text-[0.88rem] leading-6 text-[color:var(--text-secondary)]">
+                          {chart.subtitle}
+                        </p>
                       </article>
                     ))}
                   </div>
@@ -374,7 +545,12 @@ function HomePage() {
                       <h3 className="footer-heading">{column.title}</h3>
                       <div className="footer-links">
                         {column.links.map((link) => (
-                          <a key={link} href="/" onClick={(event) => event.preventDefault()} className="footer-link">
+                          <a
+                            key={link}
+                            href="/"
+                            onClick={(event) => event.preventDefault()}
+                            className="footer-link"
+                          >
                             {link}
                           </a>
                         ))}
@@ -392,26 +568,31 @@ function HomePage() {
                 </div>
 
                 <div className="footer-bottom">
-                  <span>© 2026 Spotify AB</span>
+                  <span>© 2026 TMusic</span>
                 </div>
               </footer>
             </div>
           </main>
         </div>
 
-        <div className="promo-bar fixed inset-x-3 bottom-3 z-20 flex flex-col items-start justify-between gap-3 px-4 py-3.5 sm:flex-row sm:items-center sm:px-5">
-          <div>
-            <p className="text-[0.78rem] font-bold uppercase tracking-[0.18em] text-white/80">Xem truoc TMusic</p>
-            <p className="mt-2 max-w-4xl font-display text-[1rem] font-bold leading-6 text-[color:var(--text-primary)]">
-              Dang ky de nghe khong gioi han bai hat va podcast. Tong mau moi giup giao dien em hon cho mat nhung van giu diem nhan ro rang.
-            </p>
-          </div>
+        {!isAuthenticated ? (
+          <div className="promo-bar fixed inset-x-3 bottom-3 z-20 flex flex-col items-start justify-between gap-3 px-4 py-3.5 sm:flex-row sm:items-center sm:px-5">
+            <div>
+              <p className="text-[0.78rem] font-bold uppercase tracking-[0.18em] text-white/80">
+                Xem trước TMusic
+              </p>
+              <p className="mt-2 max-w-4xl font-display text-[1rem] font-bold leading-6 text-[color:var(--text-primary)]">
+                Đăng ký để nghe không giới hạn bài hát và podcast. Tông màu mới giúp giao diện
+                êm hơn cho mắt nhưng vẫn giữ điểm nhấn rõ ràng.
+              </p>
+            </div>
 
-          <button className="primary-button inline-flex shrink-0 items-center gap-2">
-            Dang ky mien phi
-            <ArrowIcon />
-          </button>
-        </div>
+            <a href="/register" className="primary-button inline-flex shrink-0 items-center gap-2">
+              Đăng ký miễn phí
+              <ArrowIcon />
+            </a>
+          </div>
+        ) : null}
       </div>
     </div>
   )

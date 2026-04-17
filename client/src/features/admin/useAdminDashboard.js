@@ -9,7 +9,6 @@ import {
 export function useAdminDashboard() {
   const [activeResource, setActiveResource] = useState('songs')
   const [items, setItems] = useState([])
-  const [healthStatus, setHealthStatus] = useState('unknown')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [editingId, setEditingId] = useState('')
@@ -18,30 +17,6 @@ export function useAdminDashboard() {
   const [formValues, setFormValues] = useState(buildEmptyFormValues('songs'))
 
   const currentResource = resourceDefinitions[activeResource]
-
-  useEffect(() => {
-    let cancelled = false
-
-    const loadHealth = async () => {
-      try {
-        const payload = await requestJson('/api/health')
-
-        if (!cancelled) {
-          setHealthStatus(payload.database?.status || 'unknown')
-        }
-      } catch {
-        if (!cancelled) {
-          setHealthStatus('unknown')
-        }
-      }
-    }
-
-    void loadHealth()
-
-    return () => {
-      cancelled = true
-    }
-  }, [])
 
   useEffect(() => {
     setFormValues(buildEmptyFormValues(activeResource))
@@ -129,7 +104,7 @@ export function useAdminDashboard() {
 
       await reloadActiveResource()
       handleReset()
-      setNotice(editingId ? 'Da cap nhat thanh cong.' : 'Da tao moi thanh cong.')
+      setNotice(editingId ? 'Đã cập nhật thành công.' : 'Đã tạo mới thành công.')
     } catch (submitError) {
       setError(submitError.message)
     } finally {
@@ -138,7 +113,7 @@ export function useAdminDashboard() {
   }
 
   const handleDelete = async (item) => {
-    const confirmed = window.confirm(`Xoa "${item[currentResource.titleField]}"?`)
+    const confirmed = window.confirm(`Xóa "${item[currentResource.titleField]}"?`)
 
     if (!confirmed) {
       return
@@ -159,7 +134,7 @@ export function useAdminDashboard() {
         handleReset()
       }
 
-      setNotice('Da xoa thanh cong.')
+      setNotice('Đã xóa thành công.')
     } catch (deleteError) {
       setError(deleteError.message)
     } finally {
@@ -178,7 +153,6 @@ export function useAdminDashboard() {
     handleEdit,
     handleReset,
     handleSubmit,
-    healthStatus,
     items,
     loading,
     notice,

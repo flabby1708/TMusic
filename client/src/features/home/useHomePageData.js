@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { requestJson } from '../../shared/api.js'
 import { normalizeHomePayload } from './homeAdapters.js'
-import { databaseStatusLabel, fallbackHomeContent } from './homeData.js'
+import { fallbackHomeContent } from './homeData.js'
 
 export function useHomePageData() {
   const [health, setHealth] = useState({
@@ -54,7 +54,7 @@ export function useHomePageData() {
 
         setHealth({
           loading: false,
-          error: 'Khong the tai du lieu tu API. Dang hien thi du lieu mau.',
+          error: 'Không thể tải dữ liệu từ API. Đang hiển thị dữ liệu mẫu.',
           data: healthPayload,
         })
         setHomeContent({
@@ -73,22 +73,10 @@ export function useHomePageData() {
 
   const databaseStatus = health.data?.database?.status ?? 'unknown'
   const isLive = !health.error && databaseStatus === 'connected'
-  const statusText = health.loading
-    ? 'Dang kiem tra API'
-    : health.error
-      ? 'API offline'
-      : databaseStatusLabel[databaseStatus] ?? databaseStatusLabel.unknown
-  const statusClassName = health.loading
-    ? 'status-chip status-chip-neutral'
-    : health.error || databaseStatus !== 'connected'
-      ? 'status-chip status-chip-warning'
-      : 'status-chip status-chip-live'
 
   return {
     health,
     homeContent,
     isLive,
-    statusText,
-    statusClassName,
   }
 }

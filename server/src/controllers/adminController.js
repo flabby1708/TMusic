@@ -39,7 +39,7 @@ export const listAdminItems = async (req, res, next) => {
     }
 
     return res.json(await listAdminResourceItems(req.params.resource))
-  } catch (error) {
+  } catch (error) { 
     return next(error)
   }
 }
