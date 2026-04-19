@@ -3,17 +3,49 @@ import User from '../models/User.js'
 import { signUserToken } from '../utils/authToken.js'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const PHONE_PATTERN = /^\+?[1-9]\d{8,14}$/
 const PASSWORD_MIN_LENGTH = 8
 const SALT_ROUNDS = 12
 
+const SOCIAL_PROVIDER_FIELDS = {
+  google: 'googleId',
+  facebook: 'facebookId',
+  apple: 'appleId',
+}
+
 const trimString = (value) => (typeof value === 'string' ? value.trim() : '')
 const normalizeEmail = (value) => trimString(value).toLowerCase()
+
+export const normalizePhoneNumber = (value) => {
+  const trimmedValue = trimString(value)
+
+  if (!trimmedValue) {
+    return ''
+  }
+
+  if (trimmedValue.startsWith('+')) {
+    return `+${trimmedValue.slice(1).replace(/\D/g, '')}`
+  }
+
+  return trimmedValue.replace(/\D/g, '')
+}
+
+const isValidEmail = (value) => EMAIL_PATTERN.test(value)
+export const isValidPhoneNumber = (value) => PHONE_PATTERN.test(value)
 
 const toPublicUser = (user) => ({
   id: user._id.toString(),
   displayName: user.displayName,
   email: user.email,
   role: user.role,
+  avatarUrl: user.avatarUrl || '',
+  phoneNumber: user.phoneNumber || '',
+  authProviders: {
+    google: Boolean(user.authProviders?.googleId),
+    facebook: Boolean(user.authProviders?.facebookId),
+    apple: Boolean(user.authProviders?.appleId),
+    phone: Boolean(user.authProviders?.phoneVerified),
+  },
   lastLoginAt: user.lastLoginAt,
   createdAt: user.createdAt,
   updatedAt: user.updatedAt,
@@ -37,11 +69,11 @@ const buildFailure = (errorType, message) => ({
   user: null,
 })
 
-const buildSuccess = (message, user, token) => ({
+export const buildAuthSuccess = (message, user) => ({
   errorType: '',
   message,
-  token,
-  user,
+  token: signUserToken(user),
+  user: toPublicUser(user),
 })
 
 const validateRegisterPayload = ({ displayName, email, password }) => {
@@ -53,7 +85,7 @@ const validateRegisterPayload = ({ displayName, email, password }) => {
     return 'Tên hiển thị phải có ít nhất 2 ký tự.'
   }
 
-  if (!EMAIL_PATTERN.test(email)) {
+  if (!isValidEmail(email)) {
     return 'Email không đúng định dạng.'
   }
 
@@ -69,12 +101,18 @@ const validateLoginPayload = ({ email, password }) => {
     return 'Vui lòng nhập email và mật khẩu.'
   }
 
-  if (!EMAIL_PATTERN.test(email)) {
+  if (!isValidEmail(email)) {
     return 'Email không đúng định dạng.'
   }
 
   return ''
 }
+
+const buildPlaceholderEmail = (prefix, uniqueValue) =>
+  `${prefix}-${uniqueValue.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()}@tmusic.local`
+
+const getFallbackDisplayName = (displayName, fallbackEmail) =>
+  trimString(displayName) || fallbackEmail.split('@')[0]
 
 export const registerUser = async (body) => {
   const payload = sanitizeRegisterPayload(body)
@@ -97,11 +135,7 @@ export const registerUser = async (body) => {
     passwordHash,
   })
 
-  return buildSuccess(
-    'Đăng ký thành công.',
-    toPublicUser(user),
-    signUserToken(user),
-  )
+  return buildAuthSuccess('Đăng ký thành công.', user)
 }
 
 export const loginUser = async (body) => {
@@ -114,7 +148,7 @@ export const loginUser = async (body) => {
 
   const user = await User.findOne({ email: payload.email }).select('+passwordHash')
 
-  if (!user) {
+  if (!user || !user.passwordHash) {
     return buildFailure('credentials', 'Email hoặc mật khẩu không đúng.')
   }
 
@@ -127,11 +161,95 @@ export const loginUser = async (body) => {
   user.lastLoginAt = new Date()
   await user.save()
 
-  return buildSuccess(
-    'Đăng nhập thành công.',
-    toPublicUser(user),
-    signUserToken(user),
-  )
+  return buildAuthSuccess('Đăng nhập thành công.', user)
+}
+
+export const findOrCreatePhoneUser = async ({ phoneNumber, displayName }) => {
+  const normalizedPhoneNumber = normalizePhoneNumber(phoneNumber)
+
+  if (!isValidPhoneNumber(normalizedPhoneNumber)) {
+    return buildFailure('validation', 'Số điện thoại không hợp lệ.')
+  }
+
+  const existingUser = await User.findOne({ phoneNumber: normalizedPhoneNumber })
+
+  if (existingUser) {
+    existingUser.authProviders.phoneVerified = true
+    existingUser.lastLoginAt = new Date()
+    await existingUser.save()
+
+    return buildAuthSuccess('Đăng nhập bằng số điện thoại thành công.', existingUser)
+  }
+
+  const fallbackEmail = buildPlaceholderEmail('phone', normalizedPhoneNumber)
+  const user = await User.create({
+    displayName: getFallbackDisplayName(displayName, fallbackEmail),
+    email: fallbackEmail,
+    phoneNumber: normalizedPhoneNumber,
+    authProviders: {
+      phoneVerified: true,
+    },
+    lastLoginAt: new Date(),
+  })
+
+  return buildAuthSuccess('Xác thực số điện thoại thành công.', user)
+}
+
+export const findOrCreateSocialUser = async ({
+  provider,
+  providerUserId,
+  email,
+  displayName,
+  avatarUrl,
+}) => {
+  const providerField = SOCIAL_PROVIDER_FIELDS[provider]
+  const providerQueryField = `authProviders.${providerField}`
+
+  if (!providerField || !providerUserId) {
+    return buildFailure('validation', 'Thông tin nhà cung cấp đăng nhập không hợp lệ.')
+  }
+
+  const normalizedEmail = normalizeEmail(email)
+  const safeEmail = isValidEmail(normalizedEmail)
+    ? normalizedEmail
+    : buildPlaceholderEmail(provider, providerUserId)
+  const safeDisplayName = getFallbackDisplayName(displayName, safeEmail)
+
+  let user = await User.findOne({ [providerQueryField]: providerUserId })
+
+  if (!user && isValidEmail(normalizedEmail)) {
+    user = await User.findOne({ email: normalizedEmail })
+  }
+
+  if (!user) {
+    user = await User.create({
+      displayName: safeDisplayName,
+      email: safeEmail,
+      avatarUrl: trimString(avatarUrl),
+      authProviders: {
+        [providerField]: providerUserId,
+      },
+      lastLoginAt: new Date(),
+    })
+
+    return buildAuthSuccess(`Đăng nhập bằng ${provider} thành công.`, user)
+  }
+
+  user.displayName = safeDisplayName || user.displayName
+  user.avatarUrl = trimString(avatarUrl) || user.avatarUrl
+
+  if (!user.authProviders?.[providerField]) {
+    user.set(`authProviders.${providerField}`, providerUserId)
+  }
+
+  if (isValidEmail(normalizedEmail) && user.email !== normalizedEmail) {
+    user.email = normalizedEmail
+  }
+
+  user.lastLoginAt = new Date()
+  await user.save()
+
+  return buildAuthSuccess(`Đăng nhập bằng ${provider} thành công.`, user)
 }
 
 export const getAuthenticatedUserById = async (userId) => {

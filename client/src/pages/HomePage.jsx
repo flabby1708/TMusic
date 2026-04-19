@@ -159,7 +159,7 @@ function HomePage() {
             {isAuthenticated ? (
               <>
                 <div className="hidden items-center gap-3 rounded-full border border-white/10 bg-white/[0.04] px-2 py-1.5 md:flex">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[color:rgba(219,114,2,0.22)] font-display text-sm font-extrabold text-[color:var(--text-primary)]">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[color:rgba(255,107,87,0.22)] font-display text-sm font-extrabold text-[color:var(--text-primary)]">
                     {userInitials}
                   </div>
                   <div className="max-w-[11rem] pr-1">
@@ -249,7 +249,7 @@ function HomePage() {
               <section>
                 <div className="mb-5 flex items-start justify-between gap-4">
                   <div>
-                    <p className="section-kicker">Amber Earth & Electric Blue</p>
+                    <p className="section-kicker">Midnight Pulse & Neon Coral</p>
                     <div className="mt-3 flex flex-wrap items-center gap-3">
                       <span className="text-sm text-[color:var(--text-secondary)]">
                         {heroStatusText}

@@ -59,8 +59,8 @@ function AdminDashboardPage() {
                     onClick={() => setActiveResource(resourceKey)}
                     className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition ${
                       isActive
-                        ? 'border-[color:rgba(219,114,2,0.34)] bg-[color:rgba(219,114,2,0.14)]'
-                        : 'border-[color:var(--border-soft)] bg-[color:rgba(255,255,255,0.02)] hover:border-[color:rgba(161,107,66,0.34)] hover:bg-[color:rgba(255,255,255,0.04)]'
+                        ? 'border-[color:rgba(255,107,87,0.34)] bg-[color:rgba(255,107,87,0.12)]'
+                        : 'border-[color:var(--border-soft)] bg-[color:rgba(255,255,255,0.02)] hover:border-[color:rgba(83,101,126,0.34)] hover:bg-[color:rgba(255,255,255,0.04)]'
                     }`}
                   >
                     <span>
@@ -104,7 +104,7 @@ function AdminDashboardPage() {
                   Đang tải dữ liệu...
                 </div>
               ) : error ? (
-                <div className="rounded-2xl border border-[color:rgba(219,114,2,0.32)] bg-[color:rgba(219,114,2,0.1)] px-4 py-4 text-sm text-[color:#ffe4c8]">
+                <div className="rounded-2xl border border-[color:rgba(255,93,122,0.32)] bg-[color:rgba(255,93,122,0.1)] px-4 py-4 text-sm text-[color:#ffd8e1]">
                   {error}
                 </div>
               ) : items.length === 0 ? (
@@ -124,14 +124,14 @@ function AdminDashboardPage() {
                         key={item._id}
                         className={`overflow-hidden rounded-3xl border transition ${
                           isEditing
-                            ? 'border-[color:rgba(0,155,241,0.34)] bg-[color:rgba(0,155,241,0.08)]'
+                            ? 'border-[color:rgba(41,212,255,0.34)] bg-[color:rgba(41,212,255,0.08)]'
                             : 'border-[color:var(--border-soft)] bg-[color:rgba(255,255,255,0.03)]'
                         }`}
                       >
                         {previewImage ? (
                           <img src={previewImage} alt={title} className="h-40 w-full object-cover" />
                         ) : (
-                          <div className="flex h-40 items-end bg-[color:rgba(161,107,66,0.24)] p-4">
+                          <div className="flex h-40 items-end bg-[color:rgba(83,101,126,0.26)] p-4">
                             <span className="track-pill">Không có ảnh</span>
                           </div>
                         )}
@@ -203,14 +203,14 @@ function AdminDashboardPage() {
                       value={formValues[field.name]}
                       onChange={(event) => handleChange(field.name, event.target.value)}
                       rows={4}
-                      className="min-h-28 w-full rounded-2xl border border-[color:var(--border-soft)] bg-[color:rgba(255,255,255,0.03)] px-4 py-3 text-sm text-[color:var(--text-primary)] outline-none transition focus:border-[color:rgba(0,155,241,0.42)] focus:bg-[color:rgba(255,255,255,0.05)]"
+                      className="min-h-28 w-full rounded-2xl border border-[color:var(--border-soft)] bg-[color:rgba(255,255,255,0.03)] px-4 py-3 text-sm text-[color:var(--text-primary)] outline-none transition focus:border-[color:rgba(41,212,255,0.42)] focus:bg-[color:rgba(255,255,255,0.05)]"
                     />
                   ) : (
                     <input
                       type={field.type}
                       value={formValues[field.name]}
                       onChange={(event) => handleChange(field.name, event.target.value)}
-                      className="w-full rounded-2xl border border-[color:var(--border-soft)] bg-[color:rgba(255,255,255,0.03)] px-4 py-3 text-sm text-[color:var(--text-primary)] outline-none transition focus:border-[color:rgba(0,155,241,0.42)] focus:bg-[color:rgba(255,255,255,0.05)]"
+                      className="w-full rounded-2xl border border-[color:var(--border-soft)] bg-[color:rgba(255,255,255,0.03)] px-4 py-3 text-sm text-[color:var(--text-primary)] outline-none transition focus:border-[color:rgba(41,212,255,0.42)] focus:bg-[color:rgba(255,255,255,0.05)]"
                     />
                   )}
 
@@ -223,12 +223,12 @@ function AdminDashboardPage() {
               ))}
 
               {notice ? (
-                <div className="rounded-2xl border border-[color:rgba(0,155,241,0.32)] bg-[color:rgba(0,155,241,0.1)] px-4 py-3 text-sm text-[color:#dff3ff]">
+                <div className="rounded-2xl border border-[color:rgba(41,212,255,0.32)] bg-[color:rgba(41,212,255,0.1)] px-4 py-3 text-sm text-[color:#dff8ff]">
                   {notice}
                 </div>
               ) : null}
               {error ? (
-                <div className="rounded-2xl border border-[color:rgba(219,114,2,0.32)] bg-[color:rgba(219,114,2,0.1)] px-4 py-3 text-sm text-[color:#ffe4c8]">
+                <div className="rounded-2xl border border-[color:rgba(255,93,122,0.32)] bg-[color:rgba(255,93,122,0.1)] px-4 py-3 text-sm text-[color:#ffd8e1]">
                   {error}
                 </div>
               ) : null}

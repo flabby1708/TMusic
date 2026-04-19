@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react'
 import { SpotifyIcon } from '../../shared/icons.jsx'
 import {
+  beginSocialAuth,
   loginWithEmail,
   registerWithEmail,
+  requestPhoneVerificationCode,
   storeAuthSession,
+  verifyPhoneVerificationCode,
 } from './authClient.js'
 import { useAuthSession } from './useAuthSession.js'
 
@@ -89,9 +92,17 @@ function AuthPageShell({
 }) {
   const { isAuthenticated, loading: authLoading } = useAuthSession()
   const [formValues, setFormValues] = useState(() => buildInitialState(fields))
+  const [phoneValues, setPhoneValues] = useState({
+    displayName: '',
+    phoneNumber: '',
+    code: '',
+  })
+  const [phoneStep, setPhoneStep] = useState('request')
+  const [phonePanelOpen, setPhonePanelOpen] = useState(false)
   const [feedback, setFeedback] = useState('')
   const [feedbackTone, setFeedbackTone] = useState('info')
   const [submitting, setSubmitting] = useState(false)
+  const [activeProvider, setActiveProvider] = useState('')
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
@@ -101,6 +112,13 @@ function AuthPageShell({
 
   const handleChange = (fieldName, value) => {
     setFormValues((current) => ({
+      ...current,
+      [fieldName]: value,
+    }))
+  }
+
+  const handlePhoneChange = (fieldName, value) => {
+    setPhoneValues((current) => ({
       ...current,
       [fieldName]: value,
     }))
@@ -130,9 +148,77 @@ function AuthPageShell({
     }
   }
 
-  const handleProviderClick = () => {
-    setFeedbackTone('info')
-    setFeedback('Đăng nhập mạng xã hội sẽ được nối ở bước tích hợp OAuth tiếp theo.')
+  const handleProviderClick = async (providerId) => {
+    if (providerId === 'phone') {
+      setPhonePanelOpen((current) => !current || phoneStep === 'verify')
+      return
+    }
+
+    setActiveProvider(providerId)
+    setFeedback('')
+
+    try {
+      await beginSocialAuth(providerId)
+    } catch (error) {
+      setFeedbackTone('error')
+      setFeedback(error.message || 'Không thể khởi động đăng nhập mạng xã hội.')
+      setActiveProvider('')
+    }
+  }
+
+  const handleRequestPhoneCode = async () => {
+    setSubmitting(true)
+    setFeedback('')
+    setPhonePanelOpen(true)
+
+    try {
+      const payload = await requestPhoneVerificationCode({
+        phoneNumber: phoneValues.phoneNumber,
+      })
+
+      setPhoneStep('verify')
+      setPhoneValues((current) => ({
+        ...current,
+        phoneNumber: payload.phoneNumber || current.phoneNumber,
+      }))
+      setFeedbackTone(payload.devCode ? 'info' : 'success')
+      setFeedback(
+        payload.devCode
+          ? `${payload.message} Mã dev của bạn là: ${payload.devCode}`
+          : payload.message,
+      )
+    } catch (error) {
+      setFeedbackTone('error')
+      setFeedback(error.message || 'Không thể gửi mã xác thực.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleVerifyPhoneCode = async () => {
+    setSubmitting(true)
+    setFeedback('')
+
+    try {
+      const payload = await verifyPhoneVerificationCode({
+        displayName: phoneValues.displayName,
+        phoneNumber: phoneValues.phoneNumber,
+        code: phoneValues.code,
+      })
+
+      storeAuthSession(payload)
+      setFeedbackTone('success')
+      setFeedback(payload.message)
+
+      window.setTimeout(() => {
+        window.location.assign('/')
+      }, 700)
+    } catch (error) {
+      setFeedbackTone('error')
+      setFeedback(error.message || 'Không thể xác minh số điện thoại.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -168,9 +254,7 @@ function AuthPageShell({
           </button>
         </form>
 
-        {feedback ? (
-          <p className={`auth-note auth-note-${feedbackTone}`}>{feedback}</p>
-        ) : null}
+        {feedback ? <p className={`auth-note auth-note-${feedbackTone}`}>{feedback}</p> : null}
 
         <div className="auth-divider">
           <span>hoặc</span>
@@ -182,13 +266,98 @@ function AuthPageShell({
               key={provider.id}
               type="button"
               className="auth-social-button"
-              onClick={handleProviderClick}
+              onClick={() => void handleProviderClick(provider.id)}
+              disabled={submitting || activeProvider === provider.id}
             >
               <provider.Icon />
-              <span>{provider.label}</span>
+              <span>
+                {activeProvider === provider.id ? 'Đang chuyển hướng...' : provider.label}
+              </span>
             </button>
           ))}
         </div>
+
+        {phonePanelOpen ? (
+          <div className="mt-4 w-full rounded-[1.2rem] border border-white/12 bg-white/[0.03] p-4">
+            <p className="text-sm font-bold text-[color:var(--text-primary)]">
+              Xác thực bằng số điện thoại
+            </p>
+            <p className="mt-1 text-sm leading-6 text-[color:var(--text-secondary)]">
+              {phoneStep === 'request'
+                ? 'Nhập số điện thoại để nhận mã OTP.'
+                : 'Nhập mã OTP vừa nhận được để hoàn tất đăng nhập.'}
+            </p>
+
+            {mode === 'register' ? (
+              <label className="auth-field-group mt-4 block">
+                <span className="auth-label">Tên hiển thị</span>
+                <input
+                  type="text"
+                  value={phoneValues.displayName}
+                  onChange={(event) => handlePhoneChange('displayName', event.target.value)}
+                  placeholder="Tên của bạn"
+                  className="auth-input"
+                />
+              </label>
+            ) : null}
+
+            <label className="auth-field-group mt-4 block">
+              <span className="auth-label">Số điện thoại</span>
+              <input
+                type="tel"
+                value={phoneValues.phoneNumber}
+                onChange={(event) => handlePhoneChange('phoneNumber', event.target.value)}
+                placeholder="+84901234567"
+                className="auth-input"
+              />
+            </label>
+
+            {phoneStep === 'verify' ? (
+              <label className="auth-field-group mt-4 block">
+                <span className="auth-label">Mã OTP</span>
+                <input
+                  type="text"
+                  value={phoneValues.code}
+                  onChange={(event) => handlePhoneChange('code', event.target.value)}
+                  placeholder="Nhập mã 6 chữ số"
+                  className="auth-input"
+                />
+              </label>
+            ) : null}
+
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+              {phoneStep === 'verify' ? (
+                <>
+                  <button
+                    type="button"
+                    className="auth-submit mt-0 sm:flex-1"
+                    onClick={() => void handleVerifyPhoneCode()}
+                    disabled={submitting}
+                  >
+                    {submitting ? 'Đang xác minh...' : 'Xác nhận mã'}
+                  </button>
+                  <button
+                    type="button"
+                    className="auth-social-button sm:flex-1"
+                    onClick={() => void handleRequestPhoneCode()}
+                    disabled={submitting}
+                  >
+                    Gửi lại mã
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  className="auth-submit mt-0"
+                  onClick={() => void handleRequestPhoneCode()}
+                  disabled={submitting}
+                >
+                  {submitting ? 'Đang gửi mã...' : 'Gửi mã OTP'}
+                </button>
+              )}
+            </div>
+          </div>
+        ) : null}
 
         <div className="auth-alternate">
           <p>{alternatePrompt}</p>

@@ -26,3 +26,25 @@ export const signUserToken = (user) =>
   )
 
 export const verifyUserToken = (token) => jwt.verify(token, getJwtSecret())
+
+export const signOAuthState = (provider) =>
+  jwt.sign(
+    {
+      type: 'oauth-state',
+      provider,
+    },
+    getJwtSecret(),
+    {
+      expiresIn: '10m',
+    },
+  )
+
+export const verifyOAuthState = (token) => {
+  const payload = jwt.verify(token, getJwtSecret())
+
+  if (payload.type !== 'oauth-state' || !payload.provider) {
+    throw new Error('Invalid OAuth state.')
+  }
+
+  return payload
+}

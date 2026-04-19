@@ -16,13 +16,54 @@ const userSchema = new mongoose.Schema(
     },
     passwordHash: {
       type: String,
-      required: true,
+      default: '',
       select: false,
+    },
+    phoneNumber: {
+      type: String,
+      default: undefined,
+      unique: true,
+      sparse: true,
+      trim: true,
+      set: (value) => {
+        if (typeof value !== 'string') {
+          return value
+        }
+
+        const trimmedValue = value.trim()
+        return trimmedValue ? trimmedValue : undefined
+      },
+    },
+    avatarUrl: {
+      type: String,
+      default: '',
+      trim: true,
     },
     role: {
       type: String,
       enum: ['user', 'admin'],
       default: 'user',
+    },
+    authProviders: {
+      googleId: {
+        type: String,
+        default: '',
+        trim: true,
+      },
+      facebookId: {
+        type: String,
+        default: '',
+        trim: true,
+      },
+      appleId: {
+        type: String,
+        default: '',
+        trim: true,
+      },
+      phoneVerified: {
+        type: Boolean,
+        default: false,
+      },
     },
     lastLoginAt: {
       type: Date,

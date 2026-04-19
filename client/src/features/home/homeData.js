@@ -7,7 +7,7 @@ export const fallbackTracks = [
     coverUrl: '',
     tag: 'Pop',
     artwork:
-      'linear-gradient(135deg, #f2c37d 0%, #db7202 34%, #5a3517 72%, #1a130f 100%)',
+      'linear-gradient(135deg, #ffbeab 0%, #ff6b57 34%, #3f2754 72%, #09111f 100%)',
   },
   {
     title: 'Sớm Như Vậy',
@@ -17,7 +17,7 @@ export const fallbackTracks = [
     coverUrl: '',
     tag: 'Indie',
     artwork:
-      'linear-gradient(135deg, #8f6b55 0%, #533c32 32%, #1c1d28 68%, #0f0f13 100%)',
+      'linear-gradient(135deg, #9eb5ff 0%, #516aa0 32%, #192538 68%, #08101a 100%)',
   },
   {
     title: 'STAY',
@@ -27,7 +27,7 @@ export const fallbackTracks = [
     coverUrl: '',
     tag: 'Live',
     artwork:
-      'linear-gradient(135deg, #b8c5d4 0%, #009bf1 25%, #273248 60%, #101011 100%)',
+      'linear-gradient(135deg, #c6f6ff 0%, #29d4ff 25%, #1d4b73 60%, #081018 100%)',
   },
   {
     title: 'Tuyển Bạn Gái',
@@ -37,7 +37,7 @@ export const fallbackTracks = [
     coverUrl: '',
     tag: 'Hip-hop',
     artwork:
-      'linear-gradient(135deg, #cfac7a 0%, #a16b42 38%, #52331d 70%, #17100c 100%)',
+      'linear-gradient(135deg, #ffb3c5 0%, #bf5478 38%, #342142 70%, #090d17 100%)',
   },
   {
     title: 'Ngày Rời Chuyến Bay',
@@ -47,7 +47,7 @@ export const fallbackTracks = [
     coverUrl: '',
     tag: 'Ballad',
     artwork:
-      'linear-gradient(135deg, #ddd8d2 0%, #9f968d 34%, #5c5b64 70%, #181515 100%)',
+      'linear-gradient(135deg, #dce5f7 0%, #7b889d 34%, #324056 70%, #0b0f16 100%)',
   },
   {
     title: 'Eenie Meenie',
@@ -57,7 +57,7 @@ export const fallbackTracks = [
     coverUrl: '',
     tag: 'Throwback',
     artwork:
-      'linear-gradient(135deg, #916445 0%, #db7202 26%, #3a2b32 64%, #0f0d0d 100%)',
+      'linear-gradient(135deg, #ffd099 0%, #ff6b57 26%, #463364 64%, #0a0f18 100%)',
   },
 ]
 
@@ -67,42 +67,42 @@ export const fallbackArtists = [
     meta: 'Nghệ sĩ',
     initials: 'ST',
     artwork:
-      'radial-gradient(circle at 42% 26%, #f3d5c4 0%, #b28d78 26%, #5c4a40 58%, #181514 100%)',
+      'radial-gradient(circle at 42% 26%, #ffd6c9 0%, #d88b76 26%, #5a425f 58%, #111523 100%)',
   },
   {
     name: 'MONO',
     meta: 'Nghệ sĩ',
     initials: 'MO',
     artwork:
-      'radial-gradient(circle at 46% 22%, #dad8d1 0%, #98968d 30%, #4a4d48 58%, #141312 100%)',
+      'radial-gradient(circle at 46% 22%, #e6ebf5 0%, #8e99ad 30%, #42506b 58%, #111420 100%)',
   },
   {
     name: 'RPT MCK',
     meta: 'Nghệ sĩ',
     initials: 'MK',
     artwork:
-      'radial-gradient(circle at 44% 20%, #d8dfeb 0%, #7d91b2 28%, #36404e 56%, #111214 100%)',
+      'radial-gradient(circle at 44% 20%, #d7f8ff 0%, #6bb7d6 28%, #314765 56%, #0d111a 100%)',
   },
   {
     name: 'Da LAB',
     meta: 'Nghệ sĩ',
     initials: 'DL',
     artwork:
-      'radial-gradient(circle at 50% 22%, #dccfcb 0%, #866b61 28%, #3d3136 56%, #120f10 100%)',
+      'radial-gradient(circle at 50% 22%, #ffd2df 0%, #a9657c 28%, #3a2947 56%, #0f1119 100%)',
   },
   {
     name: 'HIEUTHUHAI',
     meta: 'Nghệ sĩ',
     initials: 'HH',
     artwork:
-      'radial-gradient(circle at 48% 20%, #ffd8bf 0%, #b67a4c 28%, #4e3532 54%, #120f10 100%)',
+      'radial-gradient(circle at 48% 20%, #ffd7b5 0%, #ff916f 28%, #5a3551 54%, #10111a 100%)',
   },
   {
     name: 'Vũ.',
     meta: 'Nghệ sĩ',
     initials: 'V',
     artwork:
-      'radial-gradient(circle at 48% 20%, #ddd5d0 0%, #8c817c 28%, #444342 55%, #0f0f0f 100%)',
+      'radial-gradient(circle at 48% 20%, #e4eaf4 0%, #8795aa 28%, #3f4a5c 55%, #0e1118 100%)',
   },
 ]
 
@@ -110,32 +110,32 @@ export const fallbackAlbums = [
   {
     title: 'm-tp M-TP',
     artist: 'Sơn Tùng M-TP',
-    artwork: 'linear-gradient(180deg, #0b1330 0%, #183a86 38%, #d06639 76%, #402117 100%)',
+    artwork: 'linear-gradient(180deg, #081327 0%, #1f4f8e 38%, #ff6b57 76%, #3a2039 100%)',
   },
   {
     title: 'Ai Cũng Phải Bắt Đầu Từ Đâu Đó',
     artist: 'HIEUTHUHAI',
-    artwork: 'linear-gradient(135deg, #2a0908 0%, #6a1f10 35%, #ff7a21 70%, #25110e 100%)',
+    artwork: 'linear-gradient(135deg, #230d18 0%, #6f2240 35%, #ff6b57 70%, #21132a 100%)',
   },
   {
     title: 'GOLDEN',
     artist: 'Jung Kook',
-    artwork: 'linear-gradient(135deg, #1f5c42 0%, #0f3d2c 32%, #d8b058 70%, #183225 100%)',
+    artwork: 'linear-gradient(135deg, #0f4f46 0%, #123a51 32%, #29d4ff 70%, #142637 100%)',
   },
   {
     title: 'THE WXRDIES',
     artist: 'Wxrdie',
-    artwork: 'linear-gradient(135deg, #473621 0%, #7b5c33 34%, #293320 68%, #12120f 100%)',
+    artwork: 'linear-gradient(135deg, #31223f 0%, #5a4a92 34%, #1f3640 68%, #0d1016 100%)',
   },
   {
     title: 'Đánh Đổi',
     artist: 'Obito, Shiki',
-    artwork: 'linear-gradient(135deg, #a9c0cf 0%, #6a879a 46%, #1f2832 100%)',
+    artwork: 'linear-gradient(135deg, #d5efff 0%, #73a9cf 46%, #1b2a3f 100%)',
   },
   {
     title: 'BẬT NÓ LÊN',
     artist: 'SOOBIN',
-    artwork: 'linear-gradient(135deg, #d7ebe8 0%, #9bbfbe 40%, #486f75 100%)',
+    artwork: 'linear-gradient(135deg, #d8fbff 0%, #8ddcf1 40%, #2c6980 100%)',
   },
 ]
 
@@ -143,37 +143,37 @@ export const fallbackRadios = [
   {
     title: 'Vũ.',
     description: 'Với VCT, Da LAB, Emcee L (Da LAB) và nhiều hơn nữa',
-    tone: 'linear-gradient(135deg, #ffb08b 0%, #ffa17b 60%, #d6c86f 100%)',
+    tone: 'linear-gradient(135deg, #ffd0c0 0%, #ff8d7d 60%, #ffd37a 100%)',
     initials: ['VU', 'DL', 'EM'],
   },
   {
     title: 'Hà Anh Tuấn',
     description: 'Với Vũ., Noo Phước Thịnh, Quân A.P và nhiều hơn nữa',
-    tone: 'linear-gradient(135deg, #cb9cf1 0%, #b68de8 55%, #9a86ea 100%)',
+    tone: 'linear-gradient(135deg, #c5d0ff 0%, #9eb3ff 55%, #8aa3f4 100%)',
     initials: ['VU', 'HAT', 'QA'],
   },
   {
     title: 'SOOBIN',
     description: 'Với VCT, Vũ., JustaTee và nhiều hơn nữa',
-    tone: 'linear-gradient(135deg, #91bdf2 0%, #7caee9 58%, #6d9de6 100%)',
+    tone: 'linear-gradient(135deg, #a8e8ff 0%, #75d8ff 58%, #55b8f0 100%)',
     initials: ['VU', 'SB', 'DL'],
   },
   {
     title: 'Sơn Tùng M-TP',
     description: 'Với JustaTee, Da LAB, HIEUTHUHAI và nhiều hơn nữa',
-    tone: 'linear-gradient(135deg, #ffae83 0%, #ffa47f 54%, #eecb80 100%)',
+    tone: 'linear-gradient(135deg, #ffc4ad 0%, #ff8b79 54%, #ffd38a 100%)',
     initials: ['DL', 'ST', 'JK'],
   },
   {
     title: 'Dangrangto',
     description: 'Với Wxrdie, HIEUTHUHAI, Obito và nhiều hơn nữa',
-    tone: 'linear-gradient(135deg, #b6b4ff 0%, #aaa1ec 60%, #97b1ff 100%)',
+    tone: 'linear-gradient(135deg, #d1d0ff 0%, #b3b0ff 60%, #96c2ff 100%)',
     initials: ['WX', 'DG', 'HH'],
   },
   {
     title: 'buitruonglinh',
     description: 'Với W/N, Vũ., Da LAB và nhiều hơn nữa',
-    tone: 'linear-gradient(135deg, #98ead6 0%, #85dbc7 58%, #8de3d7 100%)',
+    tone: 'linear-gradient(135deg, #bff7f0 0%, #94f0e6 58%, #78d9f7 100%)',
     initials: ['BTL', 'VU', 'DL'],
   },
 ]
@@ -182,32 +182,32 @@ export const fallbackCharts = [
   {
     title: 'Top Bài Hát Toàn Cầu',
     subtitle: 'Thông tin cập nhật hằng tuần về những bản nhạc hot nhất.',
-    artwork: 'linear-gradient(135deg, #7d36a6 0%, #723399 60%, #5b2577 100%)',
+    artwork: 'linear-gradient(135deg, #50348f 0%, #7d48d8 60%, #2a2c74 100%)',
   },
   {
     title: 'Top Bài Hát Việt Nam',
     subtitle: 'Thông tin cập nhật hằng tuần về những bản nhạc hot nhất.',
-    artwork: 'linear-gradient(135deg, #65a5ff 0%, #5790df 58%, #4878bd 100%)',
+    artwork: 'linear-gradient(135deg, #7cc2ff 0%, #4ea7ff 58%, #2c74d6 100%)',
   },
   {
     title: 'Top 50 Global',
     subtitle: 'Thông tin cập nhật hằng ngày về những bản nhạc nổi bật.',
-    artwork: 'linear-gradient(180deg, #1c7d7f 0%, #1a4b76 55%, #24386c 100%)',
+    artwork: 'linear-gradient(180deg, #19a6a2 0%, #2173b8 55%, #283d88 100%)',
   },
   {
     title: 'Top 50 Vietnam',
     subtitle: 'Thông tin cập nhật hằng ngày về những bản nhạc nổi bật.',
-    artwork: 'linear-gradient(180deg, #ff6e42 0%, #ff3c37 55%, #f2183a 100%)',
+    artwork: 'linear-gradient(180deg, #ff8a68 0%, #ff5f58 55%, #ff4368 100%)',
   },
   {
     title: 'Viral 50 Global',
     subtitle: 'Thông tin cập nhật hằng ngày về những bản nhạc lan tỏa mạnh.',
-    artwork: 'linear-gradient(180deg, #24c883 0%, #4e7b61 42%, #5b4163 100%)',
+    artwork: 'linear-gradient(180deg, #20d7a1 0%, #2c8f9f 42%, #4f4c8b 100%)',
   },
   {
     title: 'Viral 50 Vietnam',
     subtitle: 'Thông tin cập nhật hằng ngày về những bản nhạc lan tỏa mạnh.',
-    artwork: 'linear-gradient(180deg, #f0de55 0%, #f1cc42 40%, #f04454 100%)',
+    artwork: 'linear-gradient(180deg, #ffe56d 0%, #ffbf56 40%, #ff6b57 100%)',
   },
 ]
 

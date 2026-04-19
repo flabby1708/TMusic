@@ -11,11 +11,37 @@ const buildJsonRequestOptions = (payload) => ({
   body: JSON.stringify(payload),
 })
 
+const decodeBase64UrlUtf8 = (encodedValue) => {
+  const normalizedValue = encodedValue.replace(/-/g, '+').replace(/_/g, '/')
+  const paddedValue = normalizedValue.padEnd(
+    normalizedValue.length + ((4 - (normalizedValue.length % 4)) % 4),
+    '=',
+  )
+  const binaryString = window.atob(paddedValue)
+  const bytes = Uint8Array.from(binaryString, (character) => character.charCodeAt(0))
+
+  return new TextDecoder().decode(bytes)
+}
+
 export const loginWithEmail = (payload) =>
   requestJson('/api/auth/login', buildJsonRequestOptions(payload))
 
 export const registerWithEmail = (payload) =>
   requestJson('/api/auth/register', buildJsonRequestOptions(payload))
+
+export const requestPhoneVerificationCode = (payload) =>
+  requestJson('/api/auth/phone/request-code', buildJsonRequestOptions(payload))
+
+export const verifyPhoneVerificationCode = (payload) =>
+  requestJson('/api/auth/phone/verify-code', buildJsonRequestOptions(payload))
+
+export const getSocialAuthStartUrl = (provider) =>
+  requestJson(`/api/auth/oauth/${provider}/url`)
+
+export const beginSocialAuth = async (provider) => {
+  const payload = await getSocialAuthStartUrl(provider)
+  window.location.assign(payload.url)
+}
 
 export const storeAuthSession = ({ token, user }) => {
   window.localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token)
@@ -44,6 +70,18 @@ export const getStoredAuthUser = () => {
     return JSON.parse(rawValue)
   } catch {
     clearAuthSession()
+    return null
+  }
+}
+
+export const decodeSocialCallbackUser = (encodedUser) => {
+  if (!encodedUser) {
+    return null
+  }
+
+  try {
+    return JSON.parse(decodeBase64UrlUtf8(encodedUser))
+  } catch {
     return null
   }
 }
