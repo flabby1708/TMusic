@@ -1,22 +1,22 @@
 import { useEffect, useState } from 'react'
 import {
-  clearAuthSession,
-  fetchAuthenticatedUser,
-  getStoredAuthToken,
-  getStoredAuthUser,
-  updateStoredAuthUser,
-} from './authClient.js'
+  clearAdminSession,
+  fetchAuthenticatedAdmin,
+  getStoredAdminToken,
+  getStoredAdminUser,
+  updateStoredAdminUser,
+} from './adminAuthClient.js'
 
-const isExpiredSessionError = (error) =>
+const isExpiredAdminSessionError = (error) =>
   error?.status === 401 || error?.status === 403 || error?.status === 404
 
-export function useAuthSession() {
-  const [user, setUser] = useState(() => (getStoredAuthToken() ? getStoredAuthUser() : null))
-  const [loading, setLoading] = useState(() => Boolean(getStoredAuthToken()))
+export function useAdminSession() {
+  const [user, setUser] = useState(() => (getStoredAdminToken() ? getStoredAdminUser() : null))
+  const [loading, setLoading] = useState(() => Boolean(getStoredAdminToken()))
 
   useEffect(() => {
     let cancelled = false
-    const token = getStoredAuthToken()
+    const token = getStoredAdminToken()
 
     if (!token) {
       setLoading(false)
@@ -26,17 +26,17 @@ export function useAuthSession() {
 
     const refreshSession = async () => {
       try {
-        const payload = await fetchAuthenticatedUser()
+        const payload = await fetchAuthenticatedAdmin()
 
         if (cancelled) {
           return
         }
 
         if (payload?.user) {
-          updateStoredAuthUser(payload.user)
+          updateStoredAdminUser(payload.user)
           setUser(payload.user)
         } else {
-          clearAuthSession()
+          clearAdminSession()
           setUser(null)
         }
       } catch (error) {
@@ -44,8 +44,8 @@ export function useAuthSession() {
           return
         }
 
-        if (isExpiredSessionError(error)) {
-          clearAuthSession()
+        if (isExpiredAdminSessionError(error)) {
+          clearAdminSession()
           setUser(null)
         }
       } finally {
@@ -63,7 +63,7 @@ export function useAuthSession() {
   }, [])
 
   const logout = () => {
-    clearAuthSession()
+    clearAdminSession()
     setUser(null)
   }
 

@@ -1,16 +1,25 @@
 import { useEffect, useState } from 'react'
-import { requestJson } from '../../shared/api.js'
+import { clearAdminSession, requestAdminJson } from './adminAuthClient.js'
+import { uploadAdminImage } from './adminUploadClient.js'
 import {
   buildEmptyFormValues,
   resourceDefinitions,
   toFormValues,
 } from './adminConfig.js'
 
-export function useAdminDashboard() {
+const isAdminSessionError = (error) => error?.status === 401 || error?.status === 403
+
+const redirectToAdminLogin = () => {
+  clearAdminSession()
+  window.location.assign('/admin/login')
+}
+
+export function useAdminDashboard({ enabled = true } = {}) {
   const [activeResource, setActiveResource] = useState('songs')
   const [items, setItems] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(enabled)
   const [saving, setSaving] = useState(false)
+  const [uploadingField, setUploadingField] = useState('')
   const [editingId, setEditingId] = useState('')
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
@@ -22,26 +31,41 @@ export function useAdminDashboard() {
     setFormValues(buildEmptyFormValues(activeResource))
     setEditingId('')
     setNotice('')
+    setUploadingField('')
   }, [activeResource])
 
   useEffect(() => {
     let cancelled = false
+
+    if (!enabled) {
+      setLoading(false)
+      setItems([])
+      setError('')
+      return undefined
+    }
 
     const loadItems = async () => {
       setLoading(true)
       setError('')
 
       try {
-        const payload = await requestJson(`/api/admin/${activeResource}`)
+        const payload = await requestAdminJson(`/api/admin/${activeResource}`)
 
         if (!cancelled) {
           setItems(payload.items || [])
         }
       } catch (loadError) {
-        if (!cancelled) {
-          setItems([])
-          setError(loadError.message)
+        if (cancelled) {
+          return
         }
+
+        if (isAdminSessionError(loadError)) {
+          redirectToAdminLogin()
+          return
+        }
+
+        setItems([])
+        setError(loadError.message)
       } finally {
         if (!cancelled) {
           setLoading(false)
@@ -54,7 +78,7 @@ export function useAdminDashboard() {
     return () => {
       cancelled = true
     }
-  }, [activeResource])
+  }, [activeResource, enabled])
 
   const handleChange = (fieldName, value) => {
     setFormValues((current) => ({
@@ -78,8 +102,21 @@ export function useAdminDashboard() {
   }
 
   const reloadActiveResource = async () => {
-    const payload = await requestJson(`/api/admin/${activeResource}`)
-    setItems(payload.items || [])
+    if (!enabled) {
+      return
+    }
+
+    try {
+      const payload = await requestAdminJson(`/api/admin/${activeResource}`)
+      setItems(payload.items || [])
+    } catch (error) {
+      if (isAdminSessionError(error)) {
+        redirectToAdminLogin()
+        return
+      }
+
+      throw error
+    }
   }
 
   const handleSubmit = async (event) => {
@@ -94,7 +131,7 @@ export function useAdminDashboard() {
         : `/api/admin/${activeResource}`
       const method = editingId ? 'PUT' : 'POST'
 
-      await requestJson(endpoint, {
+      await requestAdminJson(endpoint, {
         method,
         headers: {
           'Content-Type': 'application/json',
@@ -106,6 +143,11 @@ export function useAdminDashboard() {
       handleReset()
       setNotice(editingId ? 'Đã cập nhật thành công.' : 'Đã tạo mới thành công.')
     } catch (submitError) {
+      if (isAdminSessionError(submitError)) {
+        redirectToAdminLogin()
+        return
+      }
+
       setError(submitError.message)
     } finally {
       setSaving(false)
@@ -124,7 +166,7 @@ export function useAdminDashboard() {
     setNotice('')
 
     try {
-      await requestJson(`/api/admin/${activeResource}/${item._id}`, {
+      await requestAdminJson(`/api/admin/${activeResource}/${item._id}`, {
         method: 'DELETE',
       })
 
@@ -136,9 +178,55 @@ export function useAdminDashboard() {
 
       setNotice('Đã xóa thành công.')
     } catch (deleteError) {
+      if (isAdminSessionError(deleteError)) {
+        redirectToAdminLogin()
+        return
+      }
+
       setError(deleteError.message)
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleImageUpload = async (fieldName, file) => {
+    if (!file) {
+      throw new Error('Chưa chọn tệp ảnh.')
+    }
+
+    if (file.type && !file.type.startsWith('image/')) {
+      const typeError = new Error('Vui lòng chọn đúng tệp hình ảnh.')
+      setError(typeError.message)
+      throw typeError
+    }
+
+    setUploadingField(fieldName)
+    setError('')
+    setNotice('')
+
+    try {
+      const uploadedImage = await uploadAdminImage({
+        file,
+        resource: activeResource,
+      })
+
+      setFormValues((current) => ({
+        ...current,
+        [fieldName]: uploadedImage.secureUrl,
+      }))
+      setNotice('Tải ảnh lên Cloudinary thành công.')
+
+      return uploadedImage
+    } catch (uploadError) {
+      if (isAdminSessionError(uploadError)) {
+        redirectToAdminLogin()
+      } else {
+        setError(uploadError.message)
+      }
+
+      throw uploadError
+    } finally {
+      setUploadingField('')
     }
   }
 
@@ -151,6 +239,7 @@ export function useAdminDashboard() {
     handleChange,
     handleDelete,
     handleEdit,
+    handleImageUpload,
     handleReset,
     handleSubmit,
     items,
@@ -159,5 +248,6 @@ export function useAdminDashboard() {
     reloadActiveResource,
     saving,
     setActiveResource,
+    uploadingField,
   }
 }

@@ -18,6 +18,7 @@ export const signUserToken = (user) =>
       sub: user._id.toString(),
       role: user.role,
       email: user.email,
+      artistStatus: user.artistStatus || 'none',
     },
     getJwtSecret(),
     {

@@ -181,31 +181,31 @@ export const fallbackRadios = [
 export const fallbackCharts = [
   {
     title: 'Top Bài Hát Toàn Cầu',
-    subtitle: 'Thông tin cập nhật hằng tuần về những bản nhạc hot nhất.',
+    subtitle: 'Thông tin cập nhật hằng tuần về những bản nhạc nổi bật nhất.',
     artwork: 'linear-gradient(135deg, #50348f 0%, #7d48d8 60%, #2a2c74 100%)',
   },
   {
     title: 'Top Bài Hát Việt Nam',
-    subtitle: 'Thông tin cập nhật hằng tuần về những bản nhạc hot nhất.',
+    subtitle: 'Thông tin cập nhật hằng tuần về những bản nhạc nổi bật nhất.',
     artwork: 'linear-gradient(135deg, #7cc2ff 0%, #4ea7ff 58%, #2c74d6 100%)',
   },
   {
-    title: 'Top 50 Global',
+    title: 'Top 50 Toàn Cầu',
     subtitle: 'Thông tin cập nhật hằng ngày về những bản nhạc nổi bật.',
     artwork: 'linear-gradient(180deg, #19a6a2 0%, #2173b8 55%, #283d88 100%)',
   },
   {
-    title: 'Top 50 Vietnam',
+    title: 'Top 50 Việt Nam',
     subtitle: 'Thông tin cập nhật hằng ngày về những bản nhạc nổi bật.',
     artwork: 'linear-gradient(180deg, #ff8a68 0%, #ff5f58 55%, #ff4368 100%)',
   },
   {
-    title: 'Viral 50 Global',
+    title: 'Viral 50 Toàn Cầu',
     subtitle: 'Thông tin cập nhật hằng ngày về những bản nhạc lan tỏa mạnh.',
     artwork: 'linear-gradient(180deg, #20d7a1 0%, #2c8f9f 42%, #4f4c8b 100%)',
   },
   {
-    title: 'Viral 50 Vietnam',
+    title: 'Viral 50 Việt Nam',
     subtitle: 'Thông tin cập nhật hằng ngày về những bản nhạc lan tỏa mạnh.',
     artwork: 'linear-gradient(180deg, #ffe56d 0%, #ffbf56 40%, #ff6b57 100%)',
   },
@@ -265,7 +265,7 @@ export const chartMockImages = [
 ]
 
 export const footerColumns = [
-  { title: 'Công ty', links: ['Giới thiệu', 'Việc làm', 'For the Record'] },
+  { title: 'Công ty', links: ['Giới thiệu', 'Việc làm', 'Tin tức'] },
   {
     title: 'Cộng đồng',
     links: ['Dành cho nghệ sĩ', 'Nhà phát triển', 'Quảng cáo', 'Nhà đầu tư', 'Nhà cung cấp'],
@@ -275,15 +275,15 @@ export const footerColumns = [
     links: ['Hỗ trợ', 'Ứng dụng di động miễn phí', 'Phổ biến theo quốc gia', 'Thêm nhạc'],
   },
   {
-    title: 'Các gói của TMusic',
-    links: ['Premium Individual', 'Premium Student', 'TMusic Free'],
+    title: 'Gói dịch vụ TMusic',
+    links: ['Gói cá nhân', 'Gói sinh viên', 'TMusic miễn phí'],
   },
 ]
 
 export const libraryPrompts = [
   {
     title: 'Tạo danh sách phát đầu tiên của bạn',
-    description: 'Rất dễ. Chúng tôi sẽ giúp bạn bắt đầu trong vài bước.',
+    description: 'Rất dễ. Chúng tôi sẽ giúp bạn bắt đầu chỉ trong vài bước.',
     action: 'Tạo danh sách phát',
   },
   {
@@ -302,4 +302,4 @@ export const footerLinks = [
   'Hỗ trợ tiếp cận',
 ]
 
-export const menuLinks = ['Premium', 'Hỗ trợ', 'Tải xuống']
+export const menuLinks = ['Nâng cấp', 'Hỗ trợ', 'Tải xuống']

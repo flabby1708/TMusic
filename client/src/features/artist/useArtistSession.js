@@ -1,22 +1,24 @@
 import { useEffect, useState } from 'react'
 import {
-  clearAuthSession,
-  fetchAuthenticatedUser,
-  getStoredAuthToken,
-  getStoredAuthUser,
-  updateStoredAuthUser,
-} from './authClient.js'
+  clearArtistSession,
+  fetchAuthenticatedArtist,
+  getStoredArtistToken,
+  getStoredArtistUser,
+  updateStoredArtistUser,
+} from './artistAuthClient.js'
 
-const isExpiredSessionError = (error) =>
+const isExpiredArtistSessionError = (error) =>
   error?.status === 401 || error?.status === 403 || error?.status === 404
 
-export function useAuthSession() {
-  const [user, setUser] = useState(() => (getStoredAuthToken() ? getStoredAuthUser() : null))
-  const [loading, setLoading] = useState(() => Boolean(getStoredAuthToken()))
+export function useArtistSession() {
+  const [user, setUser] = useState(() =>
+    getStoredArtistToken() ? getStoredArtistUser() : null,
+  )
+  const [loading, setLoading] = useState(() => Boolean(getStoredArtistToken()))
 
   useEffect(() => {
     let cancelled = false
-    const token = getStoredAuthToken()
+    const token = getStoredArtistToken()
 
     if (!token) {
       setLoading(false)
@@ -26,17 +28,17 @@ export function useAuthSession() {
 
     const refreshSession = async () => {
       try {
-        const payload = await fetchAuthenticatedUser()
+        const payload = await fetchAuthenticatedArtist()
 
         if (cancelled) {
           return
         }
 
         if (payload?.user) {
-          updateStoredAuthUser(payload.user)
+          updateStoredArtistUser(payload.user)
           setUser(payload.user)
         } else {
-          clearAuthSession()
+          clearArtistSession()
           setUser(null)
         }
       } catch (error) {
@@ -44,8 +46,8 @@ export function useAuthSession() {
           return
         }
 
-        if (isExpiredSessionError(error)) {
-          clearAuthSession()
+        if (isExpiredArtistSessionError(error)) {
+          clearArtistSession()
           setUser(null)
         }
       } finally {
@@ -63,7 +65,7 @@ export function useAuthSession() {
   }, [])
 
   const logout = () => {
-    clearAuthSession()
+    clearArtistSession()
     setUser(null)
   }
 

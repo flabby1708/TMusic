@@ -68,6 +68,26 @@ function getUserInitials(user) {
   return segments.map((item) => item[0]?.toUpperCase() || '').join('') || 'TM'
 }
 
+function getUserPlanMeta(user) {
+  const isPremium = Boolean(user?.entitlements?.isPremium)
+
+  if (isPremium) {
+    return {
+      label: 'Cao cấp',
+      detail: 'Không quảng cáo, tải xuống ngoại tuyến và chất lượng lossless đã sẵn sàng.',
+      badgeClass:
+        'border-[color:rgba(41,212,255,0.28)] bg-[color:rgba(41,212,255,0.12)] text-[color:#dff8ff]',
+    }
+  }
+
+  return {
+    label: 'Miễn phí',
+    detail: 'Bạn đang ở gói nghe cơ bản. Luồng nâng cấp gói sẽ được hoàn thiện ở bước tiếp theo.',
+    badgeClass:
+      'border-[color:rgba(255,255,255,0.12)] bg-[color:rgba(255,255,255,0.05)] text-[color:var(--text-secondary)]',
+  }
+}
+
 function HomePage() {
   const artistCarouselRef = useRef(null)
   const { health, homeContent, isLive } = useHomePageData()
@@ -75,6 +95,7 @@ function HomePage() {
 
   const userDisplayName = useMemo(() => getUserDisplayName(user), [user])
   const userInitials = useMemo(() => getUserInitials(user), [user])
+  const userPlanMeta = useMemo(() => getUserPlanMeta(user), [user])
 
   const scrollArtistsPrev = () => {
     artistCarouselRef.current?.scrollBy({
@@ -103,14 +124,14 @@ function HomePage() {
         ? 'Đang tải danh sách...'
         : health.error
           ? 'Đang hiển thị dữ liệu mẫu.'
-          : 'Không gian phát dành cho bạn'
+          : 'Không gian phát dành riêng cho bạn'
 
   return (
     <div className="min-h-screen bg-[color:var(--bg-app)] px-2.5 py-2.5 text-[color:var(--text-primary)]">
       <div className="mx-auto flex min-h-[calc(100vh-1.25rem)] w-full max-w-[1920px] flex-col gap-2.5">
         <header className="top-shell flex flex-wrap items-center justify-between gap-2.5 px-3 py-2.5 sm:px-4">
           <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
-            <a href="/" className="brand-badge hidden sm:inline-flex" aria-label="TMusic home">
+            <a href="/" className="brand-badge hidden sm:inline-flex" aria-label="Trang chủ TMusic">
               <SpotifyIcon />
             </a>
 
@@ -168,6 +189,9 @@ function HomePage() {
                     </p>
                     <p className="truncate text-sm font-bold text-[color:var(--text-primary)]">
                       {userDisplayName}
+                    </p>
+                    <p className="mt-1 truncate text-[0.68rem] font-bold uppercase tracking-[0.18em] text-[color:var(--text-dim)]">
+                      Gói {userPlanMeta.label}
                     </p>
                   </div>
                 </div>
@@ -249,11 +273,18 @@ function HomePage() {
               <section>
                 <div className="mb-5 flex items-start justify-between gap-4">
                   <div>
-                    <p className="section-kicker">Midnight Pulse & Neon Coral</p>
+                    <p className="section-kicker">Dành cho bạn hôm nay</p>
                     <div className="mt-3 flex flex-wrap items-center gap-3">
                       <span className="text-sm text-[color:var(--text-secondary)]">
                         {heroStatusText}
                       </span>
+                      {isAuthenticated ? (
+                        <span
+                          className={`rounded-full border px-3 py-1 text-[0.72rem] font-bold uppercase tracking-[0.16em] ${userPlanMeta.badgeClass}`}
+                        >
+                          {userPlanMeta.label}
+                        </span>
+                      ) : null}
                       {isAuthenticated ? (
                         <span className="text-sm text-[color:var(--text-dim)]">
                           {user?.email}
@@ -264,6 +295,11 @@ function HomePage() {
                     <h1 className="font-display text-[1.82rem] font-extrabold tracking-tight text-[color:var(--text-primary)] sm:text-[2.45rem]">
                       Những bài hát thịnh hành
                     </h1>
+                    {isAuthenticated ? (
+                      <p className="mt-3 max-w-3xl text-sm leading-7 text-[color:var(--text-secondary)]">
+                        {userPlanMeta.detail}
+                      </p>
+                    ) : null}
                   </div>
 
                   <SectionMoreLink href="/section/trending" />
@@ -331,7 +367,7 @@ function HomePage() {
                 <div className="mb-5 flex items-center justify-between gap-4">
                   <div>
                     <p className="section-kicker">
-                      {isLive ? 'Đang đồng bộ từ cloud' : 'Gợi ý tuyển chọn'}
+                      {isLive ? 'Đang đồng bộ từ máy chủ' : 'Gợi ý tuyển chọn'}
                     </p>
                     <h2 className="font-display text-[1.7rem] font-extrabold tracking-tight text-[color:var(--text-primary)] sm:text-[2.1rem]">
                       Nghệ sĩ phổ biến
@@ -579,11 +615,11 @@ function HomePage() {
           <div className="promo-bar fixed inset-x-3 bottom-3 z-20 flex flex-col items-start justify-between gap-3 px-4 py-3.5 sm:flex-row sm:items-center sm:px-5">
             <div>
               <p className="text-[0.78rem] font-bold uppercase tracking-[0.18em] text-white/80">
-                Xem trước TMusic
+                Trải nghiệm TMusic
               </p>
               <p className="mt-2 max-w-4xl font-display text-[1rem] font-bold leading-6 text-[color:var(--text-primary)]">
-                Đăng ký để nghe không giới hạn bài hát và podcast. Tông màu mới giúp giao diện
-                êm hơn cho mắt nhưng vẫn giữ điểm nhấn rõ ràng.
+                Đăng ký để nghe không giới hạn bài hát và podcast. Giao diện mới dịu mắt hơn nhưng
+                vẫn giữ điểm nhấn rõ ràng trên từng khu vực nội dung.
               </p>
             </div>
 

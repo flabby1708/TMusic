@@ -1,7 +1,703 @@
-import { resourceDefinitions, resourceKeys } from '../features/admin/adminConfig.js'
+import { useEffect } from 'react'
+import {
+  Alert,
+  Avatar,
+  Breadcrumb,
+  Button,
+  ConfigProvider,
+  Empty,
+  Input,
+  Layout,
+  Menu,
+  Spin,
+  Tag,
+  Typography,
+  Upload,
+  theme,
+} from 'antd'
+import {
+  AppstoreOutlined,
+  BarChartOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  HomeOutlined,
+  LogoutOutlined,
+  NotificationOutlined,
+  PlusOutlined,
+  ReloadOutlined,
+  UploadOutlined,
+  UserOutlined,
+} from '@ant-design/icons'
+import { resourceDefinitions } from '../features/admin/adminConfig.js'
 import { useAdminDashboard } from '../features/admin/useAdminDashboard.js'
+import { useAdminSession } from '../features/admin/useAdminSession.js'
+
+const { Header, Content, Sider } = Layout
+const { Text, Title } = Typography
+const { TextArea } = Input
+const ADMIN_HEADER_HEIGHT = 88
+
+const headerItems = [
+  {
+    key: 'dashboard',
+    icon: <AppstoreOutlined />,
+    label: 'Tổng quan',
+  },
+  {
+    key: 'home',
+    icon: <HomeOutlined />,
+    label: 'Trang chủ',
+  },
+  {
+    key: 'logout',
+    icon: <LogoutOutlined />,
+    label: 'Đăng xuất',
+  },
+]
+
+const resourceMenuItems = [
+  {
+    key: 'sub1',
+    icon: <NotificationOutlined />,
+    label: 'Thư viện nội dung',
+    children: [
+      { key: 'songs', label: resourceDefinitions.songs.label },
+      { key: 'albums', label: resourceDefinitions.albums.label },
+    ],
+  },
+  {
+    key: 'sub2',
+    icon: <UserOutlined />,
+    label: 'Nghệ sĩ và kênh',
+    children: [
+      { key: 'artists', label: resourceDefinitions.artists.label },
+      { key: 'radios', label: resourceDefinitions.radios.label },
+    ],
+  },
+  {
+    key: 'sub3',
+    icon: <BarChartOutlined />,
+    label: 'Tổng hợp',
+    children: [{ key: 'charts', label: resourceDefinitions.charts.label }],
+  },
+]
+
+const adminTheme = {
+  algorithm: theme.darkAlgorithm,
+  token: {
+    colorPrimary: '#ff6b57',
+    colorInfo: '#29d4ff',
+    borderRadius: 16,
+    borderRadiusLG: 24,
+    colorBgBase: '#070d17',
+    colorBgContainer: '#101826',
+    colorBgElevated: '#0c1320',
+    colorText: '#f5f7fb',
+    colorTextSecondary: '#aab8ce',
+    colorBorderSecondary: 'rgba(123, 136, 157, 0.18)',
+  },
+  components: {
+    Layout: {
+      bodyBg: 'transparent',
+      headerBg: 'rgba(8, 16, 28, 0.94)',
+      siderBg: '#101826',
+      triggerBg: '#101826',
+    },
+    Menu: {
+      darkItemBg: 'transparent',
+      darkSubMenuItemBg: 'transparent',
+      itemBorderRadius: 14,
+      subMenuItemBorderRadius: 12,
+      itemSelectedBg: 'rgba(255, 107, 87, 0.18)',
+      itemSelectedColor: '#ffffff',
+      itemColor: '#aab8ce',
+    },
+    Button: {
+      borderRadius: 14,
+      controlHeight: 42,
+    },
+  },
+}
+
+const shellStyles = {
+  minHeight: '100vh',
+  background:
+    'radial-gradient(circle at top left, rgba(41, 212, 255, 0.12), transparent 24%), radial-gradient(circle at bottom right, rgba(255, 107, 87, 0.16), transparent 32%), linear-gradient(180deg, #08111d 0%, #050912 100%)',
+}
+
+const panelStyle = (token) => ({
+  background: token.colorBgContainer,
+  border: `1px solid ${token.colorBorderSecondary}`,
+  borderRadius: token.borderRadiusLG,
+  boxShadow: '0 24px 60px rgba(0, 0, 0, 0.24)',
+})
+
+const fieldLabelStyle = {
+  display: 'block',
+  marginBottom: 8,
+  fontSize: 13,
+  fontWeight: 700,
+  color: '#aab8ce',
+}
+
+const inputStyle = {
+  borderRadius: 14,
+}
+
+const getAdminDisplayName = (user) => {
+  if (user?.displayName) {
+    return user.displayName
+  }
+
+  if (user?.email) {
+    return user.email.split('@')[0]
+  }
+
+  return 'Admin'
+}
+
+const isImageUploadField = (field) =>
+  field.type === 'url' && (field.name === 'coverUrl' || field.name === 'imageUrl')
+
+function AdminContentLayout(props) {
+  const {
+    user,
+    activeResource,
+    currentResource,
+    editingId,
+    error,
+    formValues,
+    handleChange,
+    handleDelete,
+    handleEdit,
+    handleHeaderMenuClick,
+    handleImageUpload,
+    handleReset,
+    handleSubmit,
+    items,
+    loading,
+    notice,
+    reloadActiveResource,
+    saving,
+    setActiveResource,
+    uploadingField,
+  } = props
+  const {
+    token: { colorBgContainer, borderRadiusLG, colorBorderSecondary, colorTextSecondary },
+  } = theme.useToken()
+
+  const createUploadRequest = (fieldName) => async ({ file, onError, onSuccess }) => {
+    try {
+      await handleImageUpload(fieldName, file)
+      onSuccess?.({}, file)
+    } catch (uploadError) {
+      onError?.(uploadError)
+    }
+  }
+
+  return (
+    <Layout style={shellStyles}>
+      <Header
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 20,
+          height: ADMIN_HEADER_HEIGHT,
+          lineHeight: 1,
+          paddingInline: 24,
+          paddingBlock: 14,
+          borderBottom: `1px solid ${colorBorderSecondary}`,
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+          backdropFilter: 'blur(16px)',
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            minWidth: 260,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            color: '#fff',
+            lineHeight: 1.1,
+          }}
+        >
+          <div
+            style={{
+              width: 42,
+              height: 42,
+              borderRadius: 16,
+              display: 'grid',
+              placeItems: 'center',
+              background: 'linear-gradient(180deg, #ff8a78 0%, #ff6b57 100%)',
+              color: '#08101a',
+              fontWeight: 900,
+            }}
+          >
+            TM
+          </div>
+          <div style={{ display: 'grid', gap: 4 }}>
+            <div
+              style={{
+                fontSize: 11,
+                letterSpacing: '0.18em',
+                textTransform: 'uppercase',
+                color: colorTextSecondary,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Trung tâm điều hành TMusic
+            </div>
+            <div style={{ fontSize: 18, fontWeight: 800, whiteSpace: 'nowrap' }}>
+              Bảng quản trị
+            </div>
+          </div>
+        </div>
+
+        <Menu
+          theme="dark"
+          mode="horizontal"
+          selectedKeys={['dashboard']}
+          items={headerItems}
+          onClick={handleHeaderMenuClick}
+          style={{
+            flex: 1,
+            minWidth: 0,
+            background: 'transparent',
+            borderBottom: 'none',
+            lineHeight: 'normal',
+            alignSelf: 'stretch',
+          }}
+        />
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, lineHeight: 1.15 }}>
+          <Avatar
+            size={42}
+            style={{
+              background: 'rgba(41, 212, 255, 0.16)',
+              color: '#dff8ff',
+              fontWeight: 800,
+            }}
+          >
+            {getAdminDisplayName(user).slice(0, 2).toUpperCase()}
+          </Avatar>
+          <div style={{ minWidth: 0, display: 'grid', gap: 6 }}>
+            <div
+              style={{
+                fontSize: 12,
+                color: colorTextSecondary,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Đăng nhập với quyền quản trị
+            </div>
+            <div
+              style={{
+                maxWidth: 220,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                fontWeight: 700,
+                fontSize: 15,
+              }}
+            >
+              {user?.email}
+            </div>
+          </div>
+        </div>
+      </Header>
+
+      <Layout style={{ background: 'transparent' }}>
+        <Sider
+          width={280}
+          style={{
+            background: colorBgContainer,
+            borderRight: `1px solid ${colorBorderSecondary}`,
+            minHeight: `calc(100vh - ${ADMIN_HEADER_HEIGHT}px)`,
+          }}
+        >
+          <div style={{ padding: '28px 24px 20px' }}>
+            <Text style={{ color: colorTextSecondary, display: 'block', marginBottom: 8 }}>
+              Chọn nhóm dữ liệu để quản trị.
+            </Text>
+            <Title level={4} style={{ margin: 0 }}>
+              {currentResource.label}
+            </Title>
+          </div>
+
+          <Menu
+            mode="inline"
+            theme="dark"
+            selectedKeys={[activeResource]}
+            defaultOpenKeys={['sub1', 'sub2', 'sub3']}
+            style={{
+              height: '100%',
+              borderInlineEnd: 0,
+              background: 'transparent',
+              paddingInline: 12,
+              paddingBottom: 24,
+            }}
+            items={resourceMenuItems}
+            onClick={({ key }) => setActiveResource(String(key))}
+          />
+        </Sider>
+
+        <Layout style={{ padding: '0 24px 24px', background: 'transparent' }}>
+          <Breadcrumb
+            items={[
+              { title: 'Trang chủ' },
+              { title: 'Quản trị' },
+              { title: currentResource.label },
+            ]}
+            style={{ margin: '20px 0 18px', color: colorTextSecondary }}
+          />
+
+          <Content
+            style={{
+              ...panelStyle({
+                colorBgContainer,
+                colorBorderSecondary,
+                borderRadiusLG,
+              }),
+              padding: 30,
+              margin: 0,
+              minHeight: 280,
+            }}
+          >
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
+              <section style={{ minWidth: 0 }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 12,
+                    marginBottom: 20,
+                  }}
+                >
+                  <div>
+                    <Text
+                      style={{
+                        color: colorTextSecondary,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.18em',
+                        fontSize: 11,
+                      }}
+                    >
+                      Trình duyệt dữ liệu
+                    </Text>
+                    <Title level={2} style={{ margin: '8px 0 0' }}>
+                      {currentResource.label}
+                    </Title>
+                  </div>
+
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    <Tag color="processing">{items.length} mục</Tag>
+                    <Tag color="default">{editingId ? 'Đang sửa' : 'Sẵn sàng tạo mới'}</Tag>
+                    <Button icon={<ReloadOutlined />} onClick={() => void reloadActiveResource()}>
+                      Tải lại
+                    </Button>
+                  </div>
+                </div>
+
+                {error && !loading ? (
+                  <Alert
+                    type="error"
+                    message={error}
+                    showIcon
+                    style={{ marginBottom: 16, borderRadius: 16 }}
+                  />
+                ) : null}
+
+                {loading ? (
+                  <div
+                    style={{
+                      minHeight: 380,
+                      display: 'grid',
+                      placeItems: 'center',
+                      borderRadius: borderRadiusLG,
+                      background: 'rgba(255, 255, 255, 0.02)',
+                      border: `1px solid ${colorBorderSecondary}`,
+                    }}
+                  >
+                    <Spin size="large" tip="Đang tải dữ liệu..." />
+                  </div>
+                ) : items.length === 0 ? (
+                  <div
+                    style={{
+                      minHeight: 380,
+                      display: 'grid',
+                      placeItems: 'center',
+                      borderRadius: borderRadiusLG,
+                      background: 'rgba(255, 255, 255, 0.02)',
+                      border: `1px solid ${colorBorderSecondary}`,
+                    }}
+                  >
+                    <Empty description="Chưa có dữ liệu trong nhóm này" />
+                  </div>
+                ) : (
+                  <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+                    {items.map((item) => {
+                      const previewImage = item[currentResource.imageField]
+                      const title = item[currentResource.titleField]
+                      const subtitle = item[currentResource.subtitleField]
+                      const isEditing = item._id === editingId
+
+                      return (
+                        <article
+                          key={item._id}
+                          style={{
+                            overflow: 'hidden',
+                            borderRadius: 24,
+                            border: `1px solid ${
+                              isEditing ? 'rgba(41, 212, 255, 0.32)' : colorBorderSecondary
+                            }`,
+                            background: isEditing
+                              ? 'rgba(41, 212, 255, 0.08)'
+                              : 'rgba(255, 255, 255, 0.03)',
+                          }}
+                        >
+                          {previewImage ? (
+                            <img
+                              src={previewImage}
+                              alt={title}
+                              style={{ width: '100%', height: 180, objectFit: 'cover' }}
+                            />
+                          ) : (
+                            <div
+                              style={{
+                                height: 180,
+                                display: 'grid',
+                                placeItems: 'center',
+                                background:
+                                  'linear-gradient(135deg, rgba(255,107,87,0.16), rgba(41,212,255,0.12))',
+                                fontWeight: 700,
+                              }}
+                            >
+                              Chưa có ảnh
+                            </div>
+                          )}
+
+                          <div style={{ padding: 18 }}>
+                            <Title level={4} style={{ marginTop: 0, marginBottom: 8 }}>
+                              {title}
+                            </Title>
+                            <Text
+                              style={{
+                                color: colorTextSecondary,
+                                display: 'block',
+                                minHeight: 44,
+                                lineHeight: 1.6,
+                              }}
+                            >
+                              {subtitle}
+                            </Text>
+
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 14 }}>
+                              <Tag>ID {item._id.slice(-6)}</Tag>
+                              <Tag color="default">Thứ tự {item.sortOrder ?? 0}</Tag>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
+                              <Button
+                                icon={<EditOutlined />}
+                                onClick={() => handleEdit(item)}
+                                style={{ flex: 1 }}
+                              >
+                                Sửa
+                              </Button>
+                              <Button
+                                danger
+                                type="primary"
+                                icon={<DeleteOutlined />}
+                                onClick={() => void handleDelete(item)}
+                                disabled={saving}
+                                style={{ flex: 1 }}
+                              >
+                                Xóa
+                              </Button>
+                            </div>
+                          </div>
+                        </article>
+                      )
+                    })}
+                  </div>
+                )}
+              </section>
+
+              <aside style={{ minWidth: 0 }}>
+                <div
+                  style={{
+                    ...panelStyle({
+                      colorBgContainer: 'rgba(255, 255, 255, 0.02)',
+                      colorBorderSecondary,
+                      borderRadiusLG,
+                    }),
+                    padding: 20,
+                    height: '100%',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 12,
+                      marginBottom: 20,
+                    }}
+                  >
+                    <div>
+                      <Text
+                        style={{
+                          color: colorTextSecondary,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.18em',
+                          fontSize: 11,
+                        }}
+                      >
+                        Trình chỉnh sửa
+                      </Text>
+                      <Title level={3} style={{ margin: '8px 0 0' }}>
+                        {editingId ? 'Cập nhật mục đã chọn' : 'Thêm mới'}
+                      </Title>
+                    </div>
+
+                    <Button icon={<PlusOutlined />} onClick={handleReset}>
+                      Mới
+                    </Button>
+                  </div>
+
+                  {notice ? (
+                    <Alert
+                      type="success"
+                      message={notice}
+                      showIcon
+                      style={{ marginBottom: 16, borderRadius: 16 }}
+                    />
+                  ) : null}
+
+                  <form className="space-y-4" onSubmit={handleSubmit}>
+                    {currentResource.fields.map((field) => (
+                      <div key={field.name} style={{ display: 'block' }}>
+                        <span style={fieldLabelStyle}>
+                          {field.label}
+                          {field.required ? ' *' : ''}
+                        </span>
+
+                        {field.type === 'textarea' ? (
+                          <TextArea
+                            value={formValues[field.name]}
+                            onChange={(event) => handleChange(field.name, event.target.value)}
+                            rows={4}
+                            style={inputStyle}
+                          />
+                        ) : isImageUploadField(field) ? (
+                          <div style={{ display: 'grid', gap: 12 }}>
+                            <Input
+                              type={field.type}
+                              value={formValues[field.name]}
+                              onChange={(event) => handleChange(field.name, event.target.value)}
+                              style={inputStyle}
+                            />
+
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                              <Upload
+                                accept="image/*"
+                                customRequest={createUploadRequest(field.name)}
+                                showUploadList={false}
+                                disabled={saving || Boolean(uploadingField)}
+                              >
+                                <Button
+                                  icon={<UploadOutlined />}
+                                  loading={uploadingField === field.name}
+                                  disabled={saving || Boolean(uploadingField)}
+                                >
+                                  Tải ảnh lên Cloudinary
+                                </Button>
+                              </Upload>
+
+                              {formValues[field.name] ? (
+                                <Button
+                                  htmlType="button"
+                                  onClick={() =>
+                                    window.open(
+                                      formValues[field.name],
+                                      '_blank',
+                                      'noopener,noreferrer',
+                                    )
+                                  }
+                                >
+                                  Xem ảnh
+                                </Button>
+                              ) : null}
+                            </div>
+
+                            {formValues[field.name] ? (
+                              <div
+                                style={{
+                                  overflow: 'hidden',
+                                  borderRadius: 18,
+                                  border: `1px solid ${colorBorderSecondary}`,
+                                  background: 'rgba(255, 255, 255, 0.03)',
+                                }}
+                              >
+                                <img
+                                  src={formValues[field.name]}
+                                  alt={field.label}
+                                  style={{ width: '100%', height: 180, objectFit: 'cover' }}
+                                />
+                              </div>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <Input
+                            type={field.type}
+                            value={formValues[field.name]}
+                            onChange={(event) => handleChange(field.name, event.target.value)}
+                            style={inputStyle}
+                          />
+                        )}
+
+                        {field.helper ? (
+                          <Text
+                            style={{ color: colorTextSecondary, display: 'block', marginTop: 8 }}
+                          >
+                            {field.helper}
+                          </Text>
+                        ) : null}
+                      </div>
+                    ))}
+
+                    <div style={{ display: 'flex', gap: 10, paddingTop: 8 }}>
+                      <Button
+                        type="primary"
+                        htmlType="submit"
+                        loading={saving}
+                        style={{ flex: 1 }}
+                      >
+                        {editingId ? 'Cập nhật' : 'Tạo mới'}
+                      </Button>
+                      <Button htmlType="button" onClick={handleReset} style={{ flex: 1 }}>
+                        Đặt lại
+                      </Button>
+                    </div>
+                  </form>
+                </div>
+              </aside>
+            </div>
+          </Content>
+        </Layout>
+      </Layout>
+    </Layout>
+  )
+}
 
 function AdminDashboardPage() {
+  const { user, loading: sessionLoading, isAuthenticated, logout } = useAdminSession()
+  const adminReady = !sessionLoading && isAuthenticated
   const {
     activeResource,
     currentResource,
@@ -11,6 +707,7 @@ function AdminDashboardPage() {
     handleChange,
     handleDelete,
     handleEdit,
+    handleImageUpload,
     handleReset,
     handleSubmit,
     items,
@@ -19,233 +716,98 @@ function AdminDashboardPage() {
     reloadActiveResource,
     saving,
     setActiveResource,
-  } = useAdminDashboard()
+    uploadingField,
+  } = useAdminDashboard({ enabled: adminReady })
+
+  useEffect(() => {
+    if (!sessionLoading && !isAuthenticated) {
+      window.location.replace('/admin/login')
+    }
+  }, [isAuthenticated, sessionLoading])
+
+  const handleLogout = () => {
+    logout()
+    window.location.assign('/admin/login')
+  }
+
+  const handleHeaderMenuClick = ({ key }) => {
+    if (key === 'home') {
+      window.location.assign('/')
+      return
+    }
+
+    if (key === 'logout') {
+      handleLogout()
+    }
+  }
+
+  if (sessionLoading) {
+    return (
+      <ConfigProvider theme={adminTheme}>
+        <Layout style={shellStyles}>
+          <div
+            style={{
+              minHeight: '100vh',
+              display: 'grid',
+              placeItems: 'center',
+              padding: 24,
+            }}
+          >
+            <div
+              style={{
+                ...panelStyle({
+                  colorBgContainer: '#101826',
+                  colorBorderSecondary: 'rgba(123, 136, 157, 0.18)',
+                  borderRadiusLG: 24,
+                }),
+                width: 'min(100%, 520px)',
+                padding: 32,
+                textAlign: 'center',
+              }}
+            >
+              <Spin size="large" />
+              <Title level={3} style={{ marginTop: 20, marginBottom: 8 }}>
+                Đang kiểm tra phiên quản trị...
+              </Title>
+              <Text style={{ color: '#aab8ce' }}>
+                Hệ thống đang xác thực token quản trị trước khi mở bảng điều khiển.
+              </Text>
+            </div>
+          </div>
+        </Layout>
+      </ConfigProvider>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return null
+  }
 
   return (
-    <div className="min-h-screen bg-[color:var(--bg-app)] px-3 py-3 text-[color:var(--text-primary)]">
-      <div className="mx-auto flex min-h-[calc(100vh-1.5rem)] max-w-[1800px] flex-col gap-3">
-        <header className="top-shell flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
-          <div>
-            <p className="section-kicker">TMusic Control Room</p>
-            <h1 className="font-display text-3xl font-extrabold tracking-tight text-[color:var(--text-primary)]">
-              Trang quản trị
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-[color:var(--text-secondary)]">
-              Quản lý nội dung thực tế trên MongoDB cho bài hát, nghệ sĩ, album, radio và bảng xếp hạng.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <a href="/" className="secondary-button">
-              Về trang chủ
-            </a>
-          </div>
-        </header>
-
-        <div className="grid flex-1 gap-3 xl:grid-cols-[260px_minmax(0,1fr)_420px]">
-          <aside className="panel-surface p-3">
-            <p className="px-2 pb-3 text-xs font-bold uppercase tracking-[0.18em] text-[color:var(--text-dim)]">
-              Nhóm dữ liệu
-            </p>
-            <div className="space-y-2">
-              {resourceKeys.map((resourceKey) => {
-                const isActive = resourceKey === activeResource
-                const config = resourceDefinitions[resourceKey]
-
-                return (
-                  <button
-                    key={resourceKey}
-                    type="button"
-                    onClick={() => setActiveResource(resourceKey)}
-                    className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition ${
-                      isActive
-                        ? 'border-[color:rgba(255,107,87,0.34)] bg-[color:rgba(255,107,87,0.12)]'
-                        : 'border-[color:var(--border-soft)] bg-[color:rgba(255,255,255,0.02)] hover:border-[color:rgba(83,101,126,0.34)] hover:bg-[color:rgba(255,255,255,0.04)]'
-                    }`}
-                  >
-                    <span>
-                      <span className="block font-display text-base font-bold text-[color:var(--text-primary)]">
-                        {config.label}
-                      </span>
-                      <span className="mt-1 block text-xs uppercase tracking-[0.18em] text-[color:var(--text-dim)]">
-                        {resourceKey}
-                      </span>
-                    </span>
-                    <span className="rounded-full bg-black/20 px-2.5 py-1 text-xs font-bold text-[color:var(--text-secondary)]">
-                      {resourceKey === activeResource ? items.length : ''}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-          </aside>
-
-          <section className="panel-surface flex min-h-[480px] flex-col overflow-hidden">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/6 px-4 py-4 sm:px-5">
-              <div>
-                <p className="section-kicker">Danh sách hiện tại</p>
-                <h2 className="font-display text-2xl font-extrabold tracking-tight">
-                  {currentResource.label}
-                </h2>
-              </div>
-
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={() => void reloadActiveResource()}
-              >
-                Tải lại
-              </button>
-            </div>
-
-            <div className="hide-scrollbar flex-1 overflow-y-auto p-4 sm:p-5">
-              {loading ? (
-                <div className="rounded-2xl border border-[color:var(--border-soft)] bg-[color:rgba(255,255,255,0.03)] px-4 py-8 text-center text-sm text-[color:var(--text-secondary)]">
-                  Đang tải dữ liệu...
-                </div>
-              ) : error ? (
-                <div className="rounded-2xl border border-[color:rgba(255,93,122,0.32)] bg-[color:rgba(255,93,122,0.1)] px-4 py-4 text-sm text-[color:#ffd8e1]">
-                  {error}
-                </div>
-              ) : items.length === 0 ? (
-                <div className="rounded-2xl border border-[color:var(--border-soft)] bg-[color:rgba(255,255,255,0.03)] px-4 py-8 text-center text-sm text-[color:var(--text-secondary)]">
-                  Chưa có dữ liệu trong nhóm này.
-                </div>
-              ) : (
-                <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
-                  {items.map((item) => {
-                    const previewImage = item[currentResource.imageField]
-                    const title = item[currentResource.titleField]
-                    const subtitle = item[currentResource.subtitleField]
-                    const isEditing = item._id === editingId
-
-                    return (
-                      <article
-                        key={item._id}
-                        className={`overflow-hidden rounded-3xl border transition ${
-                          isEditing
-                            ? 'border-[color:rgba(41,212,255,0.34)] bg-[color:rgba(41,212,255,0.08)]'
-                            : 'border-[color:var(--border-soft)] bg-[color:rgba(255,255,255,0.03)]'
-                        }`}
-                      >
-                        {previewImage ? (
-                          <img src={previewImage} alt={title} className="h-40 w-full object-cover" />
-                        ) : (
-                          <div className="flex h-40 items-end bg-[color:rgba(83,101,126,0.26)] p-4">
-                            <span className="track-pill">Không có ảnh</span>
-                          </div>
-                        )}
-
-                        <div className="space-y-3 p-4">
-                          <div>
-                            <h3 className="font-display text-lg font-bold text-[color:var(--text-primary)]">
-                              {title}
-                            </h3>
-                            <p className="mt-1 line-clamp-2 text-sm leading-6 text-[color:var(--text-secondary)]">
-                              {subtitle}
-                            </p>
-                          </div>
-
-                          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-[0.18em] text-[color:var(--text-dim)]">
-                            <span>ID: {item._id.slice(-6)}</span>
-                            <span>Thứ tự {item.sortOrder ?? 0}</span>
-                          </div>
-
-                          <div className="flex gap-2">
-                            <button
-                              type="button"
-                              className="secondary-button flex-1"
-                              onClick={() => handleEdit(item)}
-                            >
-                              Sửa
-                            </button>
-                            <button
-                              type="button"
-                              className="primary-button flex-1"
-                              onClick={() => void handleDelete(item)}
-                              disabled={saving}
-                            >
-                              Xóa
-                            </button>
-                          </div>
-                        </div>
-                      </article>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          </section>
-
-          <aside className="panel-surface p-4 sm:p-5">
-            <div className="mb-5 flex items-center justify-between gap-3">
-              <div>
-                <p className="section-kicker">Chỉnh sửa</p>
-                <h2 className="font-display text-2xl font-extrabold tracking-tight">
-                  {editingId ? 'Cập nhật mục đã chọn' : 'Thêm mới'}
-                </h2>
-              </div>
-              <button type="button" className="secondary-button" onClick={handleReset}>
-                Mới
-              </button>
-            </div>
-
-            <form className="space-y-4" onSubmit={handleSubmit}>
-              {currentResource.fields.map((field) => (
-                <label key={field.name} className="block">
-                  <span className="mb-2 block text-sm font-semibold text-[color:var(--text-secondary)]">
-                    {field.label}
-                    {field.required ? ' *' : ''}
-                  </span>
-
-                  {field.type === 'textarea' ? (
-                    <textarea
-                      value={formValues[field.name]}
-                      onChange={(event) => handleChange(field.name, event.target.value)}
-                      rows={4}
-                      className="min-h-28 w-full rounded-2xl border border-[color:var(--border-soft)] bg-[color:rgba(255,255,255,0.03)] px-4 py-3 text-sm text-[color:var(--text-primary)] outline-none transition focus:border-[color:rgba(41,212,255,0.42)] focus:bg-[color:rgba(255,255,255,0.05)]"
-                    />
-                  ) : (
-                    <input
-                      type={field.type}
-                      value={formValues[field.name]}
-                      onChange={(event) => handleChange(field.name, event.target.value)}
-                      className="w-full rounded-2xl border border-[color:var(--border-soft)] bg-[color:rgba(255,255,255,0.03)] px-4 py-3 text-sm text-[color:var(--text-primary)] outline-none transition focus:border-[color:rgba(41,212,255,0.42)] focus:bg-[color:rgba(255,255,255,0.05)]"
-                    />
-                  )}
-
-                  {field.helper ? (
-                    <span className="mt-2 block text-xs text-[color:var(--text-dim)]">
-                      {field.helper}
-                    </span>
-                  ) : null}
-                </label>
-              ))}
-
-              {notice ? (
-                <div className="rounded-2xl border border-[color:rgba(41,212,255,0.32)] bg-[color:rgba(41,212,255,0.1)] px-4 py-3 text-sm text-[color:#dff8ff]">
-                  {notice}
-                </div>
-              ) : null}
-              {error ? (
-                <div className="rounded-2xl border border-[color:rgba(255,93,122,0.32)] bg-[color:rgba(255,93,122,0.1)] px-4 py-3 text-sm text-[color:#ffd8e1]">
-                  {error}
-                </div>
-              ) : null}
-
-              <div className="flex gap-3 pt-2">
-                <button type="submit" className="primary-button flex-1" disabled={saving}>
-                  {saving ? 'Đang lưu...' : editingId ? 'Cập nhật' : 'Tạo mới'}
-                </button>
-                <button type="button" className="secondary-button flex-1" onClick={handleReset}>
-                  Đặt lại
-                </button>
-              </div>
-            </form>
-          </aside>
-        </div>
-      </div>
-    </div>
+    <ConfigProvider theme={adminTheme}>
+      <AdminContentLayout
+        user={user}
+        activeResource={activeResource}
+        currentResource={currentResource}
+        editingId={editingId}
+        error={error}
+        formValues={formValues}
+        handleChange={handleChange}
+        handleDelete={handleDelete}
+        handleEdit={handleEdit}
+        handleHeaderMenuClick={handleHeaderMenuClick}
+        handleImageUpload={handleImageUpload}
+        handleReset={handleReset}
+        handleSubmit={handleSubmit}
+        items={items}
+        loading={loading}
+        notice={notice}
+        reloadActiveResource={reloadActiveResource}
+        saving={saving}
+        setActiveResource={setActiveResource}
+        uploadingField={uploadingField}
+      />
+    </ConfigProvider>
   )
 }
 

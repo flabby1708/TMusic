@@ -1,4 +1,72 @@
 import mongoose from 'mongoose'
+import {
+  createDefaultUserSubscription,
+  USER_SUBSCRIPTION_PLANS,
+  USER_SUBSCRIPTION_STATUSES,
+} from '../utils/subscription.js'
+
+const artistProfileSchema = new mongoose.Schema(
+  {
+    stageName: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    bio: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+  },
+  {
+    _id: false,
+  },
+)
+
+const subscriptionSchema = new mongoose.Schema(
+  {
+    plan: {
+      type: String,
+      enum: USER_SUBSCRIPTION_PLANS,
+      default: 'free',
+    },
+    status: {
+      type: String,
+      enum: USER_SUBSCRIPTION_STATUSES,
+      default: 'inactive',
+    },
+    provider: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    customerId: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    subscriptionId: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    currentPeriodStart: {
+      type: Date,
+      default: null,
+    },
+    currentPeriodEnd: {
+      type: Date,
+      default: null,
+    },
+    premiumExpiresAt: {
+      type: Date,
+      default: null,
+    },
+  },
+  {
+    _id: false,
+  },
+)
 
 const userSchema = new mongoose.Schema(
   {
@@ -41,8 +109,21 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['user', 'admin'],
+      enum: ['user', 'artist', 'admin'],
       default: 'user',
+    },
+    artistStatus: {
+      type: String,
+      enum: ['none', 'pending', 'approved', 'rejected'],
+      default: 'none',
+    },
+    artistProfile: {
+      type: artistProfileSchema,
+      default: () => ({}),
+    },
+    subscription: {
+      type: subscriptionSchema,
+      default: createDefaultUserSubscription,
     },
     authProviders: {
       googleId: {

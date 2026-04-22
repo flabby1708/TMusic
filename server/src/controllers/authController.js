@@ -1,7 +1,10 @@
 import { getDatabaseStatus } from '../config/db.js'
 import {
   getAuthenticatedUserById,
+  loginAdminUser,
+  loginArtistUser,
   loginUser,
+  registerArtistUser,
   registerUser,
 } from '../services/authService.js'
 import { requestPhoneCode, verifyPhoneCode } from '../services/phoneAuthService.js'
@@ -18,7 +21,7 @@ const ensureDatabaseReady = (res) => {
   }
 
   res.status(503).json({
-    message: 'MongoDB chưa sẵn sàng. Vui lòng thử lại sau.',
+    message: 'MongoDB is not ready yet. Please try again later.',
   })
 
   return false
@@ -33,6 +36,10 @@ const resolveStatusCode = (errorType) => {
     return 401
   }
 
+  if (errorType === 'forbidden') {
+    return 403
+  }
+
   if (errorType === 'conflict') {
     return 409
   }
@@ -42,14 +49,14 @@ const resolveStatusCode = (errorType) => {
 
 const resolveDuplicateKeyMessage = (error) => {
   if (error?.keyPattern?.email) {
-    return 'Email này đã được sử dụng.'
+    return 'Email nay da duoc su dung.'
   }
 
   if (error?.keyPattern?.phoneNumber) {
-    return 'Số điện thoại này đã được sử dụng.'
+    return 'So dien thoai nay da duoc su dung.'
   }
 
-  return 'Thông tin này đã được sử dụng.'
+  return 'Thong tin nay da duoc su dung.'
 }
 
 const sendAuthResult = (res, result, successStatus = 200) => {
@@ -94,6 +101,51 @@ export const login = async (req, res, next) => {
   }
 }
 
+export const registerArtist = async (req, res, next) => {
+  try {
+    if (!ensureDatabaseReady(res)) {
+      return
+    }
+
+    const result = await registerArtistUser(req.body)
+    return sendAuthResult(res, result, 201)
+  } catch (error) {
+    if (error?.code === 11000) {
+      return res.status(409).json({
+        message: resolveDuplicateKeyMessage(error),
+      })
+    }
+
+    return next(error)
+  }
+}
+
+export const loginArtist = async (req, res, next) => {
+  try {
+    if (!ensureDatabaseReady(res)) {
+      return
+    }
+
+    const result = await loginArtistUser(req.body)
+    return sendAuthResult(res, result)
+  } catch (error) {
+    return next(error)
+  }
+}
+
+export const loginAdmin = async (req, res, next) => {
+  try {
+    if (!ensureDatabaseReady(res)) {
+      return
+    }
+
+    const result = await loginAdminUser(req.body)
+    return sendAuthResult(res, result)
+  } catch (error) {
+    return next(error)
+  }
+}
+
 export const requestPhoneOtp = async (req, res, next) => {
   try {
     if (!ensureDatabaseReady(res)) {
@@ -126,7 +178,7 @@ export const getSocialAuthStartUrl = async (req, res, next) => {
 
     if (!getSupportedSocialProviders().includes(provider)) {
       return res.status(404).json({
-        message: 'Nhà cung cấp đăng nhập không được hỗ trợ.',
+        message: 'Unsupported social auth provider.',
       })
     }
 
@@ -155,7 +207,7 @@ export const completeSocialAuth = async (req, res) => {
       return res.redirect(
         buildClientCallbackUrl({
           provider,
-          error: 'Nhà cung cấp đăng nhập không được hỗ trợ.',
+          error: 'Unsupported social auth provider.',
         }),
       )
     }
@@ -178,7 +230,7 @@ export const completeSocialAuth = async (req, res) => {
     return res.redirect(
       buildClientCallbackUrl({
         provider,
-        error: error.message || 'Không thể hoàn tất đăng nhập mạng xã hội.',
+        error: error.message || 'Khong the hoan tat dang nhap mang xa hoi.',
       }),
     )
   }
@@ -194,7 +246,7 @@ export const getMe = async (req, res, next) => {
 
     if (!user) {
       return res.status(404).json({
-        message: 'Không tìm thấy người dùng.',
+        message: 'Khong tim thay nguoi dung.',
       })
     }
 

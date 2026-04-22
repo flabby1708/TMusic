@@ -24,6 +24,27 @@ const songSchema = new mongoose.Schema(
       type: String,
       default: 'Chill',
     },
+    audioUrl: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    ownerUserId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+      index: true,
+    },
+    sourceType: {
+      type: String,
+      enum: ['catalog', 'artist'],
+      default: 'catalog',
+    },
+    releaseStatus: {
+      type: String,
+      enum: ['draft', 'pending', 'published'],
+      default: 'published',
+    },
     sortOrder: {
       type: Number,
       default: 0,

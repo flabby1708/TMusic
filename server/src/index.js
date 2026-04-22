@@ -3,7 +3,7 @@ import dotenv from 'dotenv'
 import express from 'express'
 import { connectDatabase, getDatabaseStatus } from './config/db.js'
 import apiRoutes from './routes/index.js'
-import { seedHomeContent } from './services/seedService.js'
+import { ensureAdminAccount, seedHomeContent } from './services/seedService.js'
 
 dotenv.config()
 
@@ -39,6 +39,7 @@ const bootstrap = async () => {
 
   if (getDatabaseStatus() === 'connected') {
     await seedHomeContent()
+    await ensureAdminAccount()
   }
 }
 

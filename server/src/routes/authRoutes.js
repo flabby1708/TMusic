@@ -8,13 +8,13 @@ import {
   requestPhoneOtp,
   verifyPhoneOtp,
 } from '../controllers/authController.js'
-import { requireAuth } from '../middleware/authMiddleware.js'
+import { requireListener } from '../middleware/authMiddleware.js'
 
 const authRouter = Router()
 
 authRouter.post('/register', register)
 authRouter.post('/login', login)
-authRouter.get('/me', requireAuth, getMe)
+authRouter.get('/me', requireListener, getMe)
 
 authRouter.post('/phone/request-code', requestPhoneOtp)
 authRouter.post('/phone/verify-code', verifyPhoneOtp)

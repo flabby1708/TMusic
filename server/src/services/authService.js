@@ -1,11 +1,16 @@
 import bcrypt from 'bcryptjs'
 import User from '../models/User.js'
+import {
+  buildPublicSubscription,
+  buildUserEntitlements,
+} from '../utils/subscription.js'
 import { signUserToken } from '../utils/authToken.js'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const PHONE_PATTERN = /^\+?[1-9]\d{8,14}$/
 const PASSWORD_MIN_LENGTH = 8
 const SALT_ROUNDS = 12
+const ARTIST_STATUS_PENDING = 'pending'
 
 const SOCIAL_PROVIDER_FIELDS = {
   google: 'googleId',
@@ -38,8 +43,15 @@ const toPublicUser = (user) => ({
   displayName: user.displayName,
   email: user.email,
   role: user.role,
+  artistStatus: user.artistStatus || 'none',
+  artistProfile: {
+    stageName: user.artistProfile?.stageName || '',
+    bio: user.artistProfile?.bio || '',
+  },
   avatarUrl: user.avatarUrl || '',
   phoneNumber: user.phoneNumber || '',
+  subscription: buildPublicSubscription(user.subscription),
+  entitlements: buildUserEntitlements(user.subscription),
   authProviders: {
     google: Boolean(user.authProviders?.googleId),
     facebook: Boolean(user.authProviders?.facebookId),
@@ -55,6 +67,14 @@ const sanitizeRegisterPayload = (payload = {}) => ({
   displayName: trimString(payload.displayName),
   email: normalizeEmail(payload.email),
   password: typeof payload.password === 'string' ? payload.password : '',
+})
+
+const sanitizeArtistRegisterPayload = (payload = {}) => ({
+  displayName: trimString(payload.displayName),
+  email: normalizeEmail(payload.email),
+  password: typeof payload.password === 'string' ? payload.password : '',
+  stageName: trimString(payload.stageName),
+  bio: trimString(payload.bio),
 })
 
 const sanitizeLoginPayload = (payload = {}) => ({
@@ -78,19 +98,41 @@ export const buildAuthSuccess = (message, user) => ({
 
 const validateRegisterPayload = ({ displayName, email, password }) => {
   if (!displayName || !email || !password) {
-    return 'Vui lòng nhập đầy đủ tên hiển thị, email và mật khẩu.'
+    return 'Vui long nhap day du ten hien thi, email va mat khau.'
   }
 
   if (displayName.length < 2) {
-    return 'Tên hiển thị phải có ít nhất 2 ký tự.'
+    return 'Ten hien thi phai co it nhat 2 ky tu.'
   }
 
   if (!isValidEmail(email)) {
-    return 'Email không đúng định dạng.'
+    return 'Email khong dung dinh dang.'
   }
 
   if (password.length < PASSWORD_MIN_LENGTH) {
-    return `Mật khẩu phải có ít nhất ${PASSWORD_MIN_LENGTH} ký tự.`
+    return `Mat khau phai co it nhat ${PASSWORD_MIN_LENGTH} ky tu.`
+  }
+
+  return ''
+}
+
+const validateArtistRegisterPayload = ({ displayName, email, password, stageName }) => {
+  const registerValidationMessage = validateRegisterPayload({
+    displayName,
+    email,
+    password,
+  })
+
+  if (registerValidationMessage) {
+    return registerValidationMessage
+  }
+
+  if (!stageName) {
+    return 'Vui long nhap nghe danh hoac ten nghe si.'
+  }
+
+  if (stageName.length < 2) {
+    return 'Nghe danh phai co it nhat 2 ky tu.'
   }
 
   return ''
@@ -98,11 +140,11 @@ const validateRegisterPayload = ({ displayName, email, password }) => {
 
 const validateLoginPayload = ({ email, password }) => {
   if (!email || !password) {
-    return 'Vui lòng nhập email và mật khẩu.'
+    return 'Vui long nhap email va mat khau.'
   }
 
   if (!isValidEmail(email)) {
-    return 'Email không đúng định dạng.'
+    return 'Email khong dung dinh dang.'
   }
 
   return ''
@@ -113,6 +155,11 @@ const buildPlaceholderEmail = (prefix, uniqueValue) =>
 
 const getFallbackDisplayName = (displayName, fallbackEmail) =>
   trimString(displayName) || fallbackEmail.split('@')[0]
+
+const buildArtistProfile = ({ displayName, stageName, bio }) => ({
+  stageName: stageName || displayName,
+  bio,
+})
 
 export const registerUser = async (body) => {
   const payload = sanitizeRegisterPayload(body)
@@ -125,7 +172,7 @@ export const registerUser = async (body) => {
   const existingUser = await User.findOne({ email: payload.email }).lean()
 
   if (existingUser) {
-    return buildFailure('conflict', 'Email này đã được sử dụng.')
+    return buildFailure('conflict', 'Email nay da duoc su dung.')
   }
 
   const passwordHash = await bcrypt.hash(payload.password, SALT_ROUNDS)
@@ -135,10 +182,44 @@ export const registerUser = async (body) => {
     passwordHash,
   })
 
-  return buildAuthSuccess('Đăng ký thành công.', user)
+  return buildAuthSuccess('Dang ky thanh cong.', user)
 }
 
-export const loginUser = async (body) => {
+export const registerArtistUser = async (body) => {
+  const payload = sanitizeArtistRegisterPayload(body)
+  const validationMessage = validateArtistRegisterPayload(payload)
+
+  if (validationMessage) {
+    return buildFailure('validation', validationMessage)
+  }
+
+  const existingUser = await User.findOne({ email: payload.email }).lean()
+
+  if (existingUser) {
+    return buildFailure('conflict', 'Email nay da duoc su dung.')
+  }
+
+  const passwordHash = await bcrypt.hash(payload.password, SALT_ROUNDS)
+  const user = await User.create({
+    displayName: payload.displayName,
+    email: payload.email,
+    passwordHash,
+    role: 'artist',
+    artistStatus: ARTIST_STATUS_PENDING,
+    artistProfile: buildArtistProfile(payload),
+  })
+
+  return buildAuthSuccess('Dang ky nghe si thanh cong. Ho so dang cho duyet.', user)
+}
+
+const loginUserByRole = async (
+  body,
+  {
+    requiredRole = '',
+    forbiddenMessage = 'Tai khoan nay khong dung vai tro.',
+    successMessage = 'Dang nhap thanh cong.',
+  } = {},
+) => {
   const payload = sanitizeLoginPayload(body)
   const validationMessage = validateLoginPayload(payload)
 
@@ -149,26 +230,51 @@ export const loginUser = async (body) => {
   const user = await User.findOne({ email: payload.email }).select('+passwordHash')
 
   if (!user || !user.passwordHash) {
-    return buildFailure('credentials', 'Email hoặc mật khẩu không đúng.')
+    return buildFailure('credentials', 'Email hoac mat khau khong dung.')
   }
 
   const isPasswordValid = await bcrypt.compare(payload.password, user.passwordHash)
 
   if (!isPasswordValid) {
-    return buildFailure('credentials', 'Email hoặc mật khẩu không đúng.')
+    return buildFailure('credentials', 'Email hoac mat khau khong dung.')
+  }
+
+  if (requiredRole && user.role !== requiredRole) {
+    return buildFailure('forbidden', forbiddenMessage)
   }
 
   user.lastLoginAt = new Date()
   await user.save()
 
-  return buildAuthSuccess('Đăng nhập thành công.', user)
+  return buildAuthSuccess(successMessage, user)
 }
+
+export const loginUser = async (body) =>
+  loginUserByRole(body, {
+    requiredRole: 'user',
+    forbiddenMessage: 'Tai khoan nay khong thuoc cong nguoi nghe.',
+    successMessage: 'Dang nhap thanh cong.',
+  })
+
+export const loginArtistUser = async (body) =>
+  loginUserByRole(body, {
+    requiredRole: 'artist',
+    forbiddenMessage: 'Tai khoan nay khong thuoc cong nghe si.',
+    successMessage: 'Dang nhap nghe si thanh cong.',
+  })
+
+export const loginAdminUser = async (body) =>
+  loginUserByRole(body, {
+    requiredRole: 'admin',
+    forbiddenMessage: 'Tai khoan nay khong co quyen truy cap trang quan tri.',
+    successMessage: 'Dang nhap quan tri thanh cong.',
+  })
 
 export const findOrCreatePhoneUser = async ({ phoneNumber, displayName }) => {
   const normalizedPhoneNumber = normalizePhoneNumber(phoneNumber)
 
   if (!isValidPhoneNumber(normalizedPhoneNumber)) {
-    return buildFailure('validation', 'Số điện thoại không hợp lệ.')
+    return buildFailure('validation', 'So dien thoai khong hop le.')
   }
 
   const existingUser = await User.findOne({ phoneNumber: normalizedPhoneNumber })
@@ -178,7 +284,7 @@ export const findOrCreatePhoneUser = async ({ phoneNumber, displayName }) => {
     existingUser.lastLoginAt = new Date()
     await existingUser.save()
 
-    return buildAuthSuccess('Đăng nhập bằng số điện thoại thành công.', existingUser)
+    return buildAuthSuccess('Dang nhap bang so dien thoai thanh cong.', existingUser)
   }
 
   const fallbackEmail = buildPlaceholderEmail('phone', normalizedPhoneNumber)
@@ -192,7 +298,7 @@ export const findOrCreatePhoneUser = async ({ phoneNumber, displayName }) => {
     lastLoginAt: new Date(),
   })
 
-  return buildAuthSuccess('Xác thực số điện thoại thành công.', user)
+  return buildAuthSuccess('Xac thuc so dien thoai thanh cong.', user)
 }
 
 export const findOrCreateSocialUser = async ({
@@ -206,7 +312,7 @@ export const findOrCreateSocialUser = async ({
   const providerQueryField = `authProviders.${providerField}`
 
   if (!providerField || !providerUserId) {
-    return buildFailure('validation', 'Thông tin nhà cung cấp đăng nhập không hợp lệ.')
+    return buildFailure('validation', 'Thong tin nha cung cap dang nhap khong hop le.')
   }
 
   const normalizedEmail = normalizeEmail(email)
@@ -232,7 +338,7 @@ export const findOrCreateSocialUser = async ({
       lastLoginAt: new Date(),
     })
 
-    return buildAuthSuccess(`Đăng nhập bằng ${provider} thành công.`, user)
+    return buildAuthSuccess(`Dang nhap bang ${provider} thanh cong.`, user)
   }
 
   user.displayName = safeDisplayName || user.displayName
@@ -249,7 +355,7 @@ export const findOrCreateSocialUser = async ({
   user.lastLoginAt = new Date()
   await user.save()
 
-  return buildAuthSuccess(`Đăng nhập bằng ${provider} thành công.`, user)
+  return buildAuthSuccess(`Dang nhap bang ${provider} thanh cong.`, user)
 }
 
 export const getAuthenticatedUserById = async (userId) => {
