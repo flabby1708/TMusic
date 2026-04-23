@@ -1,5 +1,5 @@
-import { getDatabaseStatus } from '../config/db.js'
-import { getSongList } from '../services/contentService.js'
+import { getDatabaseStatus } from '../../config/db.js'
+import { getSongList } from '../../services/contentService.js'
 
 export const getSongs = async (_req, res, next) => {
   try {

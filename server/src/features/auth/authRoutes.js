@@ -7,8 +7,8 @@ import {
   register,
   requestPhoneOtp,
   verifyPhoneOtp,
-} from '../controllers/authController.js'
-import { requireListener } from '../middleware/authMiddleware.js'
+} from './authController.js'
+import { requireListener } from '../../middleware/authMiddleware.js'
 
 const authRouter = Router()
 

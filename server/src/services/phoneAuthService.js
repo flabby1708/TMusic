@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs'
+import User from '../models/User.js'
 import PhoneOtp from '../models/PhoneOtp.js'
 import { findOrCreatePhoneUser, normalizePhoneNumber, isValidPhoneNumber } from './authService.js'
 
@@ -8,6 +9,18 @@ const OTP_HASH_ROUNDS = 10
 
 const generateOtpCode = () =>
   String(Math.floor(Math.random() * 10 ** OTP_LENGTH)).padStart(OTP_LENGTH, '0')
+
+const normalizePhoneAuthPurpose = (value) => (value === 'register' ? 'register' : 'login')
+
+const buildOtpResponse = ({ message, phoneNumber, otp = '', deliveryMethod }) => ({
+  errorType: '',
+  message,
+  otp,
+  devCode: otp,
+  phoneNumber,
+  deliveryMethod,
+  otpExpiresInSeconds: OTP_TTL_MINUTES * 60,
+})
 
 const hasTwilioConfig = () =>
   Boolean(
@@ -44,13 +57,25 @@ const sendSmsWithTwilio = async (phoneNumber, code) => {
   }
 }
 
-export const requestPhoneCode = async ({ phoneNumber }) => {
+export const requestPhoneCode = async ({ phoneNumber, purpose }) => {
   const normalizedPhoneNumber = normalizePhoneNumber(phoneNumber)
+  const normalizedPurpose = normalizePhoneAuthPurpose(purpose)
 
   if (!isValidPhoneNumber(normalizedPhoneNumber)) {
     return {
       errorType: 'validation',
       message: 'Số điện thoại không hợp lệ.',
+    }
+  }
+
+  if (normalizedPurpose === 'register') {
+    const existingUser = await User.exists({ phoneNumber: normalizedPhoneNumber })
+
+    if (existingUser) {
+      return {
+        errorType: 'conflict',
+        message: 'Số điện thoại này đã được sử dụng.',
+      }
     }
   }
 
@@ -76,25 +101,26 @@ export const requestPhoneCode = async ({ phoneNumber }) => {
   if (hasTwilioConfig()) {
     await sendSmsWithTwilio(normalizedPhoneNumber, code)
 
-    return {
-      errorType: '',
+    return buildOtpResponse({
       message: 'Mã xác thực đã được gửi qua SMS.',
-      devCode: '',
       phoneNumber: normalizedPhoneNumber,
-    }
+      otp: normalizedPurpose === 'register' ? code : '',
+      deliveryMethod: normalizedPurpose === 'register' ? 'sms_and_response' : 'sms',
+    })
   }
 
-  return {
-    errorType: '',
+  return buildOtpResponse({
     message: 'Mã xác thực đã được tạo. Bạn đang ở chế độ dev nên mã được hiển thị ngay trên màn hình.',
-    devCode: code,
     phoneNumber: normalizedPhoneNumber,
-  }
+    otp: code,
+    deliveryMethod: 'response',
+  })
 }
 
-export const verifyPhoneCode = async ({ phoneNumber, code, displayName }) => {
+export const verifyPhoneCode = async ({ phoneNumber, code, displayName, purpose }) => {
   const normalizedPhoneNumber = normalizePhoneNumber(phoneNumber)
   const normalizedCode = String(code || '').trim()
+  const normalizedPurpose = normalizePhoneAuthPurpose(purpose)
 
   if (!isValidPhoneNumber(normalizedPhoneNumber)) {
     return {
@@ -130,6 +156,17 @@ export const verifyPhoneCode = async ({ phoneNumber, code, displayName }) => {
     return {
       errorType: 'credentials',
       message: 'Mã xác thực không đúng.',
+    }
+  }
+
+  if (normalizedPurpose === 'register') {
+    const existingUser = await User.exists({ phoneNumber: normalizedPhoneNumber })
+
+    if (existingUser) {
+      return {
+        errorType: 'conflict',
+        message: 'Số điện thoại này đã được sử dụng.',
+      }
     }
   }
 

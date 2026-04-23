@@ -1,9 +1,10 @@
-import { createAdminImageUploadSignature } from '../services/uploadService.js'
+import { createAdminMediaUploadSignature } from '../services/uploadService.js'
 
 export const createAdminUploadSignature = (req, res, next) => {
   try {
-    const { configError, upload } = createAdminImageUploadSignature({
+    const { configError, upload } = createAdminMediaUploadSignature({
       resource: req.body?.resource,
+      assetType: req.body?.assetType,
     })
 
     if (configError) {

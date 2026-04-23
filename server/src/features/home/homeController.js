@@ -1,5 +1,5 @@
-import { getDatabaseStatus } from '../config/db.js'
-import { getHomeContentData } from '../services/contentService.js'
+import { getDatabaseStatus } from '../../config/db.js'
+import { getHomeContentData } from '../../services/contentService.js'
 
 export const getHomeContent = async (_req, res, next) => {
   try {

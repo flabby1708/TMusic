@@ -1,6 +1,6 @@
 import { Router } from 'express'
-import { getMe, loginArtist, registerArtist } from '../controllers/authController.js'
-import { requireArtist } from '../middleware/authMiddleware.js'
+import { getMe, loginArtist, registerArtist } from '../auth/authController.js'
+import { requireArtist } from '../../middleware/authMiddleware.js'
 
 const artistAuthRouter = Router()
 

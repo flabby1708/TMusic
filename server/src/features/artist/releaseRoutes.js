@@ -1,6 +1,6 @@
 import { Router } from 'express'
-import { listArtistReleases } from '../controllers/artistController.js'
-import { requireArtist } from '../middleware/authMiddleware.js'
+import { listArtistReleases } from './artistController.js'
+import { requireArtist } from '../../middleware/authMiddleware.js'
 
 const releaseRouter = Router()
 

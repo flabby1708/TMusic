@@ -11,11 +11,14 @@ export function normalizeTrack(song, index) {
   const fallback = fallbackTracks[index % fallbackTracks.length]
 
   return {
+    id: song._id || song.id || `fallback-track-${index}`,
     title: song.title || fallback.title,
     artist: song.artist || fallback.artist,
     duration: song.duration || fallback.duration,
     explicit: song.explicit ?? false,
     coverUrl: song.coverUrl || '',
+    audioUrl: song.audioUrl || '',
+    audioVariants: Array.isArray(song.audioVariants) ? song.audioVariants : [],
     tag: song.mood || fallback.tag,
     artwork: song.artwork || fallback.artwork,
   }

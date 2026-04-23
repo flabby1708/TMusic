@@ -174,18 +174,18 @@ function AuthPageShell({
     try {
       const payload = await requestPhoneVerificationCode({
         phoneNumber: phoneValues.phoneNumber,
+        purpose: mode,
       })
+      const returnedOtp = payload.otp || payload.devCode || ''
 
       setPhoneStep('verify')
       setPhoneValues((current) => ({
         ...current,
         phoneNumber: payload.phoneNumber || current.phoneNumber,
       }))
-      setFeedbackTone(payload.devCode ? 'info' : 'success')
+      setFeedbackTone(returnedOtp ? 'info' : 'success')
       setFeedback(
-        payload.devCode
-          ? `${payload.message} Mã dev của bạn là: ${payload.devCode}`
-          : payload.message,
+        returnedOtp ? `${payload.message} Mã OTP của bạn là: ${returnedOtp}` : payload.message,
       )
     } catch (error) {
       setFeedbackTone('error')
@@ -204,6 +204,7 @@ function AuthPageShell({
         displayName: phoneValues.displayName,
         phoneNumber: phoneValues.phoneNumber,
         code: phoneValues.code,
+        purpose: mode,
       })
 
       storeAuthSession(payload)
@@ -285,7 +286,9 @@ function AuthPageShell({
             <p className="mt-1 text-sm leading-6 text-[color:var(--text-secondary)]">
               {phoneStep === 'request'
                 ? 'Nhập số điện thoại để nhận mã OTP.'
-                : 'Nhập mã OTP vừa nhận được để hoàn tất đăng nhập.'}
+                : mode === 'register'
+                  ? 'Nhập mã OTP vừa nhận được để hoàn tất đăng ký.'
+                  : 'Nhập mã OTP vừa nhận được để hoàn tất đăng nhập.'}
             </p>
 
             {mode === 'register' ? (

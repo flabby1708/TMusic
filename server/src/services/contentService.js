@@ -5,10 +5,11 @@ import Radio from '../models/Radio.js'
 import Song from '../models/Song.js'
 
 const sortByOrder = { sortOrder: 1, createdAt: 1 }
+const publishedSongFilter = { releaseStatus: 'published' }
 
 export const getHomeContentData = async () => {
   const [songs, artists, albums, radios, charts] = await Promise.all([
-    Song.find().sort(sortByOrder).limit(12).lean(),
+    Song.find(publishedSongFilter).sort(sortByOrder).limit(12).lean(),
     Artist.find().sort(sortByOrder).limit(12).lean(),
     Album.find().sort(sortByOrder).limit(12).lean(),
     Radio.find().sort(sortByOrder).limit(12).lean(),
@@ -25,5 +26,5 @@ export const getHomeContentData = async () => {
 }
 
 export const getSongList = async () => {
-  return Song.find().sort(sortByOrder).limit(12).lean()
+  return Song.find(publishedSongFilter).sort(sortByOrder).limit(12).lean()
 }

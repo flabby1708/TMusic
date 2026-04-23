@@ -30,7 +30,7 @@ const sendInvalidSession = (res) =>
   })
 
 const findCurrentUser = async (auth) =>
-  User.findById(auth.sub).select('role artistStatus artistProfile')
+  User.findById(auth.sub).select('displayName role artistStatus artistProfile')
 
 export const requireAuth = (req, res, next) => {
   try {

@@ -8,6 +8,7 @@ export const appPaths = {
   admin: {
     root: '/admin',
     login: '/admin/login',
+    importSongs: '/admin/import',
   },
   artist: {
     portal: '/artist',

@@ -3,7 +3,6 @@ import dotenv from 'dotenv'
 import express from 'express'
 import { connectDatabase, getDatabaseStatus } from './config/db.js'
 import apiRoutes from './routes/index.js'
-import { ensureAdminAccount, seedHomeContent } from './services/seedService.js'
 
 dotenv.config()
 
@@ -36,11 +35,6 @@ app.use((err, _req, res, _next) => {
 
 const bootstrap = async () => {
   await connectDatabase()
-
-  if (getDatabaseStatus() === 'connected') {
-    await seedHomeContent()
-    await ensureAdminAccount()
-  }
 }
 
 app.listen(port, () => {

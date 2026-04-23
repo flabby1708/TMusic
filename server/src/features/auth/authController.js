@@ -1,4 +1,4 @@
-import { getDatabaseStatus } from '../config/db.js'
+import { getDatabaseStatus } from '../../config/db.js'
 import {
   getAuthenticatedUserById,
   loginAdminUser,
@@ -6,14 +6,14 @@ import {
   loginUser,
   registerArtistUser,
   registerUser,
-} from '../services/authService.js'
-import { requestPhoneCode, verifyPhoneCode } from '../services/phoneAuthService.js'
+} from '../../services/authService.js'
+import { requestPhoneCode, verifyPhoneCode } from '../../services/phoneAuthService.js'
 import {
   buildClientCallbackUrl,
   getSocialAuthUrl,
   getSupportedSocialProviders,
   handleSocialCallback,
-} from '../services/socialAuthService.js'
+} from '../../services/socialAuthService.js'
 
 const ensureDatabaseReady = (res) => {
   if (getDatabaseStatus() === 'connected') {

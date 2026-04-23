@@ -1,6 +1,6 @@
-import { getDatabaseStatus } from '../config/db.js'
-import { getAuthenticatedUserById } from '../services/authService.js'
-import { listArtistReleasesByUserId } from '../services/artistService.js'
+import { getDatabaseStatus } from '../../config/db.js'
+import { getAuthenticatedUserById } from '../../services/authService.js'
+import { listArtistReleasesByUserId } from '../../services/artistService.js'
 
 const ensureDatabaseReady = (res) => {
   if (getDatabaseStatus() === 'connected') {

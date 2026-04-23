@@ -1,22 +1,12 @@
 import Song from '../models/Song.js'
+import { mapTrackRecord } from './trackService.js'
 
 const releaseSort = {
   updatedAt: -1,
   createdAt: -1,
 }
 
-const mapRelease = (item) => ({
-  id: item._id.toString(),
-  title: item.title,
-  artist: item.artist,
-  coverUrl: item.coverUrl || '',
-  duration: item.duration || '00:00',
-  mood: item.mood || '',
-  audioUrl: item.audioUrl || '',
-  releaseStatus: item.releaseStatus || 'draft',
-  createdAt: item.createdAt,
-  updatedAt: item.updatedAt,
-})
+const mapRelease = (item) => mapTrackRecord(item)
 
 export const listArtistReleasesByUserId = async (userId) => {
   const releases = await Song.find({ ownerUserId: userId }).sort(releaseSort).lean()

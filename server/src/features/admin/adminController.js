@@ -1,11 +1,13 @@
-import { getDatabaseStatus } from '../config/db.js'
+import { getDatabaseStatus } from '../../config/db.js'
+import { cleanupUploadedFiles } from '../../middleware/uploadMiddleware.js'
 import {
   createAdminResourceItem,
   deleteAdminResourceItem,
   getAdminResourceConfig,
+  importAdminSongs,
   listAdminResourceItems,
   updateAdminResourceItem,
-} from '../services/adminService.js'
+} from '../../services/adminService.js'
 
 const ensureDatabaseReady = (res) => {
   if (getDatabaseStatus() === 'connected') {
@@ -61,6 +63,26 @@ export const createAdminItem = async (req, res, next) => {
     return res.status(201).json({ item })
   } catch (error) {
     return next(error)
+  }
+}
+
+export const importAdminSongItems = async (req, res, next) => {
+  try {
+    if (!ensureDatabaseReady(res)) {
+      return
+    }
+
+    const payload = await importAdminSongs({
+      body: req.body,
+      audioFiles: req.files?.audioFiles || [],
+      coverFiles: req.files?.coverFiles || [],
+    })
+
+    return res.status(201).json(payload)
+  } catch (error) {
+    return next(error)
+  } finally {
+    await cleanupUploadedFiles(req.files)
   }
 }
 

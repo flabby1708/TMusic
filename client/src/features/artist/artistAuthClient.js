@@ -77,7 +77,36 @@ export const fetchAuthenticatedArtist = () => {
 
 export const fetchArtistReleases = () => requestArtistJson('/api/releases')
 
-export const requestArtistTrackUpload = () =>
+export const createArtistTrackDraft = (payload) =>
+  requestArtistJson('/api/tracks', buildJsonRequestOptions(payload))
+
+export const requestArtistTrackUpload = (payload = null) =>
   requestArtistJson('/api/tracks/upload', {
     method: 'POST',
+    ...(payload
+      ? {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        }
+      : {}),
   })
+
+export const confirmArtistTrackUpload = (trackId, payload) =>
+  requestArtistJson(`/api/tracks/${trackId}/confirm-upload`, buildJsonRequestOptions(payload))
+
+export const processArtistTrack = (trackId) =>
+  requestArtistJson(`/api/tracks/${trackId}/process`, {
+    method: 'POST',
+  })
+
+export const uploadArtistTrackFile = (trackId, file) => {
+  const formData = new FormData()
+  formData.append('file', file)
+
+  return requestArtistJson(`/api/tracks/${trackId}/upload-file`, {
+    method: 'POST',
+    body: formData,
+  })
+}

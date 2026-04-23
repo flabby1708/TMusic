@@ -1,8 +1,11 @@
 import {
   createCloudinaryImageUploadSignature,
   createCloudinaryRawUploadSignature,
+  createCloudinaryVideoUploadSignature,
   isCloudinaryConfigured,
+  uploadCloudinaryBuffer,
 } from '../config/cloudinary.js'
+import path from 'node:path'
 
 const trimString = (value) => {
   if (typeof value !== 'string') {
@@ -21,6 +24,13 @@ const sanitizeFolderSegment = (value, fallback = 'misc') => {
   return normalized || fallback
 }
 
+const getOriginalFileExtension = (filename = '') => path.extname(trimString(filename)).replace('.', '')
+
+export const buildArtistTrackMasterFolder = ({ artistId, trackId } = {}) =>
+  trackId
+    ? `artists/${sanitizeFolderSegment(artistId, 'artist')}/tracks/${sanitizeFolderSegment(trackId, 'track')}/master`
+    : `artists/${sanitizeFolderSegment(artistId, 'artist')}/tracks`
+
 export const createAdminImageUploadSignature = ({ resource } = {}) => {
   if (!isCloudinaryConfigured()) {
     return {
@@ -38,7 +48,36 @@ export const createAdminImageUploadSignature = ({ resource } = {}) => {
   }
 }
 
-export const createArtistTrackUploadSignature = ({ artistId } = {}) => {
+export const createAdminMediaUploadSignature = ({ resource, assetType } = {}) => {
+  if (!isCloudinaryConfigured()) {
+    return {
+      configError:
+        'Cloudinary credentials are missing. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET.',
+      upload: null,
+    }
+  }
+
+  const normalizedAssetType = trimString(assetType).toLowerCase()
+  const folder = `admin/${sanitizeFolderSegment(resource, 'media')}`
+
+  if (normalizedAssetType === 'audio') {
+    return {
+      configError: '',
+      upload: createCloudinaryVideoUploadSignature({
+        folder,
+      }),
+    }
+  }
+
+  return {
+    configError: '',
+    upload: createCloudinaryImageUploadSignature({
+      folder,
+    }),
+  }
+}
+
+export const createArtistTrackUploadSignature = ({ artistId, trackId } = {}) => {
   if (!isCloudinaryConfigured()) {
     return {
       configError:
@@ -50,7 +89,30 @@ export const createArtistTrackUploadSignature = ({ artistId } = {}) => {
   return {
     configError: '',
     upload: createCloudinaryRawUploadSignature({
-      folder: `artists/${sanitizeFolderSegment(artistId, 'artist')}/tracks`,
+      folder: buildArtistTrackMasterFolder({ artistId, trackId }),
     }),
+  }
+}
+
+export const uploadArtistTrackMasterFile = async ({ artistId, trackId, file } = {}) => {
+  if (!file?.buffer) {
+    throw new Error('Track upload file is missing.')
+  }
+
+  const uploaded = await uploadCloudinaryBuffer({
+    buffer: file.buffer,
+    folder: buildArtistTrackMasterFolder({ artistId, trackId }),
+    publicId: 'master',
+    resourceType: 'raw',
+  })
+
+  return {
+    secureUrl: uploaded?.secure_url || uploaded?.url || '',
+    url: uploaded?.url || uploaded?.secure_url || '',
+    publicId: uploaded?.public_id || '',
+    format: trimString(uploaded?.format) || getOriginalFileExtension(file.originalname),
+    resourceType: trimString(uploaded?.resource_type) || 'raw',
+    sizeBytes: Number(uploaded?.bytes) || Number(file.size) || 0,
+    originalFilename: trimString(file.originalname),
   }
 }
