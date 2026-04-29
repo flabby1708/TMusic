@@ -18,7 +18,8 @@
     "dev:server": "npm run dev -w server",
     "import:song-covers": "node server/src/scripts/importMissingSongCovers.js",
     "build": "npm run build -w client",
-    "start": "npm run start -w server"
+    "start": "npm run start -w server",
+    "server:create-admin": "node server/src/scripts/createAdmin.js"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"

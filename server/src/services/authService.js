@@ -250,8 +250,8 @@ export const loginArtistUser = async (body) =>
 export const loginAdminUser = async (body) =>
   loginUserByRole(body, {
     requiredRole: 'admin',
-    forbiddenMessage: 'Tai khoan nay khong co quyen truy cap trang quan tri.',
-    successMessage: 'Dang nhap quan tri thanh cong.',
+    forbiddenMessage: 'Tài khoản này không có quyền truy cập trang quản trị.',
+    successMessage: 'Đăng nhập thành công, đang chuyển sang trang quản trị.',
   })
 
 export const findOrCreateSocialUser = async ({

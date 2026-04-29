@@ -3,7 +3,8 @@ import dotenv from 'dotenv'
 import express from 'express'
 import { connectDatabase, getDatabaseStatus } from './config/db.js'
 import apiRoutes from './routes/index.js'
-
+import { getFfmpegHealthStatus } from './services/ffmpegHealthService.js'
+-
 dotenv.config()
 
 const app = express()
@@ -18,9 +19,35 @@ app.use(
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
-app.get('/', (_req, res) => {
+app.get('/api/health', async (req, res) => {
+  const services = {}
+
+  try {
+    services.database = {
+      status: getDatabaseStatus(),
+    }
+  } catch (error) {
+    services.database = {
+      status: 'unknown',
+      error: error.message,
+    }
+  }
+
+  try {
+    services.ffmpeg = await getFfmpegHealthStatus()
+  } catch (error) {
+    services.ffmpeg = {
+      available: false,
+      path: process.env.FFMPEG_PATH || 'ffmpeg',
+      code: 'FFMPEG_HEALTH_CHECK_FAILED',
+      error: error.message,
+      checkedAt: new Date().toISOString(),
+    }
+  }
+
   res.json({
-    message: 'Welcome to TMusic API',
+    ok: true,
+    services,
   })
 })
 
