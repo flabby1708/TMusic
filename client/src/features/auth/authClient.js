@@ -29,12 +29,6 @@ export const loginWithEmail = (payload) =>
 export const registerWithEmail = (payload) =>
   requestJson('/api/auth/register', buildJsonRequestOptions(payload))
 
-export const requestPhoneVerificationCode = (payload) =>
-  requestJson('/api/auth/phone/request-code', buildJsonRequestOptions(payload))
-
-export const verifyPhoneVerificationCode = (payload) =>
-  requestJson('/api/auth/phone/verify-code', buildJsonRequestOptions(payload))
-
 export const getSocialAuthStartUrl = (provider) =>
   requestJson(`/api/auth/oauth/${provider}/url`)
 

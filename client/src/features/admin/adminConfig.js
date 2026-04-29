@@ -24,6 +24,17 @@ export const resourceDefinitions = {
         helper: 'Tu dong dien khi upload file nhac. Van co the sua tay neu can.',
       },
       { name: 'mood', label: 'Chu de', type: 'text' },
+      {
+        name: 'releaseStatus',
+        label: 'Trang thai hien thi',
+        type: 'select',
+        options: [
+          { value: 'published', label: 'Hien thi' },
+          { value: 'draft', label: 'An bai hat' },
+        ],
+        defaultValue: 'published',
+        helper: 'Chi bai hat Hien thi moi xuat hien o trang nghe nhac.',
+      },
       { name: 'coverUrl', label: 'Link anh bia', type: 'url', uploadAssetType: 'image' },
       {
         name: 'audioUrl',
@@ -101,7 +112,7 @@ export const resourceKeys = Object.keys(resourceDefinitions)
 export const buildEmptyFormValues = (resource) => {
   const fields = resourceDefinitions[resource].fields
   const values = fields.reduce((accumulator, field) => {
-    accumulator[field.name] = field.name === 'sortOrder' ? '0' : ''
+    accumulator[field.name] = field.name === 'sortOrder' ? '0' : field.defaultValue || ''
     return accumulator
   }, {})
 

@@ -295,6 +295,14 @@ const assignCoverFilesToAudio = (audioFiles = [], coverFiles = []) => {
   return assignments
 }
 
+const allowedSongReleaseStatuses = new Set(['draft', 'pending', 'published'])
+
+const normalizeSongReleaseStatus = (value) => {
+  const releaseStatus = trimString(value, 'published') || 'published'
+
+  return allowedSongReleaseStatuses.has(releaseStatus) ? releaseStatus : 'published'
+}
+
 const parseBooleanFlag = (value, fallback = false) => {
   if (typeof value === 'boolean') {
     return value
@@ -385,7 +393,7 @@ const sanitizeSongPayload = (payload) => {
     }),
     processingStatus: audioUrl ? 'ready' : 'draft',
     sourceType: 'catalog',
-    releaseStatus: 'published',
+    releaseStatus: normalizeSongReleaseStatus(payload.releaseStatus),
     ownerUserId: null,
   }
 }

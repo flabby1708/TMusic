@@ -7,7 +7,6 @@ import {
 import { signUserToken } from '../utils/authToken.js'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const PHONE_PATTERN = /^\+?[1-9]\d{8,14}$/
 const PASSWORD_MIN_LENGTH = 8
 const SALT_ROUNDS = 12
 const ARTIST_STATUS_PENDING = 'pending'
@@ -21,22 +20,7 @@ const SOCIAL_PROVIDER_FIELDS = {
 const trimString = (value) => (typeof value === 'string' ? value.trim() : '')
 const normalizeEmail = (value) => trimString(value).toLowerCase()
 
-export const normalizePhoneNumber = (value) => {
-  const trimmedValue = trimString(value)
-
-  if (!trimmedValue) {
-    return ''
-  }
-
-  if (trimmedValue.startsWith('+')) {
-    return `+${trimmedValue.slice(1).replace(/\D/g, '')}`
-  }
-
-  return trimmedValue.replace(/\D/g, '')
-}
-
 const isValidEmail = (value) => EMAIL_PATTERN.test(value)
-export const isValidPhoneNumber = (value) => PHONE_PATTERN.test(value)
 
 const toPublicUser = (user) => ({
   id: user._id.toString(),
@@ -269,37 +253,6 @@ export const loginAdminUser = async (body) =>
     forbiddenMessage: 'Tai khoan nay khong co quyen truy cap trang quan tri.',
     successMessage: 'Dang nhap quan tri thanh cong.',
   })
-
-export const findOrCreatePhoneUser = async ({ phoneNumber, displayName }) => {
-  const normalizedPhoneNumber = normalizePhoneNumber(phoneNumber)
-
-  if (!isValidPhoneNumber(normalizedPhoneNumber)) {
-    return buildFailure('validation', 'So dien thoai khong hop le.')
-  }
-
-  const existingUser = await User.findOne({ phoneNumber: normalizedPhoneNumber })
-
-  if (existingUser) {
-    existingUser.authProviders.phoneVerified = true
-    existingUser.lastLoginAt = new Date()
-    await existingUser.save()
-
-    return buildAuthSuccess('Dang nhap bang so dien thoai thanh cong.', existingUser)
-  }
-
-  const fallbackEmail = buildPlaceholderEmail('phone', normalizedPhoneNumber)
-  const user = await User.create({
-    displayName: getFallbackDisplayName(displayName, fallbackEmail),
-    email: fallbackEmail,
-    phoneNumber: normalizedPhoneNumber,
-    authProviders: {
-      phoneVerified: true,
-    },
-    lastLoginAt: new Date(),
-  })
-
-  return buildAuthSuccess('Xac thuc so dien thoai thanh cong.', user)
-}
 
 export const findOrCreateSocialUser = async ({
   provider,

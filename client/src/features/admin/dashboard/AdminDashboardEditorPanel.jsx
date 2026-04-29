@@ -1,4 +1,4 @@
-import { Alert, Button, Input, Typography, Upload, theme } from 'antd'
+import { Alert, Button, Input, Select, Typography, Upload, theme } from 'antd'
 import { PlusOutlined, UploadOutlined } from '@ant-design/icons'
 import {
   fieldLabelStyle,
@@ -26,6 +26,17 @@ function AdminDashboardEditorPanel(props) {
   const {
     token: { borderRadiusLG, colorBorderSecondary, colorTextSecondary },
   } = theme.useToken()
+  const isSongResource = currentResource.label === 'Bai hat'
+  const editorTitle = isSongResource
+    ? editingId
+      ? 'Đang chỉnh sửa bài hát'
+      : 'Thêm bài mới'
+    : editingId
+      ? 'Cập nhật mục đã chọn'
+      : 'Thêm mới'
+  const editorDescription = isSongResource
+    ? 'Chọn bài ở danh sách bên trái để sửa, hoặc tạo bài mới tại đây.'
+    : 'Điền thông tin để tạo mới hoặc chỉnh sửa mục hiện tại.'
 
   const createUploadRequest = (field) => async ({ file, onError, onSuccess }) => {
     try {
@@ -74,10 +85,10 @@ function AdminDashboardEditorPanel(props) {
               Trình chỉnh sửa
             </Text>
             <Title level={3} style={{ margin: '8px 0 6px' }}>
-              {editingId ? 'Cập nhật mục đã chọn' : 'Thêm mới'}
+              {editorTitle}
             </Title>
             <Text style={{ color: colorTextSecondary }}>
-              Điền thông tin để tạo mới hoặc chỉnh sửa mục hiện tại.
+              {editorDescription}
             </Text>
           </div>
 
@@ -88,6 +99,28 @@ function AdminDashboardEditorPanel(props) {
 
         {notice ? (
           <Alert type="success" message={notice} showIcon style={{ marginBottom: 16, borderRadius: 16 }} />
+        ) : null}
+
+        {isSongResource && editingId ? (
+          <div
+            style={{
+              marginBottom: 16,
+              padding: 14,
+              borderRadius: 18,
+              border: `1px solid ${colorBorderSecondary}`,
+              background: 'rgba(41, 212, 255, 0.08)',
+            }}
+          >
+            <Text style={{ color: colorTextSecondary, display: 'block', marginBottom: 4 }}>
+              Bài đang chọn
+            </Text>
+            <Title level={5} style={{ margin: 0 }}>
+              {formValues.title || 'Chưa đặt tên'}
+            </Title>
+            <Text style={{ color: colorTextSecondary }}>
+              {[formValues.artist, formValues.duration].filter(Boolean).join(' • ') || 'Chưa có thông tin phụ'}
+            </Text>
+          </div>
         ) : null}
 
         <form className="space-y-4" onSubmit={handleSubmit}>
@@ -104,6 +137,13 @@ function AdminDashboardEditorPanel(props) {
                   onChange={(event) => handleChange(field.name, event.target.value)}
                   rows={4}
                   style={{ ...inputStyle, borderRadius: 14 }}
+                />
+              ) : field.type === 'select' ? (
+                <Select
+                  value={formValues[field.name]}
+                  onChange={(value) => handleChange(field.name, value)}
+                  options={field.options || []}
+                  style={{ width: '100%' }}
                 />
               ) : field.uploadAssetType === 'audio' ? (
                 <div style={{ display: 'grid', gap: 12 }}>

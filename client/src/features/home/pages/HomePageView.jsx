@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { A11y } from 'swiper/modules'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import {
@@ -31,7 +32,6 @@ import {
   albumMockImages,
   artistMockImages,
   chartMockImages,
-  footerColumns,
   footerLinks,
   libraryPrompts,
   menuLinks,
@@ -41,8 +41,28 @@ import {
 import { useHomePageData } from '../useHomePageData.js'
 import { useAuthSession } from '../../auth/useAuthSession.js'
 import GuestPlaybackGateModal from '../components/GuestPlaybackGateModal.jsx'
+import AppFooter from '../../footer/AppFooter.jsx'
 import 'swiper/css'
 import 'swiper/css/navigation'
+
+const premiumHoverPlans = [
+  {
+    title: 'Individual',
+    description: '1 account - For one person.',
+  },
+  {
+    title: 'Duo',
+    description: '2 accounts - For couples under one roof.',
+  },
+  {
+    title: 'Family',
+    description: '6 accounts - For family members under one roof.',
+  },
+  {
+    title: 'Student',
+    description: '1 account - Discount for eligible students.',
+  },
+]
 
 function SectionMoreLink({ href }) {
   return (
@@ -193,18 +213,6 @@ function getPlayerPlaybackTooltip(playing, track) {
 
 function getMuteTooltip(volume) {
   return volume === 0 ? 'Bat am thanh' : 'Tat am thanh'
-}
-
-function getFooterSocialTooltip(item) {
-  if (item === 'IG') {
-    return 'Instagram'
-  }
-
-  if (item === 'X') {
-    return 'X'
-  }
-
-  return 'Facebook'
 }
 
 function getTrendingNavigationState(swiper) {
@@ -665,16 +673,41 @@ function HomePage() {
 
           <div className="flex items-center gap-2.5 sm:gap-3.5">
             <nav className="hidden items-center gap-4 text-[0.92rem] font-semibold text-[color:var(--text-secondary)] lg:flex">
-              {menuLinks.map((item) => (
-                <a
-                  key={item}
-                  href="/"
-                  onClick={(event) => event.preventDefault()}
-                  className="transition hover:text-[color:var(--text-primary)]"
-                >
-                  {item}
-                </a>
-              ))}
+              {menuLinks.map((item) =>
+                item.label === 'Premium' ? (
+                  <div key={item.label} className="premium-nav-item">
+                    <Link
+                      to={item.path}
+                      className="transition hover:text-[color:var(--text-primary)]"
+                    >
+                      {item.label}
+                    </Link>
+
+                    <div className="premium-hover-panel" aria-label="Explore Premium plans">
+                      <h3>Explore Premium</h3>
+                      <div className="premium-hover-list">
+                        {premiumHoverPlans.map((plan) => (
+                          <Link key={plan.title} to={item.path} className="premium-hover-card">
+                            <span>
+                              <strong>{plan.title}</strong>
+                              <small>{plan.description}</small>
+                            </span>
+                            <ChevronRightSmallIcon />
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <Link
+                    key={item.label}
+                    to={item.path}
+                    className="transition hover:text-[color:var(--text-primary)]"
+                  >
+                    {item.label}
+                  </Link>
+                ),
+              )}
             </nav>
 
             <div className="hidden h-7 w-px bg-white/10 lg:block" />
@@ -756,14 +789,13 @@ function HomePage() {
             <div className="space-y-5 px-5 pb-5 pt-2">
               <div className="flex flex-wrap gap-x-4 gap-y-2 text-[0.84rem] leading-6 text-[color:var(--text-secondary)]">
                 {footerLinks.map((item) => (
-                  <a
-                    key={item}
-                    href="/"
-                    onClick={(event) => event.preventDefault()}
-                    className="transition hover:text-[color:var(--text-primary)]"
+                  <Link
+                    key={item.label}
+                    to={item.path}
+                    className="transition hover:text-[color:var(--text-primary)] hover:underline hover:underline-offset-4"
                   >
-                    {item}
-                  </a>
+                    {item.label}
+                  </Link>
                 ))}
               </div>
 
@@ -1158,44 +1190,7 @@ function HomePage() {
                 </div>
               </section>
 
-              <footer className="footer-shell mt-8">
-                <div className="footer-grid">
-                  {footerColumns.map((column) => (
-                    <section key={column.title}>
-                      <h3 className="footer-heading">{column.title}</h3>
-                      <div className="footer-links">
-                        {column.links.map((link) => (
-                          <a
-                            key={link}
-                            href="/"
-                            onClick={(event) => event.preventDefault()}
-                            className="footer-link"
-                          >
-                            {link}
-                          </a>
-                        ))}
-                      </div>
-                    </section>
-                  ))}
-
-                  <div className="footer-socials">
-                    {['IG', 'X', 'f'].map((item) => (
-                      <button
-                        key={item}
-                        className="footer-social-button"
-                        aria-label={getFooterSocialTooltip(item)}
-                        title={getFooterSocialTooltip(item)}
-                      >
-                        {item}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="footer-bottom">
-                  <span>© 2026 TMusic</span>
-                </div>
-              </footer>
+              <AppFooter />
             </div>
           </main>
         </div>

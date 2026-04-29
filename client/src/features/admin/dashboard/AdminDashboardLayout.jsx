@@ -79,6 +79,7 @@ function AdminDashboardLayout(props) {
                 items={items}
                 loading={loading}
                 onOpenSongImport={onOpenSongImport}
+                onCreateNew={handleReset}
                 onDelete={handleDelete}
                 onEdit={handleEdit}
                 onReload={reloadActiveResource}

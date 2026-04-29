@@ -265,18 +265,40 @@ export const chartMockImages = [
 ]
 
 export const footerColumns = [
-  { title: 'Công ty', links: ['Giới thiệu', 'Việc làm', 'Tin tức'] },
+  {
+    title: 'Công ty',
+    links: [
+      { label: 'Giới thiệu', path: '/about' },
+      { label: 'Việc làm', path: '/jobs' },
+      { label: 'Tin tức', path: '/news' },
+    ],
+  },
   {
     title: 'Cộng đồng',
-    links: ['Dành cho nghệ sĩ', 'Nhà phát triển', 'Quảng cáo', 'Nhà đầu tư', 'Nhà cung cấp'],
+    links: [
+      { label: 'Dành cho nghệ sĩ', path: '/for-artists' },
+      { label: 'Nhà phát triển', path: '/developers' },
+      { label: 'Quảng cáo', path: '/advertising' },
+      { label: 'Nhà đầu tư', path: '/investors' },
+      { label: 'Nhà cung cấp', path: '/vendors' },
+    ],
   },
   {
     title: 'Liên kết hữu ích',
-    links: ['Hỗ trợ', 'Ứng dụng di động miễn phí', 'Phổ biến theo quốc gia', 'Thêm nhạc'],
+    links: [
+      { label: 'Hỗ trợ', path: '/support' },
+      { label: 'Ứng dụng di động miễn phí', path: '/mobile-app' },
+      { label: 'Phổ biến theo quốc gia', path: '/countries' },
+      { label: 'Thêm nhạc', path: '/import-music' },
+    ],
   },
   {
     title: 'Gói dịch vụ TMusic',
-    links: ['Gói cá nhân', 'Gói sinh viên', 'TMusic miễn phí'],
+    links: [
+      { label: 'Gói cá nhân', path: '/plans/individual' },
+      { label: 'Gói sinh viên', path: '/plans/student' },
+      { label: 'TMusic miễn phí', path: '/plans/free' },
+    ],
   },
 ]
 
@@ -294,12 +316,16 @@ export const libraryPrompts = [
 ]
 
 export const footerLinks = [
-  'Pháp lý',
-  'Trung tâm an toàn và quyền riêng tư',
-  'Chính sách quyền riêng tư',
-  'Cookie',
-  'Giới thiệu quảng cáo',
-  'Hỗ trợ tiếp cận',
+  { label: 'Pháp lý', path: '/legal' },
+  { label: 'Trung tâm an toàn và quyền riêng tư', path: '/safety-privacy' },
+  { label: 'Chính sách quyền riêng tư', path: '/privacy' },
+  { label: 'Cookie', path: '/cookies' },
+  { label: 'Giới thiệu quảng cáo', path: '/ads-info' },
+  { label: 'Hỗ trợ tiếp cận', path: '/accessibility' },
 ]
 
-export const menuLinks = ['Nâng cấp', 'Hỗ trợ', 'Tải xuống']
+export const menuLinks = [
+  { label: 'Nâng cấp', path: '/plans/individual' },
+  { label: 'Hỗ trợ', path: '/support' },
+  { label: 'Tải xuống', path: '/mobile-app' },
+]

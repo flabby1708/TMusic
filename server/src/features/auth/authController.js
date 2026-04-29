@@ -7,7 +7,6 @@ import {
   registerArtistUser,
   registerUser,
 } from '../../services/authService.js'
-import { requestPhoneCode, verifyPhoneCode } from '../../services/phoneAuthService.js'
 import {
   buildClientCallbackUrl,
   getSocialAuthUrl,
@@ -140,32 +139,6 @@ export const loginAdmin = async (req, res, next) => {
     }
 
     const result = await loginAdminUser(req.body)
-    return sendAuthResult(res, result)
-  } catch (error) {
-    return next(error)
-  }
-}
-
-export const requestPhoneOtp = async (req, res, next) => {
-  try {
-    if (!ensureDatabaseReady(res)) {
-      return
-    }
-
-    const result = await requestPhoneCode(req.body)
-    return sendAuthResult(res, result)
-  } catch (error) {
-    return next(error)
-  }
-}
-
-export const verifyPhoneOtp = async (req, res, next) => {
-  try {
-    if (!ensureDatabaseReady(res)) {
-      return
-    }
-
-    const result = await verifyPhoneCode(req.body)
     return sendAuthResult(res, result)
   } catch (error) {
     return next(error)

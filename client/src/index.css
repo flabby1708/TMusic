@@ -236,6 +236,101 @@ a {
   border-color: var(--border-soft);
 }
 
+.premium-nav-item {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding-block: 0.75rem;
+}
+
+.premium-hover-panel {
+  position: absolute;
+  top: calc(100% + 0.45rem);
+  left: 50%;
+  z-index: 40;
+  width: min(29.5rem, calc(100vw - 2rem));
+  padding: 1.3rem 1rem 1rem;
+  border-radius: 14px;
+  background: #1f1f1f;
+  color: #f5f5f5;
+  box-shadow: 0 24px 52px rgba(0, 0, 0, 0.42);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 0.35rem);
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+.premium-hover-panel::before {
+  position: absolute;
+  inset: -0.65rem 0 auto;
+  height: 0.65rem;
+  content: '';
+}
+
+.premium-nav-item:hover .premium-hover-panel,
+.premium-nav-item:focus-within .premium-hover-panel {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, 0);
+}
+
+.premium-hover-panel h3 {
+  margin: 0 0 1.55rem;
+  padding-inline: 0.15rem;
+  font-family: var(--font-display);
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.premium-hover-list {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.premium-hover-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 4.45rem;
+  border-radius: 10px;
+  padding: 0.6rem 0.15rem;
+  color: #f5f5f5;
+  transition: background-color 160ms ease;
+}
+
+.premium-hover-card:hover,
+.premium-hover-card:focus-visible {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.premium-hover-card span {
+  display: grid;
+  gap: 0.22rem;
+}
+
+.premium-hover-card strong {
+  font-size: 0.98rem;
+  line-height: 1.2;
+  color: #ffffff;
+}
+
+.premium-hover-card small {
+  font-size: 0.86rem;
+  line-height: 1.35;
+  color: #b3b3b3;
+}
+
+.premium-hover-card svg {
+  width: 1.35rem;
+  height: 1.35rem;
+  color: #b3b3b3;
+  opacity: 1;
+}
+
 .download-link,
 .ghost-link {
   font-size: 0.9rem;
@@ -698,8 +793,15 @@ a {
 
 .footer-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+  grid-template-columns: minmax(0, 1.1fr) repeat(4, minmax(0, 1fr)) auto;
   gap: 2rem;
+}
+
+.footer-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: fit-content;
 }
 
 .footer-heading {
@@ -717,13 +819,27 @@ a {
 }
 
 .footer-link {
+  width: fit-content;
   font-size: 0.95rem;
   color: var(--text-secondary);
-  transition: color 180ms ease;
+  text-underline-offset: 0.28em;
+  transition:
+    color 180ms ease,
+    transform 180ms ease;
 }
 
 .footer-link:hover {
   color: var(--text-primary);
+  text-decoration: underline;
+  transform: translateX(2px);
+}
+
+.footer-link:focus-visible,
+.footer-legal-link:focus-visible,
+.footer-brand:focus-visible {
+  outline: 2px solid var(--tertiary);
+  outline-offset: 4px;
+  border-radius: 8px;
 }
 
 .footer-socials {
@@ -738,11 +854,24 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 9999px;
   background: rgba(255, 255, 255, 0.08);
   color: var(--text-primary);
   font-weight: 800;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+.footer-social-button:hover,
+.footer-social-button:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(255, 107, 87, 0.36);
+  background: rgba(255, 107, 87, 0.14);
+  color: #fff;
 }
 
 .footer-bottom {
@@ -751,6 +880,30 @@ a {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   color: var(--text-dim);
   font-size: 0.9rem;
+}
+
+.footer-bottom-grid {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.footer-legal-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem 1.3rem;
+}
+
+.footer-legal-link {
+  color: var(--text-dim);
+  text-underline-offset: 0.28em;
+  transition: color 180ms ease;
+}
+
+.footer-legal-link:hover {
+  color: var(--text-primary);
+  text-decoration: underline;
 }
 
 .app-player-shell {
@@ -1186,6 +1339,11 @@ a {
 
   .footer-socials {
     justify-content: flex-start;
+  }
+
+  .footer-bottom-grid {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .player-volume-slider {

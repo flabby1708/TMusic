@@ -4,19 +4,9 @@ import {
   beginSocialAuth,
   loginWithEmail,
   registerWithEmail,
-  requestPhoneVerificationCode,
   storeAuthSession,
-  verifyPhoneVerificationCode,
 } from './authClient.js'
 import { useAuthSession } from './useAuthSession.js'
-
-function PhoneIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden="true">
-      <path d="M8.75 2A2.75 2.75 0 0 0 6 4.75v14.5A2.75 2.75 0 0 0 8.75 22h6.5A2.75 2.75 0 0 0 18 19.25V4.75A2.75 2.75 0 0 0 15.25 2h-6.5ZM8 5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V5Zm4 11.75a1.1 1.1 0 1 0 0 2.2 1.1 1.1 0 0 0 0-2.2Z" />
-    </svg>
-  )
-}
 
 function GoogleIcon() {
   return (
@@ -61,7 +51,6 @@ function AppleIcon() {
 }
 
 const socialProviders = [
-  { id: 'phone', label: 'Tiếp tục bằng số điện thoại', Icon: PhoneIcon },
   { id: 'google', label: 'Tiếp tục bằng Google', Icon: GoogleIcon },
   { id: 'facebook', label: 'Tiếp tục bằng Facebook', Icon: FacebookIcon },
   { id: 'apple', label: 'Tiếp tục bằng Apple', Icon: AppleIcon },
@@ -92,13 +81,6 @@ function AuthPageShell({
 }) {
   const { isAuthenticated, loading: authLoading } = useAuthSession()
   const [formValues, setFormValues] = useState(() => buildInitialState(fields))
-  const [phoneValues, setPhoneValues] = useState({
-    displayName: '',
-    phoneNumber: '',
-    code: '',
-  })
-  const [phoneStep, setPhoneStep] = useState('request')
-  const [phonePanelOpen, setPhonePanelOpen] = useState(false)
   const [feedback, setFeedback] = useState('')
   const [feedbackTone, setFeedbackTone] = useState('info')
   const [submitting, setSubmitting] = useState(false)
@@ -112,13 +94,6 @@ function AuthPageShell({
 
   const handleChange = (fieldName, value) => {
     setFormValues((current) => ({
-      ...current,
-      [fieldName]: value,
-    }))
-  }
-
-  const handlePhoneChange = (fieldName, value) => {
-    setPhoneValues((current) => ({
       ...current,
       [fieldName]: value,
     }))
@@ -149,11 +124,6 @@ function AuthPageShell({
   }
 
   const handleProviderClick = async (providerId) => {
-    if (providerId === 'phone') {
-      setPhonePanelOpen((current) => !current || phoneStep === 'verify')
-      return
-    }
-
     setActiveProvider(providerId)
     setFeedback('')
 
@@ -163,62 +133,6 @@ function AuthPageShell({
       setFeedbackTone('error')
       setFeedback(error.message || 'Không thể khởi động đăng nhập mạng xã hội.')
       setActiveProvider('')
-    }
-  }
-
-  const handleRequestPhoneCode = async () => {
-    setSubmitting(true)
-    setFeedback('')
-    setPhonePanelOpen(true)
-
-    try {
-      const payload = await requestPhoneVerificationCode({
-        phoneNumber: phoneValues.phoneNumber,
-        purpose: mode,
-      })
-      const returnedOtp = payload.otp || payload.devCode || ''
-
-      setPhoneStep('verify')
-      setPhoneValues((current) => ({
-        ...current,
-        phoneNumber: payload.phoneNumber || current.phoneNumber,
-      }))
-      setFeedbackTone(returnedOtp ? 'info' : 'success')
-      setFeedback(
-        returnedOtp ? `${payload.message} Mã OTP của bạn là: ${returnedOtp}` : payload.message,
-      )
-    } catch (error) {
-      setFeedbackTone('error')
-      setFeedback(error.message || 'Không thể gửi mã xác thực.')
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  const handleVerifyPhoneCode = async () => {
-    setSubmitting(true)
-    setFeedback('')
-
-    try {
-      const payload = await verifyPhoneVerificationCode({
-        displayName: phoneValues.displayName,
-        phoneNumber: phoneValues.phoneNumber,
-        code: phoneValues.code,
-        purpose: mode,
-      })
-
-      storeAuthSession(payload)
-      setFeedbackTone('success')
-      setFeedback(payload.message)
-
-      window.setTimeout(() => {
-        window.location.assign('/')
-      }, 700)
-    } catch (error) {
-      setFeedbackTone('error')
-      setFeedback(error.message || 'Không thể xác minh số điện thoại.')
-    } finally {
-      setSubmitting(false)
     }
   }
 
@@ -277,90 +191,6 @@ function AuthPageShell({
             </button>
           ))}
         </div>
-
-        {phonePanelOpen ? (
-          <div className="mt-4 w-full rounded-[1.2rem] border border-white/12 bg-white/[0.03] p-4">
-            <p className="text-sm font-bold text-[color:var(--text-primary)]">
-              Xác thực bằng số điện thoại
-            </p>
-            <p className="mt-1 text-sm leading-6 text-[color:var(--text-secondary)]">
-              {phoneStep === 'request'
-                ? 'Nhập số điện thoại để nhận mã OTP.'
-                : mode === 'register'
-                  ? 'Nhập mã OTP vừa nhận được để hoàn tất đăng ký.'
-                  : 'Nhập mã OTP vừa nhận được để hoàn tất đăng nhập.'}
-            </p>
-
-            {mode === 'register' ? (
-              <label className="auth-field-group mt-4 block">
-                <span className="auth-label">Tên hiển thị</span>
-                <input
-                  type="text"
-                  value={phoneValues.displayName}
-                  onChange={(event) => handlePhoneChange('displayName', event.target.value)}
-                  placeholder="Tên của bạn"
-                  className="auth-input"
-                />
-              </label>
-            ) : null}
-
-            <label className="auth-field-group mt-4 block">
-              <span className="auth-label">Số điện thoại</span>
-              <input
-                type="tel"
-                value={phoneValues.phoneNumber}
-                onChange={(event) => handlePhoneChange('phoneNumber', event.target.value)}
-                placeholder="+84901234567"
-                className="auth-input"
-              />
-            </label>
-
-            {phoneStep === 'verify' ? (
-              <label className="auth-field-group mt-4 block">
-                <span className="auth-label">Mã OTP</span>
-                <input
-                  type="text"
-                  value={phoneValues.code}
-                  onChange={(event) => handlePhoneChange('code', event.target.value)}
-                  placeholder="Nhập mã 6 chữ số"
-                  className="auth-input"
-                />
-              </label>
-            ) : null}
-
-            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-              {phoneStep === 'verify' ? (
-                <>
-                  <button
-                    type="button"
-                    className="auth-submit mt-0 sm:flex-1"
-                    onClick={() => void handleVerifyPhoneCode()}
-                    disabled={submitting}
-                  >
-                    {submitting ? 'Đang xác minh...' : 'Xác nhận mã'}
-                  </button>
-                  <button
-                    type="button"
-                    className="auth-social-button sm:flex-1"
-                    onClick={() => void handleRequestPhoneCode()}
-                    disabled={submitting}
-                  >
-                    Gửi lại mã
-                  </button>
-                </>
-              ) : (
-                <button
-                  type="button"
-                  className="auth-submit mt-0"
-                  onClick={() => void handleRequestPhoneCode()}
-                  disabled={submitting}
-                >
-                  {submitting ? 'Đang gửi mã...' : 'Gửi mã OTP'}
-                </button>
-              )}
-            </div>
-          </div>
-        ) : null}
 
         <div className="auth-alternate">
           <p>{alternatePrompt}</p>

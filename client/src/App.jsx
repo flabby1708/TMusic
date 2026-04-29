@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes, useParams } from 'react-router-dom'
 import { appPaths } from './app/routes/paths.js'
 import {
   AdminGuestRoute,
@@ -16,12 +16,31 @@ import AuthCallbackPage from './pages/AuthCallbackPage.jsx'
 import HomePage from './pages/HomePage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import RegisterPage from './pages/RegisterPage.jsx'
+import SupportPage from './pages/SupportPage.jsx'
 import AdminLoginPage from './pages/AdminLoginPage.jsx'
+import FooterInfoPage from './features/footer/FooterInfoPage.jsx'
+import SupportArticlePage from './features/support/pages/SupportArticlePage.jsx'
+import { footerPageRoutes } from './features/footer/footerPageData.js'
+
+function SupportArticleRoute() {
+  const { slug } = useParams()
+
+  return <SupportArticlePage slug={slug} />
+}
 
 function App() {
   return (
     <Routes>
       <Route path={appPaths.home} element={<HomePage />} />
+      <Route path={appPaths.support} element={<SupportPage />} />
+      <Route path={appPaths.supportArticle} element={<SupportArticleRoute />} />
+      {footerPageRoutes.map((route) => (
+        <Route
+          key={route.path}
+          path={route.path}
+          element={<FooterInfoPage pageKey={route.pageKey} />}
+        />
+      ))}
       <Route path={appPaths.auth.callback} element={<AuthCallbackPage />} />
       <Route path={appPaths.artist.portal} element={<ArtistPortalPage />} />
 
