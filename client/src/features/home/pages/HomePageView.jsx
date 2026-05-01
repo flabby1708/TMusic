@@ -173,18 +173,18 @@ function getNextRepeatMode(mode) {
 
 function getRepeatModeTooltip(mode) {
   if (mode === 'all') {
-    return 'Dang lap lai danh sach. Bam de chuyen sang lap 1 bai'
+    return 'Đang lặp lại danh sách. Bấm để chuyển sang lặp 1 bài'
   }
 
   if (mode === 'one') {
-    return 'Dang lap lai 1 bai. Bam de tat lap lai'
+    return 'Đang lặp lại 1 bài. Bấm để tắt lặp lại'
   }
 
-  return 'Da tat lap lai. Bam de bat lap lai danh sach'
+  return 'Đang tắt lặp lại. Bấm để bật lặp lại danh sách'
 }
 
 function getShuffleTooltip(enabled) {
-  return enabled ? 'Tat tron bai' : 'Bat tron bai'
+  return enabled ? 'Tắt trộn bài' : 'Bật trộn bài'
 }
 
 function getTrackPlaybackTooltip(track, activeTrack, playing, isAuthenticated) {

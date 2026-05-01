@@ -1,4 +1,5 @@
-import { spawn, spawnSync } from 'node:child_process'
+import { assertFfmpegAvailable } from './ffmpegHealthService.js'
+import { spawn } from 'node:child_process'
 import { createWriteStream } from 'node:fs'
 import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
@@ -81,35 +82,21 @@ const runFfmpeg = (args) =>
         return
       }
 
-      reject(
-        new Error(
-          stderr.trim() || stdout.trim() || `FFmpeg exited with code ${code ?? 'unknown'}.`,
-        ),
+      const error = new Error(
+        stderr.trim() || stdout.trim() || `FFmpeg exited with code ${code ?? 'unknown'}.`,
       )
+
+      error.code = 'AUDIO_PROCESSING_FAILED'
+      reject(error)
     })
   })
 
-const isFfmpegAvailable = () => {
-  const ffmpegExecutable = resolveFfmpegExecutable()
-  const result = spawnSync(ffmpegExecutable, ['-version'], {
-    stdio: 'ignore',
-  })
-
-  return result.status === 0
-}
-
-const getAudioProcessingAvailability = () => {
-  if (!isFfmpegAvailable()) {
-    return {
-      available: false,
-      message:
-        'FFmpeg is not available on the server. Install FFmpeg or set FFMPEG_PATH before processing audio variants.',
-    }
-  }
-
-  return {
-    available: true,
+const resetProcessingError = (track) => {
+  track.processingError = {
+    code: '',
     message: '',
+    details: null,
+    createdAt: null,
   }
 }
 
@@ -117,6 +104,11 @@ const markTrackProcessingState = async (track, status, errorMessage = '') => {
   const presets = getTrackVariantPresets(track)
 
   track.processingStatus = status
+
+  if (status !== 'failed') {
+    resetProcessingError(track)
+  }
+
   track.audioVariants = presets.map((variant) => ({
     ...variant,
     url: status === 'ready' ? trimString(variant.url) : '',
@@ -135,6 +127,8 @@ const markTrackProcessingState = async (track, status, errorMessage = '') => {
 
 const applyProcessedVariants = async (track, variants) => {
   track.processingStatus = 'ready'
+  resetProcessingError(track)
+
   track.audioVariants = variants.map((variant) => ({
     quality: variant.quality,
     codec: variant.codec,
@@ -147,6 +141,7 @@ const applyProcessedVariants = async (track, variants) => {
     status: 'ready',
     errorMessage: '',
   }))
+
   track.audioUrl = variants.find((variant) => variant.quality === 'normal')?.url || variants[0]?.url || ''
   await track.save()
 }
@@ -156,6 +151,12 @@ const markTrackProcessingFailed = async (track, error) => {
   const presets = getTrackVariantPresets(track)
 
   track.processingStatus = 'failed'
+  track.processingError = {
+    code: error?.code || 'AUDIO_PROCESSING_FAILED',
+    message,
+    details: error?.details || null,
+    createdAt: new Date(),
+  }
   track.audioUrl = ''
   track.audioVariants = presets.map((variant) => ({
     quality: variant.quality,
@@ -169,6 +170,7 @@ const markTrackProcessingFailed = async (track, error) => {
     status: 'failed',
     errorMessage: message,
   }))
+
   await track.save()
 }
 
@@ -178,7 +180,9 @@ const downloadMasterAudio = async ({ url, filePath }) => {
   })
 
   if (!response.ok || !response.body) {
-    throw new Error(`Could not download master audio from "${url}".`)
+    const error = new Error(`Could not download master audio from "${url}".`)
+    error.code = 'MASTER_AUDIO_DOWNLOAD_FAILED'
+    throw error
   }
 
   await pipeline(Readable.fromWeb(response.body), createWriteStream(filePath))
@@ -211,6 +215,8 @@ const processTrackAudioInBackground = async (trackId) => {
   const tempDirectory = await mkdtemp(path.join(os.tmpdir(), 'tmusic-audio-'))
 
   try {
+    await assertFfmpegAvailable()
+
     const inputPath = path.join(tempDirectory, `master.${resolveMasterExtension(track)}`)
 
     await downloadMasterAudio({
@@ -291,12 +297,14 @@ export const queueTrackAudioProcessing = async ({ track }) => {
     }
   }
 
-  const availability = getAudioProcessingAvailability()
+  try {
+    await assertFfmpegAvailable()
+  } catch (error) {
+    await markTrackProcessingFailed(track, error)
 
-  if (!availability.available) {
     return {
       queued: false,
-      message: availability.message,
+      message: error.message || 'Audio processing is not available.',
       item: mapTrackRecord(track.toObject()),
     }
   }

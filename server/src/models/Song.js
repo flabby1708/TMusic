@@ -99,6 +99,32 @@ const audioVariantSchema = new mongoose.Schema(
   },
 )
 
+const processingErrorSchema = new mongoose.Schema(
+  {
+    code: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    message: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    details: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+    },
+    createdAt: {
+      type: Date,
+      default: null,
+    },
+  },
+  {
+    _id: false,
+  },
+)
+
 const songSchema = new mongoose.Schema(
   {
     title: {
@@ -145,6 +171,10 @@ const songSchema = new mongoose.Schema(
       type: String,
       enum: ['draft', 'uploaded', 'processing', 'ready', 'failed'],
       default: 'ready',
+    },
+    processingError: {
+      type: processingErrorSchema,
+      default: () => ({}),
     },
     ownerUserId: {
       type: mongoose.Schema.Types.ObjectId,

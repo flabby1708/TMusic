@@ -9,6 +9,7 @@ export function useHomePageData() {
     error: '',
     data: null,
   })
+
   const [homeContent, setHomeContent] = useState({
     loading: false,
     ...fallbackHomeContent,
@@ -33,7 +34,14 @@ export function useHomePageData() {
           data: healthPayload,
         })
 
-        if (healthPayload.database.status !== 'connected') {
+        const databaseStatus = healthPayload?.services?.database?.status ?? 'unknown'
+
+        if (databaseStatus !== 'connected') {
+          setHealth({
+            loading: false,
+            error: 'MongoDB chưa kết nối. Đang hiển thị dữ liệu mẫu.',
+            data: healthPayload,
+          })
           return
         }
 
@@ -45,9 +53,12 @@ export function useHomePageData() {
         const homePayload = await requestJson('/api/home')
 
         if (!cancelled) {
-          setHomeContent(normalizeHomePayload(homePayload))
+          setHomeContent({
+            loading: false,
+            ...normalizeHomePayload(homePayload),
+          })
         }
-      } catch {
+      } catch (error) {
         if (cancelled) {
           return
         }
@@ -57,10 +68,13 @@ export function useHomePageData() {
           error: 'Không thể tải dữ liệu từ API. Đang hiển thị dữ liệu mẫu.',
           data: healthPayload,
         })
+
         setHomeContent({
           loading: false,
           ...fallbackHomeContent,
         })
+
+        console.error('Failed to load home dashboard data:', error)
       }
     }
 
@@ -71,7 +85,7 @@ export function useHomePageData() {
     }
   }, [])
 
-  const databaseStatus = health.data?.database?.status ?? 'unknown'
+  const databaseStatus = health.data?.services?.database?.status ?? 'unknown'
   const isLive = !health.error && databaseStatus === 'connected'
 
   return {
