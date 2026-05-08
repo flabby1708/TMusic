@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Alert,
   Button,
@@ -44,7 +44,7 @@ function AdminUsersPageView() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const loadUsers = async (nextQuery = query) => {
+  const loadUsers = useCallback(async (nextQuery = query) => {
     setLoading(true)
     setError('')
 
@@ -56,17 +56,17 @@ function AdminUsersPageView() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [query])
 
   useEffect(() => {
     void loadUsers('')
-  }, [])
+  }, [loadUsers])
 
   const handleSearch = () => {
     void loadUsers(query)
   }
 
-  const handleToggleStatus = async (user) => {
+  const handleToggleStatus = useCallback(async (user) => {
     const nextStatus = user.accountStatus === 'suspended' ? 'active' : 'suspended'
     let suspendedReason = ''
 
@@ -104,9 +104,9 @@ function AdminUsersPageView() {
     } catch (statusError) {
       message.error(statusError.message || 'Cập nhật trạng thái thất bại.')
     }
-  }
+  }, [loadUsers])
 
-  const handleSubscriptionChange = async (user, plan) => {
+  const handleSubscriptionChange = useCallback(async (user, plan) => {
     const isPremium = plan === 'premium'
 
     try {
@@ -122,7 +122,7 @@ function AdminUsersPageView() {
     } catch (subscriptionError) {
       message.error(subscriptionError.message || 'Cập nhật gói thất bại.')
     }
-  }
+  }, [loadUsers])
 
   const columns = useMemo(
     () => [
@@ -199,7 +199,7 @@ function AdminUsersPageView() {
         ),
       },
     ],
-    [],
+    [handleSubscriptionChange, handleToggleStatus],
   )
 
   return (
