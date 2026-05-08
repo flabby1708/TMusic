@@ -202,7 +202,7 @@ export function useAdminDashboard({ enabled = true } = {}) {
   }
 
   const handleDelete = async (item) => {
-    const confirmed = window.confirm(`Xoa "${item[currentResource.titleField]}"?`)
+    const confirmed = window.confirm(`Xóa "${item[currentResource.titleField]}"?`)
 
     if (!confirmed) {
       return
@@ -238,7 +238,7 @@ export function useAdminDashboard({ enabled = true } = {}) {
 
   const handleAssetUpload = async (field, file) => {
     if (!file) {
-      throw new Error('Chua chon tep upload.')
+      throw new Error('Chưa chọn tệp upload.')
     }
 
     const assetType = field.uploadAssetType || 'image'
@@ -246,8 +246,8 @@ export function useAdminDashboard({ enabled = true } = {}) {
     if (!isFileTypeAccepted(assetType, file)) {
       const typeError = new Error(
         assetType === 'audio'
-          ? 'Vui long chon dung tep am thanh.'
-          : 'Vui long chon dung tep hinh anh.',
+          ? 'Vui lòng chọn đúng tệp âm thanh.'
+          : 'Vui lòng chọn đúng tệp hình ảnh.',
       )
       setError(typeError.message)
       throw typeError
@@ -297,8 +297,8 @@ export function useAdminDashboard({ enabled = true } = {}) {
 
       setNotice(
         assetType === 'audio'
-          ? 'Tai file nhac len Cloudinary thanh cong.'
-          : 'Tai anh len Cloudinary thanh cong.',
+          ? 'Tải file nhạc lên Cloudinary thành công.'
+          : 'Tải ảnh lên Cloudinary thành công.',
       )
 
       return uploadedAsset

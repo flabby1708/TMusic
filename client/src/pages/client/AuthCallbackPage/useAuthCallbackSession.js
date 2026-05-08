@@ -2,9 +2,9 @@ import { useEffect } from 'react'
 import {
   decodeSocialCallbackUser,
   storeAuthSession,
-} from '../features/auth/authClient.js'
+} from '../../../features/auth/authClient.js'
 
-function AuthCallbackPage() {
+export function useAuthCallbackSession() {
   const params = new URLSearchParams(window.location.search)
   const token = params.get('token') || ''
   const provider = params.get('provider') || ''
@@ -38,22 +38,8 @@ function AuthCallbackPage() {
     }
   }, [error, token, user])
 
-  return (
-    <div className="auth-page">
-      <div className="auth-shell">
-        <div className="auth-copy">
-          <h1 className="auth-title">{error ? 'Có lỗi xảy ra' : 'Đang xử lý'}</h1>
-          <p className="auth-subtitle">{error || message}</p>
-        </div>
-
-        <div className="mt-8 w-full">
-          <a href="/login" className="auth-submit flex items-center justify-center">
-            Quay lại đăng nhập
-          </a>
-        </div>
-      </div>
-    </div>
-  )
+  return {
+    error,
+    message,
+  }
 }
-
-export default AuthCallbackPage

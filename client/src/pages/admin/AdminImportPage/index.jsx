@@ -1,6 +1,6 @@
 import { ConfigProvider } from 'antd'
-import AdminSongImportPageView from '../features/admin/pages/AdminSongImportPageView.jsx'
-import { adminTheme } from '../features/admin/dashboard/adminDashboardTheme'
+import AdminSongImportPageView from '../../../features/admin/pages/AdminSongImportPageView.jsx'
+import { adminTheme } from '../../../features/admin/dashboard/adminDashboardTheme'
 
 function AdminImportPage() {
   return (

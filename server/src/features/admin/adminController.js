@@ -8,14 +8,27 @@ import {
   listAdminResourceItems,
   updateAdminResourceItem,
 } from '../../services/adminService.js'
-
+import {
+  getAdminUserById,
+  listAdminUsers,
+  updateAdminUserRole,
+  updateAdminUserStatus,
+  updateAdminUserSubscription,
+} from '../../services/adminUserService.js'
+import {
+  approveArtistApplication,
+  getArtistApplicationById,
+  listArtistApplications,
+  rejectArtistApplication,
+  suspendArtistApplication,
+} from '../../services/adminArtistApplicationService.js'
 const ensureDatabaseReady = (res) => {
   if (getDatabaseStatus() === 'connected') {
     return true
   }
 
   res.status(503).json({
-    message: 'MongoDB is not connected yet.',
+    message: 'MongoDB is not ready yet. Please try again later.',
     items: [],
   })
 
@@ -131,6 +144,244 @@ export const deleteAdminItem = async (req, res, next) => {
     }
 
     return res.status(204).send()
+  } catch (error) {
+    return next(error)
+  }
+}
+export const listAdminUserItems = async (req, res, next) => {
+  try {
+    if (!ensureDatabaseReady(res)) {
+      return
+    }
+
+    return res.json(await listAdminUsers({ query: req.query.q }))
+  } catch (error) {
+    return next(error)
+  }
+}
+
+export const getAdminUserItem = async (req, res, next) => {
+  try {
+    if (!ensureDatabaseReady(res)) {
+      return
+    }
+
+    const item = await getAdminUserById(req.params.id)
+
+    if (!item) {
+      return res.status(404).json({
+        message: 'Khong tim thay nguoi dung.',
+      })
+    }
+
+    return res.json({ item })
+  } catch (error) {
+    return next(error)
+  }
+}
+
+export const updateAdminUserStatusItem = async (req, res, next) => {
+  try {
+    if (!ensureDatabaseReady(res)) {
+      return
+    }
+
+    const { item, validationMessage } = await updateAdminUserStatus(
+      req.params.id,
+      req.body,
+    )
+
+    if (validationMessage) {
+      return res.status(400).json({
+        message: validationMessage,
+      })
+    }
+
+    if (!item) {
+      return res.status(404).json({
+        message: 'Khong tim thay nguoi dung.',
+      })
+    }
+
+    return res.json({ item })
+  } catch (error) {
+    return next(error)
+  }
+}
+
+export const updateAdminUserRoleItem = async (req, res, next) => {
+  try {
+    if (!ensureDatabaseReady(res)) {
+      return
+    }
+
+    const { item, validationMessage } = await updateAdminUserRole(
+      req.params.id,
+      req.body,
+    )
+
+    if (validationMessage) {
+      return res.status(400).json({
+        message: validationMessage,
+      })
+    }
+
+    if (!item) {
+      return res.status(404).json({
+        message: 'Khong tim thay nguoi dung.',
+      })
+    }
+
+    return res.json({ item })
+  } catch (error) {
+    return next(error)
+  }
+}
+
+export const updateAdminUserSubscriptionItem = async (req, res, next) => {
+  try {
+    if (!ensureDatabaseReady(res)) {
+      return
+    }
+
+    const { item, validationMessage } = await updateAdminUserSubscription(
+      req.params.id,
+      req.body,
+    )
+
+    if (validationMessage) {
+      return res.status(400).json({
+        message: validationMessage,
+      })
+    }
+
+    if (!item) {
+      return res.status(404).json({
+        message: 'Khong tim thay nguoi dung.',
+      })
+    }
+
+    return res.json({ item })
+  } catch (error) {
+    return next(error)
+  }
+}
+export const listArtistApplicationItems = async (req, res, next) => {
+  try {
+    if (!ensureDatabaseReady(res)) {
+      return
+    }
+
+    return res.json(
+      await listArtistApplications({
+        query: req.query.q,
+        status: req.query.status,
+      }),
+    )
+  } catch (error) {
+    return next(error)
+  }
+}
+
+export const getArtistApplicationItem = async (req, res, next) => {
+  try {
+    if (!ensureDatabaseReady(res)) {
+      return
+    }
+
+    const item = await getArtistApplicationById(req.params.id)
+
+    if (!item) {
+      return res.status(404).json({
+        message: 'Khong tim thay ho so nghe si.',
+      })
+    }
+
+    return res.json({ item })
+  } catch (error) {
+    return next(error)
+  }
+}
+
+export const approveArtistApplicationItem = async (req, res, next) => {
+  try {
+    if (!ensureDatabaseReady(res)) {
+      return
+    }
+
+    const item = await approveArtistApplication(
+      req.params.id,
+      req.auth?.sub,
+      req.body,
+    )
+
+    if (!item) {
+      return res.status(404).json({
+        message: 'Khong tim thay ho so nghe si.',
+      })
+    }
+
+    return res.json({ item })
+  } catch (error) {
+    return next(error)
+  }
+}
+
+export const rejectArtistApplicationItem = async (req, res, next) => {
+  try {
+    if (!ensureDatabaseReady(res)) {
+      return
+    }
+
+    const { item, validationMessage } = await rejectArtistApplication(
+      req.params.id,
+      req.auth?.sub,
+      req.body,
+    )
+
+    if (validationMessage) {
+      return res.status(400).json({
+        message: validationMessage,
+      })
+    }
+
+    if (!item) {
+      return res.status(404).json({
+        message: 'Khong tim thay ho so nghe si.',
+      })
+    }
+
+    return res.json({ item })
+  } catch (error) {
+    return next(error)
+  }
+}
+
+export const suspendArtistApplicationItem = async (req, res, next) => {
+  try {
+    if (!ensureDatabaseReady(res)) {
+      return
+    }
+
+    const { item, validationMessage } = await suspendArtistApplication(
+      req.params.id,
+      req.auth?.sub,
+      req.body,
+    )
+
+    if (validationMessage) {
+      return res.status(400).json({
+        message: validationMessage,
+      })
+    }
+
+    if (!item) {
+      return res.status(404).json({
+        message: 'Khong tim thay ho so nghe si.',
+      })
+    }
+
+    return res.json({ item })
   } catch (error) {
     return next(error)
   }

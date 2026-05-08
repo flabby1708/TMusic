@@ -5,6 +5,7 @@ import {
   HomeOutlined,
   LogoutOutlined,
   NotificationOutlined,
+  TeamOutlined,
   UserOutlined,
 } from '@ant-design/icons'
 import { resourceDefinitions } from '../adminConfig.js'
@@ -40,10 +41,19 @@ export const resourceMenuItems = [
     ],
   },
   {
+    key: 'users',
+    label: 'Người dùng',
+  },
+  {
     key: 'sub2',
     icon: <UserOutlined />,
     label: 'Nghệ sĩ và kênh',
     children: [
+      {
+        key: 'artist-applications',
+        icon: <TeamOutlined />,
+        label: 'Hồ sơ nghệ sĩ',
+      },
       { key: 'artists', label: resourceDefinitions.artists.label },
       { key: 'radios', label: resourceDefinitions.radios.label },
     ],

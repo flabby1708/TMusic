@@ -69,7 +69,7 @@ const subscriptionSchema = new mongoose.Schema(
 )
 
 const userSchema = new mongoose.Schema(
-  {
+  { 
     displayName: {
       type: String,
       required: true,
@@ -112,10 +112,50 @@ const userSchema = new mongoose.Schema(
       enum: ['user', 'artist', 'admin'],
       default: 'user',
     },
+    accountStatus: {
+      type: String,
+      enum: ['active', 'suspended', 'deleted'],
+      default: 'active',
+    },
+    suspendedReason: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    suspendedAt: {
+      type: Date,
+      default: null,
+    },
     artistStatus: {
       type: String,
-      enum: ['none', 'pending', 'approved', 'rejected'],
+      enum: ['none', 'pending', 'approved', 'rejected', 'suspended'],
       default: 'none',
+    },
+    artistReview: {
+      reviewedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null,
+      },
+      reviewedAt: {
+        type: Date,
+        default: null,
+      },
+      rejectionReason: {
+        type: String,
+        default: '',
+        trim: true,
+      },
+      suspensionReason: {
+        type: String,
+        default: '',
+        trim: true,
+      },
+      adminNote: {
+        type: String,
+        default: '',
+        trim: true,
+      },
     },
     artistProfile: {
       type: artistProfileSchema,

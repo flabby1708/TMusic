@@ -26,7 +26,7 @@ function AdminDashboardEditorPanel(props) {
   const {
     token: { borderRadiusLG, colorBorderSecondary, colorTextSecondary },
   } = theme.useToken()
-  const isSongResource = currentResource.label === 'Bai hat'
+  const isSongResource = currentResource.label === 'Bài hát'
   const editorTitle = isSongResource
     ? editingId
       ? 'Đang chỉnh sửa bài hát'

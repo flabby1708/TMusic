@@ -114,7 +114,7 @@ const resolveSongIdentityFromFilename = (filename, defaultArtist = '') => {
     artist: '',
     title: stem,
     errorMessage:
-      'Khong tach duoc artist tu ten file. Dung mau "Artist - Title" hoac nhap default artist.',
+      'Không tách được artist từ tên file. Dùng mẫu "Artist - Title" hoặc nhập default artist.',
   }
 }
 
@@ -266,7 +266,7 @@ function FileSelectionCard(props) {
             {title}
           </Text>
           <Title level={4} style={{ margin: '10px 0 6px' }}>
-            {files.length} tep
+            {files.length} tệp
           </Title>
           <Text style={{ color: colorTextSecondary }}>{description}</Text>
         </div>
@@ -304,7 +304,7 @@ function FileSelectionCard(props) {
           disabled={files.length === 0}
           style={{ borderRadius: 12 }}
         >
-          Xoa danh sach
+          Xóa danh sách
         </Button>
       </div>
 
@@ -332,7 +332,7 @@ function FileSelectionCard(props) {
             </div>
           ))}
           {files.length > 6 ? (
-            <Text style={{ color: colorTextSecondary }}>+ {files.length - 6} tep khac</Text>
+            <Text style={{ color: colorTextSecondary }}>+ {files.length - 6} tệp khác</Text>
           ) : null}
         </div>
       ) : null}
@@ -419,7 +419,7 @@ function AdminSongImportPageView() {
 
   const handleSubmit = async () => {
     if (audioFiles.length === 0) {
-      setError('Hay chon it nhat mot file audio de import.')
+      setError('Hãy chọn ít nhất một file audio để import.')
       return
     }
 
@@ -450,7 +450,7 @@ function AdminSongImportPageView() {
 
       setImportResult(payload)
       setNotice(
-        `Da xu ly ${payload?.summary?.totalAudioFiles || 0} file. Tao moi ${payload?.summary?.createdCount || 0}, bo qua ${payload?.summary?.skippedCount || 0}, loi ${payload?.summary?.errorCount || 0}.`,
+        `Đã xử lý ${payload?.summary?.totalAudioFiles || 0} file. Tạo mới ${payload?.summary?.createdCount || 0}, bỏ qua ${payload?.summary?.skippedCount || 0}, lỗi ${payload?.summary?.errorCount || 0}.`,
       )
     } catch (submitError) {
       if (submitError?.status === 401 || submitError?.status === 403) {
@@ -475,7 +475,7 @@ function AdminSongImportPageView() {
 
   return (
     <Layout style={shellStyles}>
-      <AdminDashboardHeader user={user} onMenuClick={handleHeaderMenuClick} />
+      <AdminDashboardHeader user={user} onMenuClick={handleHeaderMenuClick} />                                                                                      
 
       <Layout style={{ background: 'transparent' }}>
         <Layout style={{ padding: '0 24px 24px', background: 'transparent' }}>
@@ -507,13 +507,13 @@ function AdminSongImportPageView() {
                   Admin Import
                 </Text>
                 <Title level={2} style={{ margin: '10px 0 8px' }}>
-                  Import nhac hang loat
+                  Import nhạc hàng loạt
                 </Title>
                 <Paragraph style={{ color: colorTextSecondary, marginBottom: 0, maxWidth: 880 }}>
-                  Chon nhieu file audio va nhieu file anh. He thong uu tien ghep cover theo ten file, neu
-                  khong thay se fallback theo thu tu file cover. Ten nhac co the dung mau
-                  <code>Artist - Title.mp3</code> hoac slug nhu <code>artist-title-12345.mp3</code>.
-                  Neu file nhac chi co ten bai, hay nhap <code>default artist</code>.
+                  Chọn nhiều file audio và nhiều file ảnh. Hệ thống ưu tiên ghép cover theo tên file, nếu
+                  không thấy sẽ fallback theo thứ tự file cover. Tên nhạc có thể dùng mẫu
+                  <code>Artist - Title.mp3</code> hoặc slug như <code>artist-title-12345.mp3</code>.
+                  Nếu file nhạc chỉ có tên bài, hãy nhập <code>default artist</code>.
                 </Paragraph>
               </div>
 
@@ -523,7 +523,7 @@ function AdminSongImportPageView() {
                   onClick={() => window.location.assign(appPaths.admin.root)}
                   style={{ borderRadius: 12 }}
                 >
-                  Ve dashboard
+                  Về dashboard
                 </Button>
                 <Button
                   icon={<ReloadOutlined />}
@@ -538,7 +538,7 @@ function AdminSongImportPageView() {
                   }}
                   style={{ borderRadius: 12 }}
                 >
-                  Lam moi form
+                  Làm mới form
                 </Button>
               </div>
             </div>
@@ -555,8 +555,8 @@ function AdminSongImportPageView() {
               <div className="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
                 <div style={{ display: 'grid', gap: 16 }}>
                   <FileSelectionCard
-                    actionLabel="Chon file audio"
-                    description="Ho tro nhieu file mp3, wav, flac, m4a, aac, ogg."
+                    actionLabel="Chọn file audio"
+                    description="Hỗ trợ nhiều file mp3, wav, flac, m4a, aac, ogg."
                     files={audioFiles}
                     icon={<PlayCircleOutlined />}
                     inputAccept="audio/*"
@@ -568,8 +568,8 @@ function AdminSongImportPageView() {
                   />
 
                   <FileSelectionCard
-                    actionLabel="Chon file cover"
-                    description="Anh se duoc match theo ten file goc. Khong co cover van import duoc."
+                    actionLabel="Chọn file cover"
+                    description="Ảnh sẽ được match theo tên file gốc. Không có cover vẫn import được."
                     files={coverFiles}
                     icon={<FileImageOutlined />}
                     inputAccept="image/*"
@@ -594,13 +594,13 @@ function AdminSongImportPageView() {
                 >
                   <div>
                     <Text style={{ color: colorTextSecondary, textTransform: 'uppercase', fontSize: 11, letterSpacing: '0.14em' }}>
-                      Cai dat import
+                      Cài đặt import
                     </Text>
                     <Title level={4} style={{ margin: '10px 0 6px' }}>
-                      Metadata mac dinh
+                      Metadata mặc định
                     </Title>
                     <Text style={{ color: colorTextSecondary }}>
-                      Server se suy ra artist/title tu ten file neu co mau <code>Artist - Title</code> hoac
+                      Server sẽ suy ra artist/title từ tên file nếu có mẫu <code>Artist - Title</code> hoặc
                       slug <code>artist-title-12345</code>.
                     </Text>
                   </div>
@@ -613,7 +613,7 @@ function AdminSongImportPageView() {
                         setDefaultArtist(event.target.value)
                         setImportResult(null)
                       }}
-                      placeholder="Dung khi file audio chi co ten bai hat"
+                      placeholder="Dùng khi file audio chỉ có tên bài hát"
                       style={{ borderRadius: 14 }}
                     />
                   </label>
@@ -632,7 +632,7 @@ function AdminSongImportPageView() {
                   </label>
 
                   <label style={{ display: 'grid', gap: 8 }}>
-                    <Text strong>Sort order bat dau</Text>
+                    <Text strong>Sort order bắt đầu</Text>
                     <Input
                       value={sortOrderStart}
                       onChange={(event) => {
@@ -652,7 +652,7 @@ function AdminSongImportPageView() {
                       setImportResult(null)
                     }}
                   >
-                    Bo qua bai trung title + artist da ton tai
+                    Bỏ qua bài trùng title + artist đã tồn tại
                   </Checkbox>
 
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -660,19 +660,19 @@ function AdminSongImportPageView() {
                       {previewSummary.total} audio
                     </Tag>
                     <Tag color="blue" style={{ borderRadius: 999 }}>
-                      {previewSummary.ready} san sang
+                      {previewSummary.ready} sẵn sàng
                     </Tag>
                     <Tag color="success" style={{ borderRadius: 999 }}>
-                      {previewSummary.withCover} co cover
+                      {previewSummary.withCover} có cover
                     </Tag>
                     <Tag color="purple" style={{ borderRadius: 999 }}>
-                      {previewSummary.orderMatched} cover theo thu tu
+                      {previewSummary.orderMatched} cover theo thứ tự
                     </Tag>
                     <Tag color="warning" style={{ borderRadius: 999 }}>
-                      {previewSummary.missingCover} khong cover
+                      {previewSummary.missingCover} không cover
                     </Tag>
                     <Tag color={previewSummary.blocked > 0 ? 'error' : 'success'} style={{ borderRadius: 999 }}>
-                      {previewSummary.blocked} can xu ly
+                      {previewSummary.blocked} cần xử lý
                     </Tag>
                   </div>
 
@@ -685,7 +685,7 @@ function AdminSongImportPageView() {
                     onClick={() => void handleSubmit()}
                     style={{ borderRadius: 14, height: 46 }}
                   >
-                    Bat dau import
+                    Bắt đầu import
                   </Button>
                 </section>
               </div>
@@ -704,16 +704,16 @@ function AdminSongImportPageView() {
                       Preview import
                     </Title>
                     <Text style={{ color: colorTextSecondary }}>
-                      Xem nhanh title, artist, cover match va cac file dang thieu thong tin.
+                      Xem nhanh title, artist, cover match và các file đang thiếu thông tin.
                     </Text>
                   </div>
                   <Tag color="blue" style={{ borderRadius: 999, margin: 0 }}>
-                    {previewRows.length} dong
+                    {previewRows.length} dòng
                   </Tag>
                 </div>
 
                 {previewRows.length === 0 ? (
-                  <Empty description="Chua co file audio nao duoc chon" />
+                  <Empty description="Chưa có file audio nào được chọn" />
                 ) : (
                   <div style={{ display: 'grid', gap: 12 }}>
                     {previewRows.slice(0, 24).map((row) => (
@@ -736,7 +736,7 @@ function AdminSongImportPageView() {
                               {row.title || row.audioFilename}
                             </Title>
                             <Text style={{ color: colorTextSecondary }}>
-                              {row.artist || 'Chua xac dinh artist'}
+                              {row.artist || 'Chưa xác định artist'}
                             </Text>
                           </div>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -744,12 +744,12 @@ function AdminSongImportPageView() {
                             <Tag color={row.coverMatched ? 'success' : 'default'} style={{ borderRadius: 999, margin: 0 }}>
                               {row.coverMatched
                                 ? row.coverMatchStrategy === 'order'
-                                  ? 'Cover theo thu tu'
-                                  : 'Cover theo ten'
-                                : 'Khong cover'}
+                                  ? 'Cover theo thứ tự'
+                                  : 'Cover theo tên'
+                                : 'Không cover'}
                             </Tag>
                             <Tag color={row.errorMessage ? 'error' : 'processing'} style={{ borderRadius: 999, margin: 0 }}>
-                              {row.errorMessage ? 'Can xu ly' : 'San sang'}
+                              {row.errorMessage ? 'Cần xử lý' : 'Sẵn sàng'}
                             </Tag>
                           </div>
                         </div>
@@ -760,8 +760,8 @@ function AdminSongImportPageView() {
                           Cover:{' '}
                           {row.coverFilename ||
                             (row.coverMatchStrategy === 'order'
-                              ? 'Duoc gan theo thu tu file'
-                              : 'Khong tim thay cover phu hop')}
+                              ? 'Được gán theo thứ tự file'
+                              : 'Không tìm thấy cover phù hợp')}
                         </Text>
                         {row.errorMessage ? (
                           <Alert
@@ -775,7 +775,7 @@ function AdminSongImportPageView() {
                     ))}
                     {previewRows.length > 24 ? (
                       <Text style={{ color: colorTextSecondary }}>
-                        Dang hien 24 dong dau tien. Tong cong {previewRows.length} dong se duoc import.
+                        Đang hiển thị 24 dòng đầu tiên. Tổng cộng {previewRows.length} dòng sẽ được import.
                       </Text>
                     ) : null}
                   </div>
@@ -794,24 +794,24 @@ function AdminSongImportPageView() {
                   <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 16 }}>
                     <div>
                       <Title level={4} style={{ margin: 0 }}>
-                        Ket qua import
+                        Kết quả import
                       </Title>
                       <Text style={{ color: colorTextSecondary }}>
-                        Bao cao tung file sau khi server upload len Cloudinary va tao ban ghi `Song`.
+                        Báo cáo từng file sau khi server upload lên Cloudinary và tạo bản ghi `Song`.
                       </Text>
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                       <Tag color="success" style={{ borderRadius: 999, margin: 0 }}>
-                        Tao moi {importResult.summary?.createdCount || 0}
+                        Tạo mới {importResult.summary?.createdCount || 0}
                       </Tag>
                       <Tag color="processing" style={{ borderRadius: 999, margin: 0 }}>
-                        Cover theo thu tu {importResult.summary?.orderMatchedCoverCount || 0}
+                        Cover theo thứ tự {importResult.summary?.orderMatchedCoverCount || 0}
                       </Tag>
                       <Tag color="warning" style={{ borderRadius: 999, margin: 0 }}>
                         Bo qua {importResult.summary?.skippedCount || 0}
                       </Tag>
                       <Tag color="error" style={{ borderRadius: 999, margin: 0 }}>
-                        Loi {importResult.summary?.errorCount || 0}
+                        Lỗi {importResult.summary?.errorCount || 0}
                       </Tag>
                     </div>
                   </div>
@@ -832,7 +832,7 @@ function AdminSongImportPageView() {
                             <Title level={5} style={{ margin: 0 }}>
                               {item.title || item.audioFilename}
                             </Title>
-                            <Text style={{ color: colorTextSecondary }}>{item.artist || 'Khong co artist'}</Text>
+                            <Text style={{ color: colorTextSecondary }}>{item.artist || 'Không có artist'}</Text>
                           </div>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                             <Tag
@@ -850,9 +850,9 @@ function AdminSongImportPageView() {
                             <Tag color={item.coverMatched ? 'processing' : 'default'} style={{ borderRadius: 999, margin: 0 }}>
                               {item.coverMatched
                                 ? item.coverMatchStrategy === 'order'
-                                  ? 'Cover theo thu tu'
-                                  : 'Cover theo ten'
-                                : 'Khong cover'}
+                                  ? 'Cover theo thứ tự'
+                                  : 'Cover theo tên'
+                                : 'Không cover'}
                             </Tag>
                           </div>
                         </div>
@@ -862,16 +862,16 @@ function AdminSongImportPageView() {
                         <Text style={{ display: 'block', marginTop: 4, color: colorTextSecondary }}>
                           Cover:{' '}
                           {item.coverFilename ||
-                            (item.coverMatchStrategy === 'order' ? 'Gan theo thu tu file' : 'Khong co')}
+                            (item.coverMatchStrategy === 'order' ? 'Gán theo thứ tự file' : 'Không có')}
                         </Text>
                         <Text style={{ display: 'block', marginTop: 8 }}>
-                          {item.message || 'Khong co ghi chu.'}
+                          {item.message || 'Không có ghi chú.'}
                         </Text>
                       </article>
                     ))}
                     {(importResult.results || []).length > 40 ? (
                       <Text style={{ color: colorTextSecondary }}>
-                        Dang hien 40 ket qua dau tien. Tong cong {(importResult.results || []).length} dong.
+                        Đang hiển thị 40 kết quả đầu tiên. Tổng cộng {(importResult.results || []).length} dòng.
                       </Text>
                     ) : null}
                   </div>

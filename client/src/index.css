@@ -1373,3 +1373,30 @@ a {
     font-size: 15px;
   }
 }
+
+.tmusic-admin-shell .tmusic-admin-shell-menu .ant-menu-item {
+  height: 46px;
+  line-height: 46px;
+  margin: 6px 0;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.tmusic-admin-shell .tmusic-admin-shell-menu .ant-menu-item-selected {
+  background: linear-gradient(135deg, #ff6b57 0%, #29d4ff 100%);
+  color: #08101a;
+}
+
+.tmusic-admin-shell .tmusic-admin-shell-menu .ant-menu-item-selected .anticon {
+  color: #08101a;
+}
+
+.tmusic-admin-shell .tmusic-admin-shell-menu .ant-menu-item-disabled {
+  opacity: 0.38;
+}
+
+.tmusic-admin-shell .tmusic-admin-shell-menu .ant-menu-item-divider {
+  margin: 18px 0;
+  border-color: rgba(255, 255, 255, 0.08);
+}

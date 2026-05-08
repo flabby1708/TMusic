@@ -1,12 +1,12 @@
 import { requestAdminJson } from './adminAuthClient.js'
 
 const getUploadErrorMessage = (assetType) =>
-  assetType === 'audio' ? 'Tai file nhac len that bai.' : 'Tai anh len that bai.'
+    assetType === 'audio' ? 'Tải file nhạc lên thất bại.' : 'Tải ảnh lên thất bại.'
 
 const getInvalidResponseMessage = (assetType) =>
   assetType === 'audio'
     ? 'Cloudinary khong tra ve duong dan audio hop le.'
-    : 'Cloudinary khong tra ve duong dan anh hop le.'
+    : 'Cloudinary không trả về đường dẫn ảnh hợp lệ.'
 
 const toPositiveFiniteNumber = (value) => {
   const parsed = Number(value)

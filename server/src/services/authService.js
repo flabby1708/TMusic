@@ -216,6 +216,20 @@ const loginUserByRole = async (
   if (!user || !user.passwordHash) {
     return buildFailure('credentials', 'Email hoac mat khau khong dung.')
   }
+  if (user.accountStatus === 'suspended') {
+    return buildFailure(
+      'forbidden',
+      'Tai khoan cua ban da bi khoa. Vui long lien he quan tri vien.',
+    )
+  }
+
+  if (user.accountStatus === 'deleted') {
+    return buildFailure(
+      'forbidden',
+      'Tai khoan nay khong con kha dung.',
+    )
+  }
+
 
   const isPasswordValid = await bcrypt.compare(payload.password, user.passwordHash)
 

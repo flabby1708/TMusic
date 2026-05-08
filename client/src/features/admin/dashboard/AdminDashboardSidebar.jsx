@@ -54,7 +54,19 @@ function AdminDashboardSidebar({ activeResource, currentResource, onSelectResour
             paddingInline: 6,
           }}
           items={resourceMenuItems}
-          onClick={({ key }) => onSelectResource(String(key))}
+          onClick={({ key }) => {
+            if (key === 'users') {
+              window.location.assign('/admin/users')
+              return
+            }
+
+            if (key === 'artist-applications') {
+              window.location.assign('/admin/artist-applications')
+              return
+            }
+
+            onSelectResource(String(key))
+          }}
         />
       </div>
     </Sider>
