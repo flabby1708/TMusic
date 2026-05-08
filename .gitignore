@@ -1,5 +1,7 @@
 node_modules/
 
+.claude/worktrees/
+
 coverage/
 .env
 .env.local
