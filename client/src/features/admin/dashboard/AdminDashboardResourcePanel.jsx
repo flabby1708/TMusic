@@ -50,9 +50,10 @@ function AdminDashboardResourcePanel(props) {
           justifyContent: 'space-between',
           gap: 16,
           marginBottom: 20,
-          padding: 20,
+          padding: 22,
           borderRadius: 24,
-          background: 'rgba(255, 255, 255, 0.03)',
+          background:
+            'linear-gradient(135deg, rgba(255,107,87,0.1), rgba(41,212,255,0.06), rgba(255,255,255,0.03))',
           border: `1px solid ${colorBorderSecondary}`,
         }}
       >
@@ -141,9 +142,9 @@ function AdminDashboardResourcePanel(props) {
               alignItems: 'center',
               justifyContent: 'space-between',
               gap: 12,
-              padding: 16,
+              padding: 18,
               borderRadius: 22,
-              background: 'rgba(255, 255, 255, 0.025)',
+              background: 'rgba(255, 255, 255, 0.035)',
               border: `1px solid ${colorBorderSecondary}`,
             }}
           >

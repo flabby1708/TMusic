@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+﻿import { useEffect } from 'react'
 import { ConfigProvider } from 'antd'
 import { appPaths } from '../../../app/routes/paths.js'
 import AdminDashboardEditorPanel from '../../../features/admin/dashboard/AdminDashboardEditorPanel.jsx'
@@ -63,14 +63,15 @@ function AdminDashboardPage() {
       <ConfigProvider theme={adminTheme}>
         <div
           style={{
-            borderRadius: 28,
-            padding: 22,
-            background: 'rgba(255, 255, 255, 0.035)',
+            borderRadius: 32,
+            padding: 26,
+            background:
+              'linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.028))',
             border: '1px solid rgba(255, 255, 255, 0.08)',
-            boxShadow: '0 24px 70px rgba(0, 0, 0, 0.24)',
+            boxShadow: '0 24px 80px rgba(0, 0, 0, 0.26)',
           }}
         >
-          <div className="grid items-start gap-6 2xl:grid-cols-[minmax(0,1fr)_minmax(340px,420px)]">
+          <div className="grid items-start gap-6 2xl:grid-cols-[minmax(0,1fr)_minmax(360px,440px)]">
             <AdminDashboardResourcePanel
               activeResource={activeResource}
               currentResource={currentResource}

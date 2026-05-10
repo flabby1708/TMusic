@@ -1,11 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import {
   Alert,
   Button,
   Checkbox,
   Empty,
   Input,
-  Layout,
   Tag,
   Typography,
   theme,
@@ -19,13 +18,9 @@ import {
   ReloadOutlined,
 } from '@ant-design/icons'
 import { appPaths } from '../../../app/routes/paths.js'
+import { panelStyle } from '../dashboard/adminDashboardTheme'
 import { requestAdminJson } from '../adminAuthClient.js'
-import AdminDashboardHeader from '../dashboard/AdminDashboardHeader.jsx'
-import AdminDashboardLoadingState from '../dashboard/AdminDashboardLoadingState.jsx'
-import { panelStyle, shellStyles } from '../dashboard/adminDashboardTheme'
-import { useAdminSession } from '../useAdminSession.js'
 
-const { Content } = Layout
 const { Paragraph, Text, Title } = Typography
 
 const normalizeLookupToken = (value) =>
@@ -260,9 +255,23 @@ function FileSelectionCard(props) {
         background: 'rgba(255, 255, 255, 0.03)',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          gap: 12,
+        }}
+      >
         <div>
-          <Text style={{ color: colorTextSecondary, textTransform: 'uppercase', fontSize: 11, letterSpacing: '0.14em' }}>
+          <Text
+            style={{
+              color: colorTextSecondary,
+              textTransform: 'uppercase',
+              fontSize: 11,
+              letterSpacing: '0.14em',
+            }}
+          >
             {title}
           </Text>
           <Title level={4} style={{ margin: '10px 0 6px' }}>
@@ -341,7 +350,6 @@ function FileSelectionCard(props) {
 }
 
 function AdminSongImportPageView() {
-  const { user, loading: sessionLoading, isAuthenticated, logout } = useAdminSession()
   const [audioFiles, setAudioFiles] = useState([])
   const [coverFiles, setCoverFiles] = useState([])
   const [defaultArtist, setDefaultArtist] = useState('')
@@ -357,12 +365,6 @@ function AdminSongImportPageView() {
   const {
     token: { colorBgContainer, borderRadiusLG, colorBorderSecondary, colorTextSecondary },
   } = theme.useToken()
-
-  useEffect(() => {
-    if (!sessionLoading && !isAuthenticated) {
-      window.location.replace(appPaths.admin.login)
-    }
-  }, [isAuthenticated, sessionLoading])
 
   const coverAssignments = assignCoverFilesToAudio(audioFiles, coverFiles)
   const previewRows = audioFiles.map((file, index) => {
@@ -387,18 +389,6 @@ function AdminSongImportPageView() {
   const resetInput = (ref) => {
     if (ref.current) {
       ref.current.value = ''
-    }
-  }
-
-  const handleHeaderMenuClick = ({ key }) => {
-    if (key === 'home') {
-      window.location.assign(appPaths.home)
-      return
-    }
-
-    if (key === 'logout') {
-      logout()
-      window.location.assign(appPaths.admin.login)
     }
   }
 
@@ -454,7 +444,6 @@ function AdminSongImportPageView() {
       )
     } catch (submitError) {
       if (submitError?.status === 401 || submitError?.status === 403) {
-        logout()
         window.location.assign(appPaths.admin.login)
         return
       }
@@ -465,423 +454,441 @@ function AdminSongImportPageView() {
     }
   }
 
-  if (sessionLoading) {
-    return <AdminDashboardLoadingState />
-  }
-
-  if (!isAuthenticated) {
-    return null
-  }
-
   return (
-    <Layout style={shellStyles}>
-      <AdminDashboardHeader user={user} onMenuClick={handleHeaderMenuClick} />                                                                                      
+    <div
+      style={{
+        ...panelStyle({
+          colorBgContainer,
+          colorBorderSecondary,
+          borderRadiusLG,
+        }),
+        padding: 26,
+        borderRadius: 32,
+        background:
+          'linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.028))',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          gap: 16,
+          marginBottom: 24,
+        }}
+      >
+        <div>
+          <Text style={{ color: colorTextSecondary, textTransform: 'uppercase', letterSpacing: '0.16em', fontSize: 11 }}>
+            Admin Import
+          </Text>
+          <Title level={2} style={{ margin: '10px 0 8px' }}>
+            Import nhạc hàng loạt
+          </Title>
+          <Paragraph style={{ color: colorTextSecondary, marginBottom: 0, maxWidth: 880 }}>
+            Chọn nhiều file audio và nhiều file ảnh. Hệ thống ưu tiên ghép cover theo tên file, nếu không thấy
+            sẽ fallback theo thứ tự file cover. Tên nhạc có thể dùng mẫu <code>Artist - Title.mp3</code> hoặc slug
+            như <code>artist-title-12345.mp3</code>. Nếu file nhạc chỉ có tên bài, hãy nhập{' '}
+            <code>default artist</code>.
+          </Paragraph>
+        </div>
 
-      <Layout style={{ background: 'transparent' }}>
-        <Layout style={{ padding: '0 24px 24px', background: 'transparent' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+          <Button
+            icon={<ArrowLeftOutlined />}
+            onClick={() => window.location.assign(appPaths.admin.root)}
+            style={{ borderRadius: 12 }}
+          >
+            Về dashboard
+          </Button>
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={() => {
+              setAudioFiles([])
+              setCoverFiles([])
+              setImportResult(null)
+              setError('')
+              setNotice('')
+              resetInput(audioInputRef)
+              resetInput(coverInputRef)
+            }}
+            style={{ borderRadius: 12 }}
+          >
+            Làm mới form
+          </Button>
+        </div>
+      </div>
+
+      {error ? (
+        <Alert type="error" message={error} showIcon style={{ marginBottom: 16, borderRadius: 18 }} />
+      ) : null}
+
+      {notice ? (
+        <Alert type="success" message={notice} showIcon style={{ marginBottom: 16, borderRadius: 18 }} />
+      ) : null}
+
+      <div style={{ display: 'grid', gap: 20 }}>
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
+          <div style={{ display: 'grid', gap: 16 }}>
+            <FileSelectionCard
+              actionLabel="Chọn file audio"
+              description="Hỗ trợ nhiều file mp3, wav, flac, m4a, aac, ogg."
+              files={audioFiles}
+              icon={<PlayCircleOutlined />}
+              inputAccept="audio/*"
+              inputRef={audioInputRef}
+              title="Audio"
+              onClear={handleClearFiles(setAudioFiles, audioInputRef)}
+              onPick={() => audioInputRef.current?.click()}
+              onSelect={handleSelectFiles(setAudioFiles, audioInputRef)}
+            />
+
+            <FileSelectionCard
+              actionLabel="Chọn file cover"
+              description="Ảnh sẽ được match theo tên file gốc. Không có cover vẫn import được."
+              files={coverFiles}
+              icon={<FileImageOutlined />}
+              inputAccept="image/*"
+              inputRef={coverInputRef}
+              title="Cover"
+              onClear={handleClearFiles(setCoverFiles, coverInputRef)}
+              onPick={() => coverInputRef.current?.click()}
+              onSelect={handleSelectFiles(setCoverFiles, coverInputRef)}
+            />
+          </div>
+
+          <section
+            style={{
+              border: `1px solid ${colorBorderSecondary}`,
+              borderRadius: 22,
+              padding: 18,
+              background: 'rgba(255, 255, 255, 0.03)',
+              display: 'grid',
+              gap: 14,
+              alignContent: 'start',
+            }}
+          >
+            <div>
+              <Text style={{ color: colorTextSecondary, textTransform: 'uppercase', fontSize: 11, letterSpacing: '0.14em' }}>
+                Cài đặt import
+              </Text>
+              <Title level={4} style={{ margin: '10px 0 6px' }}>
+                Metadata mặc định
+              </Title>
+              <Text style={{ color: colorTextSecondary }}>
+                Server sẽ suy ra artist/title từ tên file nếu có mẫu <code>Artist - Title</code> hoặc slug{' '}
+                <code>artist-title-12345</code>.
+              </Text>
+            </div>
+
+            <label style={{ display: 'grid', gap: 8 }}>
+              <Text strong>Default artist</Text>
+              <Input
+                value={defaultArtist}
+                onChange={(event) => {
+                  setDefaultArtist(event.target.value)
+                  setImportResult(null)
+                }}
+                placeholder="Dùng khi file audio chỉ có tên bài hát"
+                style={{ borderRadius: 14 }}
+              />
+            </label>
+
+            <label style={{ display: 'grid', gap: 8 }}>
+              <Text strong>Mood</Text>
+              <Input
+                value={mood}
+                onChange={(event) => {
+                  setMood(event.target.value)
+                  setImportResult(null)
+                }}
+                placeholder="Chill"
+                style={{ borderRadius: 14 }}
+              />
+            </label>
+
+            <label style={{ display: 'grid', gap: 8 }}>
+              <Text strong>Sort order bắt đầu</Text>
+              <Input
+                value={sortOrderStart}
+                onChange={(event) => {
+                  setSortOrderStart(event.target.value)
+                  setImportResult(null)
+                }}
+                inputMode="numeric"
+                placeholder="0"
+                style={{ borderRadius: 14 }}
+              />
+            </label>
+
+            <Checkbox
+              checked={skipDuplicates}
+              onChange={(event) => {
+                setSkipDuplicates(event.target.checked)
+                setImportResult(null)
+              }}
+            >
+              Bỏ qua bài trùng title + artist đã tồn tại
+            </Checkbox>
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              <Tag color="processing" style={{ borderRadius: 999 }}>
+                {previewSummary.total} audio
+              </Tag>
+              <Tag color="blue" style={{ borderRadius: 999 }}>
+                {previewSummary.ready} sẵn sàng
+              </Tag>
+              <Tag color="success" style={{ borderRadius: 999 }}>
+                {previewSummary.withCover} có cover
+              </Tag>
+              <Tag color="purple" style={{ borderRadius: 999 }}>
+                {previewSummary.orderMatched} cover theo thứ tự
+              </Tag>
+              <Tag color="warning" style={{ borderRadius: 999 }}>
+                {previewSummary.missingCover} không cover
+              </Tag>
+              <Tag color={previewSummary.blocked > 0 ? 'error' : 'success'} style={{ borderRadius: 999 }}>
+                {previewSummary.blocked} cần xử lý
+              </Tag>
+            </div>
+
+            <Button
+              type="primary"
+              size="large"
+              icon={<CloudUploadOutlined />}
+              loading={submitting}
+              disabled={audioFiles.length === 0}
+              onClick={() => void handleSubmit()}
+              style={{ borderRadius: 14, height: 46 }}
+            >
+              Bắt đầu import
+            </Button>
+          </section>
+        </div>
+
+        <section
+          style={{
+            border: `1px solid ${colorBorderSecondary}`,
+            borderRadius: 22,
+            padding: 18,
+            background: 'rgba(255, 255, 255, 0.03)',
+          }}
+        >
           <div
             style={{
-              ...panelStyle({
-                colorBgContainer,
-                colorBorderSecondary,
-                borderRadiusLG,
-              }),
-              marginTop: 20,
-              padding: 24,
-              background:
-                'linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.015))',
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+              marginBottom: 16,
+            }}
+          >
+            <div>
+              <Title level={4} style={{ margin: 0 }}>
+                Preview import
+              </Title>
+              <Text style={{ color: colorTextSecondary }}>
+                Xem nhanh title, artist, cover match và các file đang thiếu thông tin.
+              </Text>
+            </div>
+            <Tag color="blue" style={{ borderRadius: 999, margin: 0 }}>
+              {previewRows.length} dòng
+            </Tag>
+          </div>
+
+          {previewRows.length === 0 ? (
+            <Empty description="Chưa có file audio nào được chọn" />
+          ) : (
+            <div style={{ display: 'grid', gap: 12 }}>
+              {previewRows.slice(0, 24).map((row) => (
+                <article
+                  key={row.key}
+                  style={{
+                    borderRadius: 18,
+                    padding: 14,
+                    background: row.errorMessage
+                      ? 'rgba(255, 107, 87, 0.08)'
+                      : 'rgba(255, 255, 255, 0.035)',
+                    border: `1px solid ${
+                      row.errorMessage ? 'rgba(255, 107, 87, 0.22)' : colorBorderSecondary
+                    }`,
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 10,
+                    }}
+                  >
+                    <div>
+                      <Title level={5} style={{ margin: 0 }}>
+                        {row.title || row.audioFilename}
+                      </Title>
+                      <Text style={{ color: colorTextSecondary }}>
+                        {row.artist || 'Chưa xác định artist'}
+                      </Text>
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                      <Tag style={{ borderRadius: 999, margin: 0 }}>Sort {row.sortOrder}</Tag>
+                      <Tag color={row.coverMatched ? 'success' : 'default'} style={{ borderRadius: 999, margin: 0 }}>
+                        {row.coverMatched
+                          ? row.coverMatchStrategy === 'order'
+                            ? 'Cover theo thứ tự'
+                            : 'Cover theo tên'
+                          : 'Không cover'}
+                      </Tag>
+                      <Tag color={row.errorMessage ? 'error' : 'processing'} style={{ borderRadius: 999, margin: 0 }}>
+                        {row.errorMessage ? 'Cần xử lý' : 'Sẵn sàng'}
+                      </Tag>
+                    </div>
+                  </div>
+                  <Text style={{ display: 'block', marginTop: 10, color: colorTextSecondary }}>
+                    Audio: {row.audioFilename}
+                  </Text>
+                  <Text style={{ display: 'block', marginTop: 4, color: colorTextSecondary }}>
+                    Cover:{' '}
+                    {row.coverFilename ||
+                      (row.coverMatchStrategy === 'order'
+                        ? 'Được gán theo thứ tự file'
+                        : 'Không tìm thấy cover phù hợp')}
+                  </Text>
+                  {row.errorMessage ? (
+                    <Alert
+                      type="warning"
+                      message={row.errorMessage}
+                      showIcon
+                      style={{ marginTop: 12, borderRadius: 14 }}
+                    />
+                  ) : null}
+                </article>
+              ))}
+              {previewRows.length > 24 ? (
+                <Text style={{ color: colorTextSecondary }}>
+                  Đang hiển thị 24 dòng đầu tiên. Tổng cộng {previewRows.length} dòng sẽ được import.
+                </Text>
+              ) : null}
+            </div>
+          )}
+        </section>
+
+        {importResult ? (
+          <section
+            style={{
+              border: `1px solid ${colorBorderSecondary}`,
+              borderRadius: 22,
+              padding: 18,
+              background: 'rgba(255, 255, 255, 0.03)',
             }}
           >
             <div
               style={{
                 display: 'flex',
                 flexWrap: 'wrap',
-                alignItems: 'flex-start',
+                alignItems: 'center',
                 justifyContent: 'space-between',
-                gap: 16,
-                marginBottom: 24,
+                gap: 12,
+                marginBottom: 16,
               }}
             >
               <div>
-                <Text style={{ color: colorTextSecondary, textTransform: 'uppercase', letterSpacing: '0.16em', fontSize: 11 }}>
-                  Admin Import
-                </Text>
-                <Title level={2} style={{ margin: '10px 0 8px' }}>
-                  Import nhạc hàng loạt
+                <Title level={4} style={{ margin: 0 }}>
+                  Kết quả import
                 </Title>
-                <Paragraph style={{ color: colorTextSecondary, marginBottom: 0, maxWidth: 880 }}>
-                  Chọn nhiều file audio và nhiều file ảnh. Hệ thống ưu tiên ghép cover theo tên file, nếu
-                  không thấy sẽ fallback theo thứ tự file cover. Tên nhạc có thể dùng mẫu
-                  <code>Artist - Title.mp3</code> hoặc slug như <code>artist-title-12345.mp3</code>.
-                  Nếu file nhạc chỉ có tên bài, hãy nhập <code>default artist</code>.
-                </Paragraph>
+                <Text style={{ color: colorTextSecondary }}>
+                  Báo cáo từng file sau khi server upload lên Cloudinary và tạo bản ghi Song.
+                </Text>
               </div>
-
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-                <Button
-                  icon={<ArrowLeftOutlined />}
-                  onClick={() => window.location.assign(appPaths.admin.root)}
-                  style={{ borderRadius: 12 }}
-                >
-                  Về dashboard
-                </Button>
-                <Button
-                  icon={<ReloadOutlined />}
-                  onClick={() => {
-                    setAudioFiles([])
-                    setCoverFiles([])
-                    setImportResult(null)
-                    setError('')
-                    setNotice('')
-                    resetInput(audioInputRef)
-                    resetInput(coverInputRef)
-                  }}
-                  style={{ borderRadius: 12 }}
-                >
-                  Làm mới form
-                </Button>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                <Tag color="success" style={{ borderRadius: 999, margin: 0 }}>
+                  Tạo mới {importResult.summary?.createdCount || 0}
+                </Tag>
+                <Tag color="processing" style={{ borderRadius: 999, margin: 0 }}>
+                  Cover theo thứ tự {importResult.summary?.orderMatchedCoverCount || 0}
+                </Tag>
+                <Tag color="warning" style={{ borderRadius: 999, margin: 0 }}>
+                  Bỏ qua {importResult.summary?.skippedCount || 0}
+                </Tag>
+                <Tag color="error" style={{ borderRadius: 999, margin: 0 }}>
+                  Lỗi {importResult.summary?.errorCount || 0}
+                </Tag>
               </div>
             </div>
 
-            {error ? (
-              <Alert type="error" message={error} showIcon style={{ marginBottom: 16, borderRadius: 18 }} />
-            ) : null}
-
-            {notice ? (
-              <Alert type="success" message={notice} showIcon style={{ marginBottom: 16, borderRadius: 18 }} />
-            ) : null}
-
-            <Content style={{ display: 'grid', gap: 20 }}>
-              <div className="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
-                <div style={{ display: 'grid', gap: 16 }}>
-                  <FileSelectionCard
-                    actionLabel="Chọn file audio"
-                    description="Hỗ trợ nhiều file mp3, wav, flac, m4a, aac, ogg."
-                    files={audioFiles}
-                    icon={<PlayCircleOutlined />}
-                    inputAccept="audio/*"
-                    inputRef={audioInputRef}
-                    title="Audio"
-                    onClear={handleClearFiles(setAudioFiles, audioInputRef)}
-                    onPick={() => audioInputRef.current?.click()}
-                    onSelect={handleSelectFiles(setAudioFiles, audioInputRef)}
-                  />
-
-                  <FileSelectionCard
-                    actionLabel="Chọn file cover"
-                    description="Ảnh sẽ được match theo tên file gốc. Không có cover vẫn import được."
-                    files={coverFiles}
-                    icon={<FileImageOutlined />}
-                    inputAccept="image/*"
-                    inputRef={coverInputRef}
-                    title="Cover"
-                    onClear={handleClearFiles(setCoverFiles, coverInputRef)}
-                    onPick={() => coverInputRef.current?.click()}
-                    onSelect={handleSelectFiles(setCoverFiles, coverInputRef)}
-                  />
-                </div>
-
-                <section
+            <div style={{ display: 'grid', gap: 12 }}>
+              {(importResult.results || []).slice(0, 40).map((item) => (
+                <article
+                  key={`${item.index}-${item.audioFilename}`}
                   style={{
+                    borderRadius: 18,
+                    padding: 14,
+                    background: 'rgba(255, 255, 255, 0.035)',
                     border: `1px solid ${colorBorderSecondary}`,
-                    borderRadius: 22,
-                    padding: 18,
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    display: 'grid',
-                    gap: 14,
-                    alignContent: 'start',
                   }}
                 >
-                  <div>
-                    <Text style={{ color: colorTextSecondary, textTransform: 'uppercase', fontSize: 11, letterSpacing: '0.14em' }}>
-                      Cài đặt import
-                    </Text>
-                    <Title level={4} style={{ margin: '10px 0 6px' }}>
-                      Metadata mặc định
-                    </Title>
-                    <Text style={{ color: colorTextSecondary }}>
-                      Server sẽ suy ra artist/title từ tên file nếu có mẫu <code>Artist - Title</code> hoặc
-                      slug <code>artist-title-12345</code>.
-                    </Text>
-                  </div>
-
-                  <label style={{ display: 'grid', gap: 8 }}>
-                    <Text strong>Default artist</Text>
-                    <Input
-                      value={defaultArtist}
-                      onChange={(event) => {
-                        setDefaultArtist(event.target.value)
-                        setImportResult(null)
-                      }}
-                      placeholder="Dùng khi file audio chỉ có tên bài hát"
-                      style={{ borderRadius: 14 }}
-                    />
-                  </label>
-
-                  <label style={{ display: 'grid', gap: 8 }}>
-                    <Text strong>Mood</Text>
-                    <Input
-                      value={mood}
-                      onChange={(event) => {
-                        setMood(event.target.value)
-                        setImportResult(null)
-                      }}
-                      placeholder="Chill"
-                      style={{ borderRadius: 14 }}
-                    />
-                  </label>
-
-                  <label style={{ display: 'grid', gap: 8 }}>
-                    <Text strong>Sort order bắt đầu</Text>
-                    <Input
-                      value={sortOrderStart}
-                      onChange={(event) => {
-                        setSortOrderStart(event.target.value)
-                        setImportResult(null)
-                      }}
-                      inputMode="numeric"
-                      placeholder="0"
-                      style={{ borderRadius: 14 }}
-                    />
-                  </label>
-
-                  <Checkbox
-                    checked={skipDuplicates}
-                    onChange={(event) => {
-                      setSkipDuplicates(event.target.checked)
-                      setImportResult(null)
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 10,
                     }}
                   >
-                    Bỏ qua bài trùng title + artist đã tồn tại
-                  </Checkbox>
-
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                    <Tag color="processing" style={{ borderRadius: 999 }}>
-                      {previewSummary.total} audio
-                    </Tag>
-                    <Tag color="blue" style={{ borderRadius: 999 }}>
-                      {previewSummary.ready} sẵn sàng
-                    </Tag>
-                    <Tag color="success" style={{ borderRadius: 999 }}>
-                      {previewSummary.withCover} có cover
-                    </Tag>
-                    <Tag color="purple" style={{ borderRadius: 999 }}>
-                      {previewSummary.orderMatched} cover theo thứ tự
-                    </Tag>
-                    <Tag color="warning" style={{ borderRadius: 999 }}>
-                      {previewSummary.missingCover} không cover
-                    </Tag>
-                    <Tag color={previewSummary.blocked > 0 ? 'error' : 'success'} style={{ borderRadius: 999 }}>
-                      {previewSummary.blocked} cần xử lý
-                    </Tag>
-                  </div>
-
-                  <Button
-                    type="primary"
-                    size="large"
-                    icon={<CloudUploadOutlined />}
-                    loading={submitting}
-                    disabled={audioFiles.length === 0}
-                    onClick={() => void handleSubmit()}
-                    style={{ borderRadius: 14, height: 46 }}
-                  >
-                    Bắt đầu import
-                  </Button>
-                </section>
-              </div>
-
-              <section
-                style={{
-                  border: `1px solid ${colorBorderSecondary}`,
-                  borderRadius: 22,
-                  padding: 18,
-                  background: 'rgba(255, 255, 255, 0.03)',
-                }}
-              >
-                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 16 }}>
-                  <div>
-                    <Title level={4} style={{ margin: 0 }}>
-                      Preview import
-                    </Title>
-                    <Text style={{ color: colorTextSecondary }}>
-                      Xem nhanh title, artist, cover match và các file đang thiếu thông tin.
-                    </Text>
-                  </div>
-                  <Tag color="blue" style={{ borderRadius: 999, margin: 0 }}>
-                    {previewRows.length} dòng
-                  </Tag>
-                </div>
-
-                {previewRows.length === 0 ? (
-                  <Empty description="Chưa có file audio nào được chọn" />
-                ) : (
-                  <div style={{ display: 'grid', gap: 12 }}>
-                    {previewRows.slice(0, 24).map((row) => (
-                      <article
-                        key={row.key}
-                        style={{
-                          borderRadius: 18,
-                          padding: 14,
-                          background: row.errorMessage
-                            ? 'rgba(255, 107, 87, 0.08)'
-                            : 'rgba(255, 255, 255, 0.035)',
-                          border: `1px solid ${
-                            row.errorMessage ? 'rgba(255, 107, 87, 0.22)' : colorBorderSecondary
-                          }`,
-                        }}
-                      >
-                        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                          <div>
-                            <Title level={5} style={{ margin: 0 }}>
-                              {row.title || row.audioFilename}
-                            </Title>
-                            <Text style={{ color: colorTextSecondary }}>
-                              {row.artist || 'Chưa xác định artist'}
-                            </Text>
-                          </div>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                            <Tag style={{ borderRadius: 999, margin: 0 }}>Sort {row.sortOrder}</Tag>
-                            <Tag color={row.coverMatched ? 'success' : 'default'} style={{ borderRadius: 999, margin: 0 }}>
-                              {row.coverMatched
-                                ? row.coverMatchStrategy === 'order'
-                                  ? 'Cover theo thứ tự'
-                                  : 'Cover theo tên'
-                                : 'Không cover'}
-                            </Tag>
-                            <Tag color={row.errorMessage ? 'error' : 'processing'} style={{ borderRadius: 999, margin: 0 }}>
-                              {row.errorMessage ? 'Cần xử lý' : 'Sẵn sàng'}
-                            </Tag>
-                          </div>
-                        </div>
-                        <Text style={{ display: 'block', marginTop: 10, color: colorTextSecondary }}>
-                          Audio: {row.audioFilename}
-                        </Text>
-                        <Text style={{ display: 'block', marginTop: 4, color: colorTextSecondary }}>
-                          Cover:{' '}
-                          {row.coverFilename ||
-                            (row.coverMatchStrategy === 'order'
-                              ? 'Được gán theo thứ tự file'
-                              : 'Không tìm thấy cover phù hợp')}
-                        </Text>
-                        {row.errorMessage ? (
-                          <Alert
-                            type="warning"
-                            message={row.errorMessage}
-                            showIcon
-                            style={{ marginTop: 12, borderRadius: 14 }}
-                          />
-                        ) : null}
-                      </article>
-                    ))}
-                    {previewRows.length > 24 ? (
-                      <Text style={{ color: colorTextSecondary }}>
-                        Đang hiển thị 24 dòng đầu tiên. Tổng cộng {previewRows.length} dòng sẽ được import.
-                      </Text>
-                    ) : null}
-                  </div>
-                )}
-              </section>
-
-              {importResult ? (
-                <section
-                  style={{
-                    border: `1px solid ${colorBorderSecondary}`,
-                    borderRadius: 22,
-                    padding: 18,
-                    background: 'rgba(255, 255, 255, 0.03)',
-                  }}
-                >
-                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 16 }}>
                     <div>
-                      <Title level={4} style={{ margin: 0 }}>
-                        Kết quả import
+                      <Title level={5} style={{ margin: 0 }}>
+                        {item.title || item.audioFilename}
                       </Title>
-                      <Text style={{ color: colorTextSecondary }}>
-                        Báo cáo từng file sau khi server upload lên Cloudinary và tạo bản ghi `Song`.
-                      </Text>
+                      <Text style={{ color: colorTextSecondary }}>{item.artist || 'Không có artist'}</Text>
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                      <Tag color="success" style={{ borderRadius: 999, margin: 0 }}>
-                        Tạo mới {importResult.summary?.createdCount || 0}
+                      <Tag
+                        color={
+                          item.status === 'created'
+                            ? 'success'
+                            : item.status === 'skipped'
+                              ? 'warning'
+                              : 'error'
+                        }
+                        style={{ borderRadius: 999, margin: 0 }}
+                      >
+                        {item.status}
                       </Tag>
-                      <Tag color="processing" style={{ borderRadius: 999, margin: 0 }}>
-                        Cover theo thứ tự {importResult.summary?.orderMatchedCoverCount || 0}
-                      </Tag>
-                      <Tag color="warning" style={{ borderRadius: 999, margin: 0 }}>
-                        Bo qua {importResult.summary?.skippedCount || 0}
-                      </Tag>
-                      <Tag color="error" style={{ borderRadius: 999, margin: 0 }}>
-                        Lỗi {importResult.summary?.errorCount || 0}
+                      <Tag color={item.coverMatched ? 'processing' : 'default'} style={{ borderRadius: 999, margin: 0 }}>
+                        {item.coverMatched
+                          ? item.coverMatchStrategy === 'order'
+                            ? 'Cover theo thứ tự'
+                            : 'Cover theo tên'
+                          : 'Không cover'}
                       </Tag>
                     </div>
                   </div>
-
-                  <div style={{ display: 'grid', gap: 12 }}>
-                    {(importResult.results || []).slice(0, 40).map((item) => (
-                      <article
-                        key={`${item.index}-${item.audioFilename}`}
-                        style={{
-                          borderRadius: 18,
-                          padding: 14,
-                          background: 'rgba(255, 255, 255, 0.035)',
-                          border: `1px solid ${colorBorderSecondary}`,
-                        }}
-                      >
-                        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                          <div>
-                            <Title level={5} style={{ margin: 0 }}>
-                              {item.title || item.audioFilename}
-                            </Title>
-                            <Text style={{ color: colorTextSecondary }}>{item.artist || 'Không có artist'}</Text>
-                          </div>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                            <Tag
-                              color={
-                                item.status === 'created'
-                                  ? 'success'
-                                  : item.status === 'skipped'
-                                    ? 'warning'
-                                    : 'error'
-                              }
-                              style={{ borderRadius: 999, margin: 0 }}
-                            >
-                              {item.status}
-                            </Tag>
-                            <Tag color={item.coverMatched ? 'processing' : 'default'} style={{ borderRadius: 999, margin: 0 }}>
-                              {item.coverMatched
-                                ? item.coverMatchStrategy === 'order'
-                                  ? 'Cover theo thứ tự'
-                                  : 'Cover theo tên'
-                                : 'Không cover'}
-                            </Tag>
-                          </div>
-                        </div>
-                        <Text style={{ display: 'block', marginTop: 10, color: colorTextSecondary }}>
-                          Audio: {item.audioFilename}
-                        </Text>
-                        <Text style={{ display: 'block', marginTop: 4, color: colorTextSecondary }}>
-                          Cover:{' '}
-                          {item.coverFilename ||
-                            (item.coverMatchStrategy === 'order' ? 'Gán theo thứ tự file' : 'Không có')}
-                        </Text>
-                        <Text style={{ display: 'block', marginTop: 8 }}>
-                          {item.message || 'Không có ghi chú.'}
-                        </Text>
-                      </article>
-                    ))}
-                    {(importResult.results || []).length > 40 ? (
-                      <Text style={{ color: colorTextSecondary }}>
-                        Đang hiển thị 40 kết quả đầu tiên. Tổng cộng {(importResult.results || []).length} dòng.
-                      </Text>
-                    ) : null}
-                  </div>
-                </section>
+                  <Text style={{ display: 'block', marginTop: 10, color: colorTextSecondary }}>
+                    Audio: {item.audioFilename}
+                  </Text>
+                  <Text style={{ display: 'block', marginTop: 4, color: colorTextSecondary }}>
+                    Cover:{' '}
+                    {item.coverFilename ||
+                      (item.coverMatchStrategy === 'order' ? 'Gán theo thứ tự file' : 'Không có')}
+                  </Text>
+                  <Text style={{ display: 'block', marginTop: 8 }}>
+                    {item.message || 'Không có ghi chú.'}
+                  </Text>
+                </article>
+              ))}
+              {(importResult.results || []).length > 40 ? (
+                <Text style={{ color: colorTextSecondary }}>
+                  Đang hiển thị 40 kết quả đầu tiên. Tổng cộng {(importResult.results || []).length} dòng.
+                </Text>
               ) : null}
-            </Content>
-          </div>
-        </Layout>
-      </Layout>
-    </Layout>
+            </div>
+          </section>
+        ) : null}
+      </div>
+    </div>
   )
 }
 

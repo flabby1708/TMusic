@@ -56,12 +56,12 @@ function AdminDashboardEditorPanel(props) {
             colorBorderSecondary,
             borderRadiusLG,
           }),
-          padding: 22,
+          padding: 24,
           height: '100%',
           position: 'sticky',
           top: 20,
           background:
-            'linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02))',
+            'linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.025))',
         }}
       >
         <div
