@@ -1,12 +1,12 @@
 import 'antd/dist/reset.css'
 import { Navigate, Route, Routes } from 'react-router-dom'
-import { appPaths } from './app/routes/paths.js'
-import AdminArtistApplicationsPage from './pages/admin/AdminArtistApplicationsPage/index.jsx'
-import AdminDashboardPage from './pages/admin/AdminDashboardPage/index.jsx'
-import AdminImportPage from './pages/admin/AdminImportPage/index.jsx'
-import AdminUsersPage from './pages/admin/AdminUsersPage/index.jsx'
+import { appPaths } from '../paths.js'
+import AdminArtistApplicationsPage from '../../../pages/admin/AdminArtistApplicationsPage/index.jsx'
+import AdminDashboardPage from '../../../pages/admin/AdminDashboardPage/index.jsx'
+import AdminImportPage from '../../../pages/admin/AdminImportPage/index.jsx'
+import AdminUsersPage from '../../../pages/admin/AdminUsersPage/index.jsx'
 
-function AdminPage() {
+function AdminRoutes() {
   return (
     <Routes>
       <Route index element={<AdminDashboardPage />} />
@@ -18,4 +18,4 @@ function AdminPage() {
   )
 }
 
-export default AdminPage
+export default AdminRoutes

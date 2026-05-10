@@ -1,5 +1,7 @@
 export const appPaths = {
   home: '/',
+  section: '/section/:sectionKey',
+  search: '/search',
   support: '/support',
   supportArticle: '/support/:slug',
   footer: {

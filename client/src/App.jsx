@@ -7,13 +7,15 @@ import {
   ArtistProtectedRoute,
   UserGuestRoute,
 } from './app/routes/routeGuards.jsx'
-import AdminPage from './AdminPage.jsx'
+import AdminRoutes from './app/routes/admin/AdminRoutes.jsx'
 import ArtistDashboardPage from './pages/client/ArtistDashboardPage/index.jsx'
 import ArtistLoginPage from './pages/client/ArtistLoginPage/index.jsx'
 import ArtistPortalPage from './pages/client/ArtistPortalPage/index.jsx'
 import ArtistRegisterPage from './pages/client/ArtistRegisterPage/index.jsx'
 import AuthCallbackPage from './pages/client/AuthCallbackPage/index.jsx'
 import HomePage from './pages/client/HomePage/index.jsx'
+import HomeSectionPage from './features/home/pages/HomeSectionPage.jsx'
+import SearchPage from './features/home/pages/SearchPage.jsx'
 import LoginPage from './pages/client/LoginPage/index.jsx'
 import RegisterPage from './pages/client/RegisterPage/index.jsx'
 import SupportPage from './pages/client/SupportPage/index.jsx'
@@ -32,6 +34,8 @@ function App() {
   return (
     <Routes>
       <Route path={appPaths.home} element={<HomePage />} />
+      <Route path={appPaths.section} element={<HomeSectionPage />} />
+      <Route path={appPaths.search} element={<SearchPage />} />
       <Route path={appPaths.support} element={<SupportPage />} />
       <Route path={appPaths.supportArticle} element={<SupportArticleRoute />} />
       {footerPageRoutes.map((route) => (
@@ -63,8 +67,8 @@ function App() {
       </Route>
 
       <Route element={<AdminProtectedRoute />}>
-        <Route path={appPaths.admin.root} element={<AdminPage />} />
-        <Route path={`${appPaths.admin.root}/*`} element={<AdminPage />} />
+        <Route path={appPaths.admin.root} element={<AdminRoutes />} />
+        <Route path={`${appPaths.admin.root}/*`} element={<AdminRoutes />} />
       </Route>
 
       <Route path="*" element={<Navigate to={appPaths.home} replace />} />

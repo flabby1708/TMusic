@@ -1,8 +1,8 @@
-import ArtistAuthShellPage from '../components/ArtistAuthShellPage.jsx'
+import ArtistAuthShell from '../../../features/artist/ArtistAuthShell.jsx'
 import { artistLoginPageContent } from '../../../features/artist/artistPageContent.js'
 
 function ArtistLoginPage() {
-  return <ArtistAuthShellPage content={artistLoginPageContent} />
+  return <ArtistAuthShell {...artistLoginPageContent} />
 }
 
 export default ArtistLoginPage

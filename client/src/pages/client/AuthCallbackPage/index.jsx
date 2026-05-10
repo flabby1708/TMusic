@@ -1,5 +1,5 @@
-import AuthCallbackStatus from './components/AuthCallbackStatus.jsx'
-import { useAuthCallbackSession } from './useAuthCallbackSession.js'
+import AuthCallbackStatus from '../../../features/auth/callback/AuthCallbackStatus.jsx'
+import { useAuthCallbackSession } from '../../../features/auth/callback/useAuthCallbackSession.js'
 
 function AuthCallbackPage() {
   const { error, message } = useAuthCallbackSession()

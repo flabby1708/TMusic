@@ -1,8 +1,8 @@
-import AuthShellPage from '../components/AuthShellPage.jsx'
+import AuthPageShell from '../../../features/auth/AuthPageShell.jsx'
 import { loginPageContent } from '../../../features/auth/authPageContent.js'
 
 function LoginPage() {
-  return <AuthShellPage content={loginPageContent} />
+  return <AuthPageShell {...loginPageContent} />
 }
 
 export default LoginPage
