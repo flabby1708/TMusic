@@ -1,0 +1,45 @@
+import { useEffect } from 'react'
+import {
+  decodeSocialCallbackUser,
+  storeAuthSession,
+} from '../authClient.js'
+
+export function useAuthCallbackSession() {
+  const params = new URLSearchParams(window.location.search)
+  const token = params.get('token') || ''
+  const provider = params.get('provider') || ''
+  const encodedUser = params.get('user') || ''
+  const authError = params.get('error') || ''
+  const user = decodeSocialCallbackUser(encodedUser)
+  const error =
+    authError || (!token || !user ? 'Không nhận được phiên đăng nhập hợp lệ từ nhà cung cấp.' : '')
+  const message = error
+    ? ''
+    : provider
+      ? `Đăng nhập bằng ${provider} thành công. Đang chuyển về trang chủ...`
+      : 'Đăng nhập thành công. Đang chuyển về trang chủ...'
+
+  useEffect(() => {
+    if (error) {
+      return
+    }
+
+    storeAuthSession({
+      token,
+      user,
+    })
+
+    const timeoutId = window.setTimeout(() => {
+      window.location.replace('/')
+    }, 700)
+
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
+  }, [error, token, user])
+
+  return {
+    error,
+    message,
+  }
+}

@@ -137,7 +137,7 @@ function AuthPageShell({
   }
 
   return (
-    <div className="auth-page">
+    <div className="auth-page auth-cute-theme">
       <div className="auth-shell">
         <a href="/" className="auth-mark" aria-label="TMusic home">
           <SpotifyIcon />

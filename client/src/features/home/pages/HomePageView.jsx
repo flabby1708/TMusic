@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { A11y } from 'swiper/modules'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import {
@@ -66,11 +66,10 @@ const premiumHoverPlans = [
 
 function SectionMoreLink({ href }) {
   return (
-    <a
+    <Link
       draggable="false"
       className="FOjXJqlCvEIMzJBF mbwNxmJkaTgwmZSP section-more-link hidden sm:flex"
-      href={href}
-      onClick={(event) => event.preventDefault()}
+      to={href}
     >
       <span
         className="e-10310-text encore-text-body-small-bold encore-internal-color-text-subdued"
@@ -78,7 +77,7 @@ function SectionMoreLink({ href }) {
       >
         Hiện tất cả
       </span>
-    </a>
+    </Link>
   )
 }
 
@@ -189,30 +188,30 @@ function getShuffleTooltip(enabled) {
 
 function getTrackPlaybackTooltip(track, activeTrack, playing, isAuthenticated) {
   if (!track?.audioUrl) {
-    return `Bai ${track?.title || ''} chua co audio`
+    return `Bài ${track?.title || ''} chưa có audio`
   }
 
   if (!isAuthenticated) {
-    return `Dang nhap de phat ${track.title}`
+    return `Đăng nhập để phát ${track.title}`
   }
 
   if (activeTrack?.id === track.id && playing) {
-    return `Tam dung ${track.title}`
+    return `Tạm dừng ${track.title}`
   }
 
-  return `Phat ${track.title}`
+  return `Phát ${track.title}`
 }
 
 function getPlayerPlaybackTooltip(playing, track) {
   if (!track) {
-    return 'Phat'
+    return 'Phát'
   }
 
-  return playing ? `Tam dung ${track.title}` : `Phat ${track.title}`
+  return playing ? `Tạm dừng ${track.title}` : `Phát ${track.title}`
 }
 
 function getMuteTooltip(volume) {
-  return volume === 0 ? 'Bat am thanh' : 'Tat am thanh'
+  return volume === 0 ? 'Bật âm thanh' : 'Tắt âm thanh'
 }
 
 function getTrendingNavigationState(swiper) {
@@ -244,6 +243,7 @@ function PlayerIconButton({ active = false, className = '', children, title, 'ar
 }
 
 function HomePage() {
+  const navigate = useNavigate()
   const artistCarouselRef = useRef(null)
   const audioRef = useRef(null)
   const lastVolumeRef = useRef(72)
@@ -256,6 +256,7 @@ function HomePage() {
   const { user, loading: authLoading, isAuthenticated, logout } = useAuthSession()
   const [currentTrack, setCurrentTrack] = useState(null)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [isBuffering, setIsBuffering] = useState(false)
   const [isShuffleEnabled, setIsShuffleEnabled] = useState(false)
   const [repeatMode, setRepeatMode] = useState('all')
   const [playbackError, setPlaybackError] = useState('')
@@ -264,6 +265,7 @@ function HomePage() {
   const [volumeLevel, setVolumeLevel] = useState(72)
   const [playbackGateTrack, setPlaybackGateTrack] = useState(null)
   const [installPromptEvent, setInstallPromptEvent] = useState(null)
+  const [searchQuery, setSearchQuery] = useState('')
   const [trendingNavigationState, setTrendingNavigationState] = useState(() => getTrendingNavigationState(null))
 
   const userDisplayName = useMemo(() => getUserDisplayName(user), [user])
@@ -370,11 +372,13 @@ function HomePage() {
 
     const handlePlay = () => {
       setIsPlaying(true)
+      setIsBuffering(false)
       setPlaybackError('')
     }
 
     const handlePause = () => {
       setIsPlaying(false)
+      setIsBuffering(false)
     }
 
     const handleEnded = async () => {
@@ -387,10 +391,11 @@ function HomePage() {
         )
 
         if (nextTrack?.audioUrl) {
-          try {
-            setPlaybackError('')
-            setCurrentTrack(nextTrack)
-            setCurrentTime(0)
+            try {
+              setPlaybackError('')
+              setIsBuffering(true)
+              setCurrentTrack(nextTrack)
+              setCurrentTime(0)
             setDurationSeconds(0)
 
             if (currentTrackRef.current?.id === nextTrack.id) {
@@ -402,7 +407,7 @@ function HomePage() {
             await audio.play()
             return
           } catch {
-            setPlaybackError('Trinh duyet da chan phat tu dong. Hay bam lai.')
+            setPlaybackError('Trình duyệt đã chặn phát tự động. Hãy bấm lại.')
           }
         }
       }
@@ -420,8 +425,17 @@ function HomePage() {
     }
 
     const handlePlaybackFailure = () => {
-      setPlaybackError('Khong the phat bai nhac nay luc nay.')
+      setIsBuffering(false)
+      setPlaybackError('Không thể phát bài nhạc này lúc này.')
       setIsPlaying(false)
+    }
+
+    const handleWaiting = () => {
+      setIsBuffering(true)
+    }
+
+    const handlePlaying = () => {
+      setIsBuffering(false)
     }
 
     audio.addEventListener('play', handlePlay)
@@ -429,6 +443,8 @@ function HomePage() {
     audio.addEventListener('ended', handleEnded)
     audio.addEventListener('timeupdate', handleTimeUpdate)
     audio.addEventListener('loadedmetadata', handleLoadedMetadata)
+    audio.addEventListener('waiting', handleWaiting)
+    audio.addEventListener('playing', handlePlaying)
     audio.addEventListener('error', handlePlaybackFailure)
 
     return () => {
@@ -437,6 +453,8 @@ function HomePage() {
       audio.removeEventListener('ended', handleEnded)
       audio.removeEventListener('timeupdate', handleTimeUpdate)
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata)
+      audio.removeEventListener('waiting', handleWaiting)
+      audio.removeEventListener('playing', handlePlaying)
       audio.removeEventListener('error', handlePlaybackFailure)
     }
   }, [])
@@ -480,6 +498,18 @@ function HomePage() {
     window.location.assign('/')
   }
 
+  const handleSearchSubmit = (event) => {
+    event.preventDefault()
+
+    const query = searchQuery.trim()
+
+    if (!query) {
+      return
+    }
+
+    navigate(`/search?q=${encodeURIComponent(query)}`)
+  }
+
   const openPlaybackGate = (track) => {
     setPlaybackError('')
     setPlaybackGateTrack(track)
@@ -510,12 +540,12 @@ function HomePage() {
     const audio = audioRef.current
 
     if (!audio || !track?.audioUrl) {
-      setPlaybackError('Bai nhac nay chua co file audio de phat.')
+      setPlaybackError('Bài nhạc này chưa có file audio để phát.')
       return
     }
 
     if (authLoading) {
-      setPlaybackError('Dang kiem tra phien dang nhap. Hay thu lai sau it giay.')
+      setPlaybackError('Đang kiểm tra phiên đăng nhập. Hãy thử lại sau ít giây.')
       return
     }
 
@@ -527,6 +557,7 @@ function HomePage() {
     const isSameTrack = currentTrack?.id === track.id
 
     setPlaybackError('')
+    setIsBuffering(true)
     setCurrentTrack(track)
 
     if (!isSameTrack) {
@@ -538,7 +569,7 @@ function HomePage() {
     try {
       await audio.play()
     } catch {
-      setPlaybackError('Trinh duyet da chan phat tu dong. Hay bam lai.')
+      setPlaybackError('Trình duyệt đã chặn phát tự động. Hãy bấm lại.')
     }
   }
 
@@ -546,12 +577,12 @@ function HomePage() {
     const audio = audioRef.current
 
     if (!audio || !track?.audioUrl) {
-      setPlaybackError('Bai nhac nay chua co file audio de phat.')
+      setPlaybackError('Bài nhạc này chưa có file audio để phát.')
       return
     }
 
     if (authLoading) {
-      setPlaybackError('Dang kiem tra phien dang nhap. Hay thu lai sau it giay.')
+      setPlaybackError('Đang kiểm tra phiên đăng nhập. Hãy thử lại sau ít giây.')
       return
     }
 
@@ -565,9 +596,10 @@ function HomePage() {
     if (currentTrack?.id === track.id) {
       if (audio.paused) {
         try {
+          setIsBuffering(true)
           await audio.play()
         } catch {
-          setPlaybackError('Trinh duyet da chan phat tu dong. Hay bam lai.')
+          setPlaybackError('Trình duyệt đã chặn phát tự động. Hãy bấm lại.')
         }
       } else {
         audio.pause()
@@ -642,33 +674,39 @@ function HomePage() {
           : 'Không gian phát dành riêng cho bạn'
 
   return (
-    <div className="min-h-screen bg-[color:var(--bg-app)] px-2.5 py-2.5 text-[color:var(--text-primary)]">
+    <div className="client-cute-theme min-h-screen bg-[color:var(--bg-app)] px-2.5 py-2.5 text-[color:var(--text-primary)]">
       <div className="mx-auto flex min-h-[calc(100vh-1.25rem)] w-full max-w-[1920px] flex-col gap-2.5">
         <header className="top-shell flex flex-wrap items-center justify-between gap-2.5 px-3 py-2.5 sm:px-4">
           <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
             <a href="/" className="brand-badge hidden sm:inline-flex" aria-label="Trang chủ TMusic">
               <SpotifyIcon />
             </a>
+            <a href="/" className="brand-word hidden md:inline-flex" aria-label="TMusic home">
+              TMusic
+            </a>
 
             <a href="/" className="icon-frame" aria-label="Trang chủ">
               <HomeIcon />
             </a>
 
-            <div className="search-shell min-w-0 flex-1">
+            <form className="search-shell min-w-0 flex-1" onSubmit={handleSearchSubmit}>
               <SearchIcon />
               <input
                 className="search-input"
                 type="text"
                 placeholder="Bạn muốn phát nội dung gì?"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
               />
               <div className="search-divider" />
               <button
+                type="submit"
                 className="text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
-                aria-label="Tìm kiếm nâng cao"
+                aria-label="Tìm kiếm"
               >
                 <SearchTrailingIcon />
               </button>
-            </div>
+            </form>
           </div>
 
           <div className="flex items-center gap-2.5 sm:gap-3.5">
@@ -714,7 +752,7 @@ function HomePage() {
 
             <button
               className="download-link hidden items-center gap-2 md:inline-flex"
-              title="Cai dat ung dung TMusic"
+              title="Cài đặt ứng dụng TMusic"
             >
               <DownloadIcon />
               Cài đặt ứng dụng
@@ -818,6 +856,7 @@ function HomePage() {
                 <div className="mb-5 flex items-start justify-between gap-4">
                   <div>
                     <p className="section-kicker">Dành cho bạn hôm nay</p>
+                    <span className="hero-soft-badge">New mix board</span>
                     <div className="mt-3 flex flex-wrap items-center gap-3">
                       <span className="text-sm text-[color:var(--text-secondary)]">
                         {heroStatusText}
@@ -850,12 +889,12 @@ function HomePage() {
                 </div>
 
                 <div className="trending-swiper-shell pb-7">
-                  <button
-                    type="button"
-                    className={`trending-swiper-button trending-swiper-button-prev hidden lg:inline-flex ${
-                      trendingNavigationState.isBeginning ? 'trending-swiper-button-disabled' : ''
-                    }`}
-                    aria-label="Xem bai truoc"
+                    <button
+                      type="button"
+                      className={`trending-swiper-button trending-swiper-button-prev hidden lg:inline-flex ${
+                        trendingNavigationState.isBeginning ? 'trending-swiper-button-disabled' : ''
+                      }`}
+                    aria-label="Xem bài trước"
                     onClick={() => handleTrendingNavigation(-1)}
                     disabled={trendingNavigationState.isBeginning}
                   >
@@ -932,7 +971,13 @@ function HomePage() {
                               disabled={!track.audioUrl}
                               title={getTrackPlaybackTooltip(track, currentTrack, isPlaying, isAuthenticated)}
                             >
-                              {currentTrack?.id === track.id && isPlaying ? <PauseIcon /> : <PlayIcon />}
+                              {currentTrack?.id === track.id && isBuffering ? (
+                                <span className="player-loading-dot" />
+                              ) : currentTrack?.id === track.id && isPlaying ? (
+                                <PauseIcon />
+                              ) : (
+                                <PlayIcon />
+                              )}
                             </button>
                           </div>
 
@@ -951,7 +996,7 @@ function HomePage() {
                               </p>
                               {!track.audioUrl ? (
                                 <p className="mt-1 text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-[color:#ffb5a8]">
-                                  Chua co audio
+                                  Chưa có audio
                                 </p>
                               ) : null}
                             </div>
@@ -965,12 +1010,12 @@ function HomePage() {
                     ))}
                   </Swiper>
 
-                  <button
-                    type="button"
-                    className={`trending-swiper-button trending-swiper-button-next hidden lg:inline-flex ${
-                      trendingNavigationState.isEnd ? 'trending-swiper-button-disabled' : ''
-                    }`}
-                    aria-label="Xem bai tiep theo"
+                    <button
+                      type="button"
+                      className={`trending-swiper-button trending-swiper-button-next hidden lg:inline-flex ${
+                        trendingNavigationState.isEnd ? 'trending-swiper-button-disabled' : ''
+                      }`}
+                    aria-label="Xem bài tiếp theo"
                     onClick={() => handleTrendingNavigation(1)}
                     disabled={trendingNavigationState.isEnd}
                   >
@@ -1225,7 +1270,7 @@ function HomePage() {
 
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[0.72rem] font-bold uppercase tracking-[0.18em] text-[color:#7be29b]">
-                      Dang phat
+                      Đang phát
                     </p>
                     <h3 className="truncate text-[1.05rem] font-bold text-white">
                       {currentTrack.title}
@@ -1236,7 +1281,7 @@ function HomePage() {
                   </div>
 
                   <div className="hidden sm:block">
-                    <PlayerIconButton aria-label="Them vao thu vien">
+                    <PlayerIconButton aria-label="Thêm vào thư viện">
                       <PlusIcon />
                     </PlayerIconButton>
                   </div>
@@ -1258,7 +1303,7 @@ function HomePage() {
                     <ShuffleIcon />
                   </PlayerIconButton>
                   <PlayerIconButton
-                    aria-label="Bai truoc"
+                    aria-label="Bài trước"
                     onClick={() => void handleSkipTrack(-1)}
                     disabled={playableTracks.length === 0}
                   >
@@ -1271,10 +1316,16 @@ function HomePage() {
                     title={getPlayerPlaybackTooltip(isPlaying, currentTrack)}
                     onClick={() => void handleToggleTrackPlayback(currentTrack)}
                   >
-                    {isPlaying ? <PauseIcon /> : <PlayIcon />}
+                    {isBuffering ? (
+                      <span className="player-loading-dot" />
+                    ) : isPlaying ? (
+                      <PauseIcon />
+                    ) : (
+                      <PlayIcon />
+                    )}
                   </button>
                   <PlayerIconButton
-                    aria-label="Bai tiep theo"
+                    aria-label="Bài tiếp theo"
                     onClick={() => void handleSkipTrack(1)}
                     disabled={playableTracks.length === 0}
                   >
@@ -1302,7 +1353,7 @@ function HomePage() {
                     onChange={handleSeekTrack}
                     className="player-slider"
                     style={{ '--player-slider-progress': `${playbackProgress}%` }}
-                    aria-label="Tien do phat"
+                    aria-label="Tiến độ phát"
                   />
                   <span className="player-time-label">{formatPlaybackSeconds(durationSeconds)}</span>
                 </div>
@@ -1311,12 +1362,12 @@ function HomePage() {
               <div className="min-w-0">
                 <div className="flex items-center justify-start gap-1.5 sm:justify-end">
                   <div className="hidden lg:block">
-                    <PlayerIconButton aria-label="Loi bai hat">
+                    <PlayerIconButton aria-label="Lời bài hát">
                       <LyricsIcon />
                     </PlayerIconButton>
                   </div>
                   <div className="hidden lg:block">
-                    <PlayerIconButton aria-label="Hang doi">
+                    <PlayerIconButton aria-label="Hàng đợi">
                       <QueueIcon />
                     </PlayerIconButton>
                   </div>
@@ -1335,7 +1386,7 @@ function HomePage() {
                     onChange={handleVolumeChange}
                     className="player-slider player-volume-slider"
                     style={{ '--player-slider-progress': `${volumeLevel}%` }}
-                    aria-label="Am luong"
+                    aria-label="Âm lượng"
                   />
                   <div className="hidden sm:block">
                     <a
@@ -1343,14 +1394,14 @@ function HomePage() {
                       target="_blank"
                       rel="noreferrer"
                       className="player-icon-link"
-                      aria-label="Mo file audio"
-                      title="Mo file audio"
+                      aria-label="Mở file audio"
+                      title="Mở file audio"
                     >
                       <DeviceIcon />
                     </a>
                   </div>
                   <div className="hidden lg:block">
-                    <PlayerIconButton aria-label="Mo rong player">
+                    <PlayerIconButton aria-label="Mở rộng player">
                       <ExpandIcon />
                     </PlayerIconButton>
                   </div>
