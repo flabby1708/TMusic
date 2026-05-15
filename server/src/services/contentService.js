@@ -5,8 +5,12 @@ import Radio from '../models/Radio.js'
 import Song from '../models/Song.js'
 
 const sortByOrder = { sortOrder: 1, createdAt: 1 }
+const sortByNewest = { createdAt: -1, sortOrder: -1 }
 const publishedSongFilter = { releaseStatus: 'published' }
 const homeSectionLimit = 12
+const homeCacheTtlMs = 60 * 1000
+const homeSongFields = 'title artist duration explicit coverUrl audioUrl audioVariants mood artwork sortOrder'
+const homeCache = new Map()
 
 const trimString = (value, fallback = '') => {
   if (typeof value !== 'string') {
@@ -14,6 +18,23 @@ const trimString = (value, fallback = '') => {
   }
 
   return value.trim()
+}
+
+const getCachedHomeSection = async (key, loader) => {
+  const cached = homeCache.get(key)
+
+  if (cached && Date.now() - cached.createdAt < homeCacheTtlMs) {
+    return cached.data
+  }
+
+  const data = await loader()
+
+  homeCache.set(key, {
+    createdAt: Date.now(),
+    data,
+  })
+
+  return data
 }
 
 const buildInitials = (value) => {
@@ -34,6 +55,13 @@ const buildSongCountMeta = (count) => {
 }
 
 const normalizeArtistNameKey = (value) => trimString(value).toLowerCase()
+
+const queryHomeSongs = () =>
+  Song.find(publishedSongFilter)
+    .sort(sortByNewest)
+    .limit(homeSectionLimit)
+    .select(homeSongFields)
+    .lean()
 
 const getPopularArtistsFromSongs = async () => {
   return Song.aggregate([
@@ -100,12 +128,8 @@ const getPopularArtistsFromSongs = async () => {
   ])
 }
 
-const listPopularArtists = async () => {
-  const [curatedArtists, songArtists] = await Promise.all([
-    Artist.find().sort(sortByOrder).limit(homeSectionLimit).lean(),
-    getPopularArtistsFromSongs(),
-  ])
-
+const queryPopularArtists = async () => {
+  const songArtists = await getPopularArtistsFromSongs()
   const mergedArtists = []
   const seenArtistNames = new Set()
 
@@ -131,6 +155,12 @@ const listPopularArtists = async () => {
     return mergedArtists.slice(0, homeSectionLimit)
   }
 
+  const curatedArtists = await Artist.find()
+    .sort(sortByOrder)
+    .limit(homeSectionLimit)
+    .select('name meta imageUrl initials artwork sortOrder')
+    .lean()
+
   for (const artist of curatedArtists) {
     const name = trimString(artist.name)
     const key = normalizeArtistNameKey(name)
@@ -151,12 +181,9 @@ const listPopularArtists = async () => {
   return mergedArtists.slice(0, homeSectionLimit)
 }
 
-const listPopularAlbumsAndSingles = async () => {
+const queryPopularAlbumsAndSingles = async () => {
   const songSingles = await Song.find(publishedSongFilter)
-    .sort({
-      sortOrder: 1,
-      createdAt: -1,
-    })
+    .sort(sortByNewest)
     .limit(homeSectionLimit)
     .select('title artist coverUrl sortOrder createdAt')
     .lean()
@@ -172,16 +199,46 @@ const listPopularAlbumsAndSingles = async () => {
     }))
   }
 
-  return Album.find().sort(sortByOrder).limit(homeSectionLimit).lean()
+  return Album.find()
+    .sort(sortByOrder)
+    .limit(homeSectionLimit)
+    .select('title artist coverUrl artwork sortOrder')
+    .lean()
 }
+
+const queryHomeRadios = () =>
+  Radio.find()
+    .sort(sortByOrder)
+    .limit(homeSectionLimit)
+    .select('title description imageUrl tone initials sortOrder')
+    .lean()
+
+const queryHomeCharts = () =>
+  Chart.find()
+    .sort(sortByOrder)
+    .limit(homeSectionLimit)
+    .select('title subtitle coverUrl artwork sortOrder')
+    .lean()
+
+export const getHomeSongs = () => getCachedHomeSection('home:songs', queryHomeSongs)
+
+export const getHomePopularArtists = () =>
+  getCachedHomeSection('home:popular-artists', queryPopularArtists)
+
+export const getHomeAlbums = () =>
+  getCachedHomeSection('home:albums', queryPopularAlbumsAndSingles)
+
+export const getHomeRadios = () => getCachedHomeSection('home:radios', queryHomeRadios)
+
+export const getHomeCharts = () => getCachedHomeSection('home:charts', queryHomeCharts)
 
 export const getHomeContentData = async () => {
   const [songs, artists, albums, radios, charts] = await Promise.all([
-    Song.find(publishedSongFilter).sort(sortByOrder).limit(homeSectionLimit).lean(),
-    listPopularArtists(),
-    listPopularAlbumsAndSingles(),
-    Radio.find().sort(sortByOrder).limit(homeSectionLimit).lean(),
-    Chart.find().sort(sortByOrder).limit(homeSectionLimit).lean(),
+    getHomeSongs(),
+    getHomePopularArtists(),
+    getHomeAlbums(),
+    getHomeRadios(),
+    getHomeCharts(),
   ])
 
   return {
@@ -193,6 +250,41 @@ export const getHomeContentData = async () => {
   }
 }
 
-export const getSongList = async () => {
-  return Song.find(publishedSongFilter).sort(sortByOrder).limit(12).lean()
+export const getSongList = () => getHomeSongs()
+
+const parsePositiveInteger = (value, fallback) => {
+  const parsed = Number.parseInt(String(value || '').trim(), 10)
+
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
+}
+
+export const getPaginatedSongList = async ({ page = 1, limit = 30, query = '' } = {}) => {
+  const currentPage = parsePositiveInteger(page, 1)
+  const pageSize = Math.min(parsePositiveInteger(limit, 30), 50)
+  const skip = (currentPage - 1) * pageSize
+  const normalizedQuery = trimString(query)
+  const filter = { ...publishedSongFilter }
+
+  if (normalizedQuery) {
+    filter.$text = { $search: normalizedQuery }
+  }
+
+  const sort = normalizedQuery
+    ? { score: { $meta: 'textScore' }, sortOrder: 1, createdAt: -1 }
+    : { sortOrder: 1, createdAt: -1 }
+  const projection = normalizedQuery ? { score: { $meta: 'textScore' } } : {}
+
+  const [items, total] = await Promise.all([
+    Song.find(filter, projection).sort(sort).skip(skip).limit(pageSize).lean(),
+    Song.countDocuments(filter),
+  ])
+
+  return {
+    items,
+    page: currentPage,
+    limit: pageSize,
+    total,
+    totalPages: Math.ceil(total / pageSize),
+    hasNextPage: currentPage * pageSize < total,
+  }
 }

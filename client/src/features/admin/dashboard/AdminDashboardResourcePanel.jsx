@@ -14,6 +14,7 @@ function AdminDashboardResourcePanel(props) {
     error,
     items,
     loading,
+    onOpenPodcastImport,
     onOpenSongImport,
     onCreateNew,
     onDelete,
@@ -21,24 +22,28 @@ function AdminDashboardResourcePanel(props) {
     onReload,
     saving,
   } = props
-  const [songSearchQuery, setSongSearchQuery] = useState('')
+  const [itemSearchQuery, setItemSearchQuery] = useState('')
   const {
     token: { borderRadiusLG, colorBorderSecondary, colorTextSecondary },
   } = theme.useToken()
   const isSongsResource = activeResource === 'songs'
-  const normalizedSongSearchQuery = normalizeSearchValue(songSearchQuery)
-  const filteredSongItems = useMemo(() => {
-    if (!isSongsResource || !normalizedSongSearchQuery) {
+  const isPodcastResource = activeResource === 'podcasts'
+  const isAudioResource = isSongsResource || isPodcastResource
+  const normalizedItemSearchQuery = normalizeSearchValue(itemSearchQuery)
+  const filteredAudioItems = useMemo(() => {
+    if (!isAudioResource || !normalizedItemSearchQuery) {
       return items
     }
 
     return items.filter((item) => {
       const title = normalizeSearchValue(item.title)
-      const artist = normalizeSearchValue(item.artist)
+      const subtitle = isPodcastResource
+        ? normalizeSearchValue([item.showTitle, item.host, item.category].filter(Boolean).join(' '))
+        : normalizeSearchValue(item.artist)
 
-      return title.includes(normalizedSongSearchQuery) || artist.includes(normalizedSongSearchQuery)
+      return title.includes(normalizedItemSearchQuery) || subtitle.includes(normalizedItemSearchQuery)
     })
-  }, [isSongsResource, items, normalizedSongSearchQuery])
+  }, [isAudioResource, isPodcastResource, items, normalizedItemSearchQuery])
 
   return (
     <section style={{ minWidth: 0 }}>
@@ -96,7 +101,22 @@ function AdminDashboardResourcePanel(props) {
                 Import nhạc hàng loạt
               </Button>
             </>
-          ) : null}
+          ) : (
+            <>
+              <Button icon={<PlusOutlined />} onClick={onCreateNew} style={{ borderRadius: 12 }}>
+                {isPodcastResource ? 'Thêm podcast mới' : 'Thêm mới'}
+              </Button>
+              {isPodcastResource ? (
+                <Button
+                  icon={<CloudUploadOutlined />}
+                  onClick={onOpenPodcastImport}
+                  style={{ borderRadius: 12 }}
+                >
+                  Import podcast hàng loạt
+                </Button>
+              ) : null}
+            </>
+          )}
           <Button icon={<ReloadOutlined />} onClick={() => void onReload()} style={{ borderRadius: 12 }}>
             Tải lại
           </Button>
@@ -133,7 +153,7 @@ function AdminDashboardResourcePanel(props) {
         >
           <Empty description="Chưa có dữ liệu trong nhóm này" />
         </div>
-      ) : isSongsResource ? (
+      ) : isAudioResource ? (
         <div style={{ display: 'grid', gap: 14 }}>
           <div
             style={{
@@ -150,27 +170,29 @@ function AdminDashboardResourcePanel(props) {
           >
             <div>
               <Title level={4} style={{ margin: 0 }}>
-                Danh sách bài đã thêm
+                {isPodcastResource ? 'Danh sách podcast đã thêm' : 'Danh sách bài đã thêm'}
               </Title>
               <Text style={{ color: colorTextSecondary }}>
-                Chọn một bài để sửa, xóa hoặc quản lý lại sau.
+                {isPodcastResource
+                  ? 'Podcast được tách riêng khỏi catalog bài hát để quản lý audio, show và license.'
+                  : 'Chọn một bài để sửa, xóa hoặc quản lý lại sau.'}
               </Text>
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10 }}>
               <Tag color="blue" style={{ borderRadius: 999, margin: 0 }}>
-                {filteredSongItems.length}/{items.length} bài
+                {filteredAudioItems.length}/{items.length} {isPodcastResource ? 'podcast' : 'bài'}
               </Tag>
               <Input.Search
                 allowClear
-                placeholder="Tìm tên bài hoặc nghệ sĩ"
-                value={songSearchQuery}
-                onChange={(event) => setSongSearchQuery(event.target.value)}
+                placeholder={isPodcastResource ? 'Tìm podcast, show hoặc host' : 'Tìm tên bài hoặc nghệ sĩ'}
+                value={itemSearchQuery}
+                onChange={(event) => setItemSearchQuery(event.target.value)}
                 style={{ width: 260 }}
               />
             </div>
           </div>
 
-          {filteredSongItems.length === 0 ? (
+          {filteredAudioItems.length === 0 ? (
             <div
               style={{
                 minHeight: 260,
@@ -181,15 +203,19 @@ function AdminDashboardResourcePanel(props) {
                 border: `1px solid ${colorBorderSecondary}`,
               }}
             >
-              <Empty description="Không tìm thấy bài hát phù hợp" />
+              <Empty description={isPodcastResource ? 'Không tìm thấy podcast phù hợp' : 'Không tìm thấy bài hát phù hợp'} />
             </div>
           ) : (
             <div style={{ display: 'grid', gap: 10 }}>
-              {filteredSongItems.map((item) => {
+              {filteredAudioItems.map((item) => {
                 const isEditing = item._id === editingId
                 const hasCover = Boolean(item.coverUrl)
                 const hasAudio = Boolean(item.audioUrl)
                 const isPublished = item.releaseStatus === 'published'
+                const title = item.title || (isPodcastResource ? 'Chưa đặt tên podcast' : 'Chưa đặt tên')
+                const subtitle = isPodcastResource
+                  ? [item.showTitle, item.host].filter(Boolean).join(' / ') || 'Chưa có show'
+                  : item.artist || 'Chưa có nghệ sĩ'
 
                 return (
                   <article
@@ -230,7 +256,7 @@ function AdminDashboardResourcePanel(props) {
                         }}
                       >
                         <Title level={4} style={{ margin: 0, lineHeight: 1.35 }}>
-                          {item.title || 'Chưa đặt tên'}
+                          {title}
                         </Title>
                         {isEditing ? (
                           <Tag color="cyan" style={{ borderRadius: 999, margin: 0 }}>
@@ -240,7 +266,7 @@ function AdminDashboardResourcePanel(props) {
                       </div>
 
                       <Text style={{ color: colorTextSecondary }}>
-                        {item.artist || 'Chưa có nghệ sĩ'}
+                        {subtitle}
                       </Text>
 
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
@@ -252,11 +278,22 @@ function AdminDashboardResourcePanel(props) {
                         <Tag color={isPublished ? 'green' : 'default'} style={{ borderRadius: 999 }}>
                           {isPublished ? 'Đang hiển thị' : 'Đang ẩn'}
                         </Tag>
+                        {isPodcastResource && item.license ? (
+                          <Tag color="blue" style={{ borderRadius: 999 }}>
+                            {item.license}
+                          </Tag>
+                        ) : null}
                         <Tag color={hasCover ? 'green' : 'default'} style={{ borderRadius: 999 }}>
                           {hasCover ? 'Có ảnh bìa' : 'Chưa có ảnh'}
                         </Tag>
                         <Tag color={hasAudio ? 'green' : 'warning'} style={{ borderRadius: 999 }}>
-                          {hasAudio ? 'Có file nhạc' : 'Thiếu file nhạc'}
+                          {hasAudio
+                            ? isPodcastResource
+                              ? 'Có audio podcast'
+                              : 'Có file nhạc'
+                            : isPodcastResource
+                              ? 'Thiếu audio podcast'
+                              : 'Thiếu file nhạc'}
                         </Tag>
                       </div>
                     </div>

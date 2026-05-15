@@ -1,9 +1,7 @@
 import { Avatar, Button, Layout, Menu, Space, Typography } from 'antd'
 import {
-  AppstoreOutlined,
   CustomerServiceOutlined,
   FileProtectOutlined,
-  ImportOutlined,
   LogoutOutlined,
   SoundOutlined,
   TeamOutlined,
@@ -15,20 +13,31 @@ import { useAdminSession } from '../useAdminSession.js'
 const { Content, Header, Sider } = Layout
 const { Text, Title } = Typography
 
+const renderAdminMenuLabel = ({ title, description }) => (
+  <span className="tmusic-admin-shell-menu-label">
+    <span className="tmusic-admin-shell-menu-title">{title}</span>
+    <span className="tmusic-admin-shell-menu-description">{description}</span>
+  </span>
+)
+
 const adminMenuItems = [
   {
-    key: '/admin',
-    icon: <AppstoreOutlined />,
-    label: 'Tổng quan',
+    key: '/admin/songs',
+    icon: <SoundOutlined />,
+    label: renderAdminMenuLabel({
+      title: 'Bài hát',
+      description: 'Catalog nhạc',
+    }),
   },
   {
-    key: '/admin/import',
-    icon: <ImportOutlined />,
-    label: 'Import bài hát',
+    key: '/admin/podcasts',
+    icon: <CustomerServiceOutlined />,
+    label: renderAdminMenuLabel({
+      title: 'Podcast',
+      description: 'Show và tập',
+    }),
   },
-  {
-    type: 'divider',
-  },
+  { type: 'divider' },
   {
     key: '/admin/users',
     icon: <UserOutlined />,
@@ -57,9 +66,8 @@ const getSelectedKey = (pathname) =>
   adminMenuItems.find(
     (item) =>
       item?.key &&
-      item.key !== '/admin' &&
       pathname.startsWith(item.key),
-  )?.key || '/admin'
+  )?.key || '/admin/songs'
 
 function AdminShell({
   children,
@@ -82,7 +90,9 @@ function AdminShell({
     <Layout
       className="tmusic-admin-shell"
       style={{
+        height: '100vh',
         minHeight: '100vh',
+        overflow: 'hidden',
         background:
           'radial-gradient(circle at 8% 0%, rgba(255, 107, 87, 0.2), transparent 34%), radial-gradient(circle at 92% 12%, rgba(41, 212, 255, 0.16), transparent 32%), linear-gradient(145deg, #0d1525 0%, #08111d 46%, #060b16 100%)',
       }}
@@ -98,6 +108,7 @@ function AdminShell({
           position: 'sticky',
           top: 0,
           height: '100vh',
+          flex: '0 0 300px',
           overflow: 'auto',
         }}
       >
@@ -150,9 +161,17 @@ function AdminShell({
         </div>
       </Sider>
 
-      <Layout style={{ minWidth: 0, background: 'transparent' }}>
+      <Layout
+        style={{
+          minWidth: 0,
+          height: '100vh',
+          overflow: 'hidden',
+          background: 'transparent',
+        }}
+      >
         <Header
           style={{
+            flex: '0 0 auto',
             minHeight: 92,
             display: 'flex',
             alignItems: 'center',
@@ -216,8 +235,11 @@ function AdminShell({
 
         <Content
           style={{
-            minHeight: 'calc(100vh - 92px)',
+            minHeight: 0,
             padding: 32,
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            overscrollBehavior: 'contain',
             background:
               'radial-gradient(circle at 0% 0%, rgba(255, 107, 87, 0.06), transparent 28%), radial-gradient(circle at 100% 0%, rgba(41, 212, 255, 0.06), transparent 28%)',
           }}

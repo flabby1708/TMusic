@@ -3,7 +3,7 @@ import { ADMIN_HEADER_HEIGHT, getAdminDisplayName, headerItems } from './adminDa
 
 const { Header } = Layout
 
-function AdminDashboardHeader({ selectedKeys = ['dashboard'], user, onMenuClick }) {
+function AdminDashboardHeader({ selectedKeys = [], user, onMenuClick }) {
   const {
     token: { colorBorderSecondary, colorTextSecondary },
   } = theme.useToken()

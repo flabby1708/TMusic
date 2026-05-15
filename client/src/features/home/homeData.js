@@ -312,6 +312,7 @@ export const libraryPrompts = [
     title: 'Theo dõi podcast và nội dung mới',
     description: 'Nhận cập nhật tập mới và lưu lại các chương trình bạn quan tâm.',
     action: 'Duyệt podcast',
+    path: '/podcast',
   },
 ]
 
@@ -325,6 +326,7 @@ export const footerLinks = [
 ]
 
 export const menuLinks = [
+  { label: 'Podcast', path: '/podcast' },
   { label: 'Nâng cấp', path: '/plans/individual' },
   { label: 'Hỗ trợ', path: '/support' },
   { label: 'Tải xuống', path: '/mobile-app' },

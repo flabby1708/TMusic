@@ -113,6 +113,58 @@ const resolveSongIdentityFromFilename = (filename, defaultArtist = '') => {
   }
 }
 
+const resolvePodcastIdentityFromFilename = (filename, defaultShowTitle = '') => {
+  const stem = cleanupSongFilenameStem(getFilenameStem(filename))
+  const parsedIdentity = splitArtistAndTitleFromStem(stem)
+
+  if (parsedIdentity?.artist && parsedIdentity?.title) {
+    return {
+      showTitle: parsedIdentity.artist,
+      title: parsedIdentity.title,
+      errorMessage: '',
+    }
+  }
+
+  const hyphenParts = stem
+    .split('-')
+    .map((part) => part.trim())
+    .filter(Boolean)
+
+  if (hyphenParts.length >= 2) {
+    const showTitle = formatSlugWords(hyphenParts[0])
+    const titleParts = [...hyphenParts.slice(1)]
+
+    if (titleParts.length > 1 && /^\d{3,}$/.test(titleParts[titleParts.length - 1])) {
+      titleParts.pop()
+    }
+
+    const title = formatSlugWords(titleParts.join(' '))
+
+    if (showTitle && title) {
+      return {
+        showTitle,
+        title,
+        errorMessage: '',
+      }
+    }
+  }
+
+  if (stem && defaultShowTitle.trim()) {
+    return {
+      showTitle: defaultShowTitle.trim(),
+      title: formatSlugWords(stem),
+      errorMessage: '',
+    }
+  }
+
+  return {
+    showTitle: '',
+    title: stem,
+    errorMessage:
+      'Không tách được show từ tên file. Dùng mẫu "Show - Episode" hoặc nhập default show.',
+  }
+}
+
 const buildCoverLookupCandidates = (filename) => {
   const stem = cleanupSongFilenameStem(getFilenameStem(filename))
   const tokens = new Set()
@@ -228,6 +280,50 @@ const summarizePreviewRows = (rows) => ({
   missingCover: rows.filter((row) => !row.coverMatched).length,
   blocked: rows.filter((row) => Boolean(row.errorMessage)).length,
 })
+
+const importIssueStatuses = new Set(['skipped', 'error'])
+
+const getImportIssues = (payload) =>
+  (payload?.results || []).filter((item) => importIssueStatuses.has(item.status))
+
+const getImportStatusLabel = (status) => {
+  if (status === 'created') {
+    return 'Tạo mới'
+  }
+
+  if (status === 'skipped') {
+    return 'Bỏ qua'
+  }
+
+  return 'Lỗi'
+}
+
+const formatImportIssueText = (item) => {
+  const title = item?.title || item?.audioFilename || `Dòng ${(Number(item?.index) || 0) + 1}`
+  const owner = item?.artist || item?.showTitle
+  const ownerText = owner ? ` - ${owner}` : ''
+  const reason = item?.message || 'Server chưa trả ghi chú chi tiết.'
+
+  return `${getImportStatusLabel(item?.status)}: ${title}${ownerText}. Lý do: ${reason}`
+}
+
+const formatImportNotice = (payload) => {
+  const summary = payload?.summary || {}
+  const total = summary.totalAudioFiles || 0
+  const created = summary.createdCount || 0
+  const skipped = summary.skippedCount || 0
+  const errors = summary.errorCount || 0
+  const issues = getImportIssues(payload)
+  const issuePreview = issues.slice(0, 2).map(formatImportIssueText)
+  const hiddenIssueCount = Math.max(issues.length - issuePreview.length, 0)
+  const issueText = issuePreview.length
+    ? ` Lý do: ${issuePreview.join(' | ')}${
+        hiddenIssueCount > 0 ? ` (+${hiddenIssueCount} dòng khác trong kết quả import)` : ''
+      }`
+    : ''
+
+  return `Đã xử lý ${total} file. Tạo mới ${created}, bỏ qua ${skipped}, lỗi ${errors}.${issueText}`
+}
 
 function FileSelectionCard(props) {
   const {
@@ -349,11 +445,16 @@ function FileSelectionCard(props) {
   )
 }
 
-function AdminSongImportPageView() {
+function AdminSongImportPageView({ resourceType = 'songs' }) {
+  const isPodcastImport = resourceType === 'podcasts'
   const [audioFiles, setAudioFiles] = useState([])
   const [coverFiles, setCoverFiles] = useState([])
   const [defaultArtist, setDefaultArtist] = useState('')
   const [mood, setMood] = useState('Chill')
+  const [host, setHost] = useState('')
+  const [category, setCategory] = useState('Podcast')
+  const [license, setLicense] = useState('')
+  const [sourcePage, setSourcePage] = useState('')
   const [sortOrderStart, setSortOrderStart] = useState('0')
   const [skipDuplicates, setSkipDuplicates] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -368,15 +469,20 @@ function AdminSongImportPageView() {
 
   const coverAssignments = assignCoverFilesToAudio(audioFiles, coverFiles)
   const previewRows = audioFiles.map((file, index) => {
-    const identity = resolveSongIdentityFromFilename(file.name, defaultArtist)
+    const identity = isPodcastImport
+      ? resolvePodcastIdentityFromFilename(file.name, defaultArtist)
+      : resolveSongIdentityFromFilename(file.name, defaultArtist)
     const coverAssignment = coverAssignments.get(getFileIdentity(file)) || null
     const matchedCover = coverAssignment?.file || null
+    const ownerName = isPodcastImport ? identity.showTitle : identity.artist
 
     return {
       key: `${file.name}-${file.lastModified}-${index}`,
       sortOrder: parseSortOrder(sortOrderStart) + index,
       title: identity.title || cleanupSongFilenameStem(getFilenameStem(file.name)),
-      artist: identity.artist || '',
+      artist: isPodcastImport ? '' : identity.artist || '',
+      showTitle: isPodcastImport ? identity.showTitle || '' : '',
+      ownerName: ownerName || '',
       errorMessage: identity.errorMessage,
       audioFilename: file.name,
       coverFilename: matchedCover?.name || '',
@@ -385,6 +491,12 @@ function AdminSongImportPageView() {
     }
   })
   const previewSummary = summarizePreviewRows(previewRows)
+  const importIssues = importResult ? getImportIssues(importResult) : []
+  const ownerLabel = isPodcastImport ? 'Default show' : 'Default artist'
+  const ownerFallbackText = isPodcastImport ? 'Chưa xác định show' : 'Chưa xác định artist'
+  const duplicateLabel = isPodcastImport
+    ? 'Bỏ qua podcast trùng title + show đã tồn tại'
+    : 'Bỏ qua bài trùng title + artist đã tồn tại'
 
   const resetInput = (ref) => {
     if (ref.current) {
@@ -428,20 +540,30 @@ function AdminSongImportPageView() {
         formData.append('coverFiles', file)
       }
 
-      formData.append('defaultArtist', defaultArtist)
-      formData.append('mood', mood)
+      if (isPodcastImport) {
+        formData.append('defaultShowTitle', defaultArtist)
+        formData.append('host', host)
+        formData.append('category', category)
+        formData.append('license', license)
+        formData.append('sourcePage', sourcePage)
+      } else {
+        formData.append('defaultArtist', defaultArtist)
+        formData.append('mood', mood)
+      }
+
       formData.append('sortOrderStart', sortOrderStart)
       formData.append('skipDuplicates', String(skipDuplicates))
 
-      const payload = await requestAdminJson('/api/admin/songs/import', {
-        method: 'POST',
-        body: formData,
-      })
+      const payload = await requestAdminJson(
+        isPodcastImport ? '/api/admin/podcasts/import' : '/api/admin/songs/import',
+        {
+          method: 'POST',
+          body: formData,
+        },
+      )
 
       setImportResult(payload)
-      setNotice(
-        `Đã xử lý ${payload?.summary?.totalAudioFiles || 0} file. Tạo mới ${payload?.summary?.createdCount || 0}, bỏ qua ${payload?.summary?.skippedCount || 0}, lỗi ${payload?.summary?.errorCount || 0}.`,
-      )
+      setNotice(formatImportNotice(payload))
     } catch (submitError) {
       if (submitError?.status === 401 || submitError?.status === 403) {
         window.location.assign(appPaths.admin.login)
@@ -483,23 +605,23 @@ function AdminSongImportPageView() {
             Admin Import
           </Text>
           <Title level={2} style={{ margin: '10px 0 8px' }}>
-            Import nhạc hàng loạt
+            {isPodcastImport ? 'Import podcast hàng loạt' : 'Import nhạc hàng loạt'}
           </Title>
           <Paragraph style={{ color: colorTextSecondary, marginBottom: 0, maxWidth: 880 }}>
             Chọn nhiều file audio và nhiều file ảnh. Hệ thống ưu tiên ghép cover theo tên file, nếu không thấy
-            sẽ fallback theo thứ tự file cover. Tên nhạc có thể dùng mẫu <code>Artist - Title.mp3</code> hoặc slug
-            như <code>artist-title-12345.mp3</code>. Nếu file nhạc chỉ có tên bài, hãy nhập{' '}
-            <code>default artist</code>.
+            sẽ fallback theo thứ tự file cover. {isPodcastImport ? 'Tên podcast' : 'Tên nhạc'} có thể dùng mẫu{' '}
+            <code>{isPodcastImport ? 'Show - Episode.mp3' : 'Artist - Title.mp3'}</code> hoặc slug như{' '}
+            <code>{isPodcastImport ? 'show-episode-12345.mp3' : 'artist-title-12345.mp3'}</code>.
           </Paragraph>
         </div>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
           <Button
             icon={<ArrowLeftOutlined />}
-            onClick={() => window.location.assign(appPaths.admin.root)}
+            onClick={() => window.location.assign(isPodcastImport ? appPaths.admin.podcasts : appPaths.admin.songs)}
             style={{ borderRadius: 12 }}
           >
-            Về dashboard
+            {isPodcastImport ? 'Về podcast' : 'Về bài hát'}
           </Button>
           <Button
             icon={<ReloadOutlined />}
@@ -576,36 +698,92 @@ function AdminSongImportPageView() {
                 Metadata mặc định
               </Title>
               <Text style={{ color: colorTextSecondary }}>
-                Server sẽ suy ra artist/title từ tên file nếu có mẫu <code>Artist - Title</code> hoặc slug{' '}
-                <code>artist-title-12345</code>.
+                Server sẽ suy ra {isPodcastImport ? 'show/title' : 'artist/title'} từ tên file nếu có mẫu{' '}
+                <code>{isPodcastImport ? 'Show - Episode' : 'Artist - Title'}</code>.
               </Text>
             </div>
 
             <label style={{ display: 'grid', gap: 8 }}>
-              <Text strong>Default artist</Text>
+              <Text strong>{ownerLabel}</Text>
               <Input
                 value={defaultArtist}
                 onChange={(event) => {
                   setDefaultArtist(event.target.value)
                   setImportResult(null)
                 }}
-                placeholder="Dùng khi file audio chỉ có tên bài hát"
+                placeholder={isPodcastImport ? 'Dùng khi file audio chỉ có tên tập' : 'Dùng khi file audio chỉ có tên bài hát'}
                 style={{ borderRadius: 14 }}
               />
             </label>
 
-            <label style={{ display: 'grid', gap: 8 }}>
-              <Text strong>Mood</Text>
-              <Input
-                value={mood}
-                onChange={(event) => {
-                  setMood(event.target.value)
-                  setImportResult(null)
-                }}
-                placeholder="Chill"
-                style={{ borderRadius: 14 }}
-              />
-            </label>
+            {isPodcastImport ? (
+              <>
+                <label style={{ display: 'grid', gap: 8 }}>
+                  <Text strong>Host</Text>
+                  <Input
+                    value={host}
+                    onChange={(event) => {
+                      setHost(event.target.value)
+                      setImportResult(null)
+                    }}
+                    placeholder="Người dẫn / đơn vị sản xuất"
+                    style={{ borderRadius: 14 }}
+                  />
+                </label>
+
+                <label style={{ display: 'grid', gap: 8 }}>
+                  <Text strong>Chủ đề</Text>
+                  <Input
+                    value={category}
+                    onChange={(event) => {
+                      setCategory(event.target.value)
+                      setImportResult(null)
+                    }}
+                    placeholder="Podcast"
+                    style={{ borderRadius: 14 }}
+                  />
+                </label>
+
+                <label style={{ display: 'grid', gap: 8 }}>
+                  <Text strong>Giấy phép</Text>
+                  <Input
+                    value={license}
+                    onChange={(event) => {
+                      setLicense(event.target.value)
+                      setImportResult(null)
+                    }}
+                    placeholder="CC BY 2.5, Public domain..."
+                    style={{ borderRadius: 14 }}
+                  />
+                </label>
+
+                <label style={{ display: 'grid', gap: 8 }}>
+                  <Text strong>Trang nguồn</Text>
+                  <Input
+                    value={sourcePage}
+                    onChange={(event) => {
+                      setSourcePage(event.target.value)
+                      setImportResult(null)
+                    }}
+                    placeholder="https://..."
+                    style={{ borderRadius: 14 }}
+                  />
+                </label>
+              </>
+            ) : (
+              <label style={{ display: 'grid', gap: 8 }}>
+                <Text strong>Mood</Text>
+                <Input
+                  value={mood}
+                  onChange={(event) => {
+                    setMood(event.target.value)
+                    setImportResult(null)
+                  }}
+                  placeholder="Chill"
+                  style={{ borderRadius: 14 }}
+                />
+              </label>
+            )}
 
             <label style={{ display: 'grid', gap: 8 }}>
               <Text strong>Sort order bắt đầu</Text>
@@ -628,7 +806,7 @@ function AdminSongImportPageView() {
                 setImportResult(null)
               }}
             >
-              Bỏ qua bài trùng title + artist đã tồn tại
+              {duplicateLabel}
             </Checkbox>
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -689,7 +867,7 @@ function AdminSongImportPageView() {
                 Preview import
               </Title>
               <Text style={{ color: colorTextSecondary }}>
-                Xem nhanh title, artist, cover match và các file đang thiếu thông tin.
+                Xem nhanh title, {isPodcastImport ? 'show' : 'artist'}, cover match và các file đang thiếu thông tin.
               </Text>
             </div>
             <Tag color="blue" style={{ borderRadius: 999, margin: 0 }}>
@@ -729,7 +907,7 @@ function AdminSongImportPageView() {
                         {row.title || row.audioFilename}
                       </Title>
                       <Text style={{ color: colorTextSecondary }}>
-                        {row.artist || 'Chưa xác định artist'}
+                        {row.ownerName || ownerFallbackText}
                       </Text>
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -799,7 +977,7 @@ function AdminSongImportPageView() {
                   Kết quả import
                 </Title>
                 <Text style={{ color: colorTextSecondary }}>
-                  Báo cáo từng file sau khi server upload lên Cloudinary và tạo bản ghi Song.
+                  Báo cáo từng file sau khi server upload lên Cloudinary và tạo bản ghi {isPodcastImport ? 'Podcast' : 'Song'}.
                 </Text>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -818,6 +996,32 @@ function AdminSongImportPageView() {
               </div>
             </div>
 
+            {importIssues.length > 0 ? (
+              <Alert
+                type={(importResult.summary?.errorCount || 0) > 0 ? 'warning' : 'info'}
+                message="Có file chưa được tạo mới"
+                description={
+                  <div style={{ display: 'grid', gap: 6 }}>
+                    {importIssues.slice(0, 6).map((item) => (
+                      <Text
+                        key={`issue-${item.index}-${item.audioFilename}`}
+                        style={{ display: 'block' }}
+                      >
+                        {formatImportIssueText(item)}
+                      </Text>
+                    ))}
+                    {importIssues.length > 6 ? (
+                      <Text style={{ display: 'block', color: colorTextSecondary }}>
+                        Còn {importIssues.length - 6} dòng khác trong danh sách kết quả.
+                      </Text>
+                    ) : null}
+                  </div>
+                }
+                showIcon
+                style={{ marginBottom: 16, borderRadius: 14 }}
+              />
+            ) : null}
+
             <div style={{ display: 'grid', gap: 12 }}>
               {(importResult.results || []).slice(0, 40).map((item) => (
                 <article
@@ -825,8 +1029,19 @@ function AdminSongImportPageView() {
                   style={{
                     borderRadius: 18,
                     padding: 14,
-                    background: 'rgba(255, 255, 255, 0.035)',
-                    border: `1px solid ${colorBorderSecondary}`,
+                    background:
+                      item.status === 'skipped'
+                        ? 'rgba(250, 173, 20, 0.08)'
+                        : item.status === 'error'
+                          ? 'rgba(255, 107, 87, 0.08)'
+                          : 'rgba(255, 255, 255, 0.035)',
+                    border: `1px solid ${
+                      item.status === 'skipped'
+                        ? 'rgba(250, 173, 20, 0.26)'
+                        : item.status === 'error'
+                          ? 'rgba(255, 107, 87, 0.24)'
+                          : colorBorderSecondary
+                    }`,
                   }}
                 >
                   <div
@@ -842,7 +1057,9 @@ function AdminSongImportPageView() {
                       <Title level={5} style={{ margin: 0 }}>
                         {item.title || item.audioFilename}
                       </Title>
-                      <Text style={{ color: colorTextSecondary }}>{item.artist || 'Không có artist'}</Text>
+                      <Text style={{ color: colorTextSecondary }}>
+                        {item.artist || item.showTitle || (isPodcastImport ? 'Không có show' : 'Không có artist')}
+                      </Text>
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                       <Tag
@@ -855,7 +1072,7 @@ function AdminSongImportPageView() {
                         }
                         style={{ borderRadius: 999, margin: 0 }}
                       >
-                        {item.status}
+                        {getImportStatusLabel(item.status)}
                       </Tag>
                       <Tag color={item.coverMatched ? 'processing' : 'default'} style={{ borderRadius: 999, margin: 0 }}>
                         {item.coverMatched
@@ -875,6 +1092,7 @@ function AdminSongImportPageView() {
                       (item.coverMatchStrategy === 'order' ? 'Gán theo thứ tự file' : 'Không có')}
                   </Text>
                   <Text style={{ display: 'block', marginTop: 8 }}>
+                    <Text strong>{item.status === 'created' ? 'Ghi chú: ' : 'Lý do: '}</Text>
                     {item.message || 'Không có ghi chú.'}
                   </Text>
                 </article>

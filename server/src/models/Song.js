@@ -202,6 +202,12 @@ const songSchema = new mongoose.Schema(
   },
 )
 
+songSchema.index({ releaseStatus: 1, sortOrder: 1, createdAt: -1 })
+songSchema.index({ releaseStatus: 1, artist: 1 })
+songSchema.index({ releaseStatus: 1, sourceType: 1 })
+songSchema.index({ title: 'text', artist: 'text' })
+
+
 const Song = mongoose.models.Song || mongoose.model('Song', songSchema)
 
 export default Song

@@ -2,6 +2,7 @@ import path from 'node:path'
 import Album from '../models/Album.js'
 import Artist from '../models/Artist.js'
 import Chart from '../models/Chart.js'
+import Podcast from '../models/Podcast.js'
 import Radio from '../models/Radio.js'
 import Song from '../models/Song.js'
 import { destroyCloudinaryAsset, uploadCloudinaryFile } from '../config/cloudinary.js'
@@ -181,7 +182,63 @@ const resolveSongIdentityFromFilename = (filename, defaultArtist = '') => {
     title: stem,
     inferredFromFilename: false,
     errorMessage:
-      'Could not detect artist from filename. Rename files as "Artist - Title.ext" or provide a default artist.',
+      'Không tách được artist từ tên file. Dùng mẫu "Artist - Title.ext" hoặc nhập default artist.',
+  }
+}
+
+const resolvePodcastIdentityFromFilename = (filename, defaultShowTitle = '') => {
+  const stem = cleanupSongFilenameStem(getFilenameStem(filename))
+  const parsedIdentity = splitArtistAndTitleFromStem(stem)
+
+  if (parsedIdentity?.artist && parsedIdentity?.title) {
+    return {
+      showTitle: parsedIdentity.artist,
+      title: parsedIdentity.title,
+      inferredFromFilename: true,
+      errorMessage: '',
+    }
+  }
+
+  const hyphenParts = stem
+    .split('-')
+    .map((part) => trimString(part))
+    .filter(Boolean)
+
+  if (hyphenParts.length >= 2) {
+    const showTitle = formatSlugWords(hyphenParts[0])
+    const titleParts = [...hyphenParts.slice(1)]
+
+    if (titleParts.length > 1 && /^\d{3,}$/.test(titleParts[titleParts.length - 1])) {
+      titleParts.pop()
+    }
+
+    const title = formatSlugWords(titleParts.join(' '))
+
+    if (showTitle && title) {
+      return {
+        showTitle,
+        title,
+        inferredFromFilename: true,
+        errorMessage: '',
+      }
+    }
+  }
+
+  if (stem && trimString(defaultShowTitle)) {
+    return {
+      showTitle: trimString(defaultShowTitle),
+      title: formatSlugWords(stem),
+      inferredFromFilename: false,
+      errorMessage: '',
+    }
+  }
+
+  return {
+    showTitle: '',
+    title: stem,
+    inferredFromFilename: false,
+    errorMessage:
+      'Khong tach duoc show tu ten file. Dung mau "Show - Episode.ext" hoac nhap default show.',
   }
 }
 
@@ -303,6 +360,8 @@ const normalizeSongReleaseStatus = (value) => {
   return allowedSongReleaseStatuses.has(releaseStatus) ? releaseStatus : 'published'
 }
 
+const normalizeReleaseStatus = normalizeSongReleaseStatus
+
 const parseBooleanFlag = (value, fallback = false) => {
   if (typeof value === 'boolean') {
     return value
@@ -398,6 +457,55 @@ const sanitizeSongPayload = (payload) => {
   }
 }
 
+const sanitizePodcastPayload = (payload) => {
+  const audioUrl = trimString(payload.audioUrl)
+  const audioPublicId = trimString(payload.audioPublicId)
+  const audioDurationSeconds = toNonNegativeNumber(payload.audioDurationSeconds)
+  const audioFormat = trimString(payload.audioFormat)
+  const audioResourceType = trimString(payload.audioResourceType || 'video') || 'video'
+  const audioOriginalFilename = trimString(payload.audioOriginalFilename)
+  const audioSizeBytes = toNonNegativeNumber(payload.audioSizeBytes)
+  const providedDuration = trimString(payload.duration)
+  const inferredDuration = formatDurationFromSeconds(audioDurationSeconds)
+
+  return {
+    title: trimString(payload.title),
+    showTitle: trimString(payload.showTitle),
+    host: trimString(payload.host),
+    category: trimString(payload.category, 'Podcast') || 'Podcast',
+    description: trimString(payload.description),
+    duration: providedDuration ? normalizeDurationString(providedDuration, '00:00') : inferredDuration || '00:00',
+    coverUrl: trimString(payload.coverUrl),
+    coverPublicId: trimString(payload.coverPublicId),
+    audioUrl,
+    audio: audioUrl
+      ? {
+          url: audioUrl,
+          publicId: audioPublicId,
+          originalFilename: audioOriginalFilename,
+          format: audioFormat,
+          resourceType: audioResourceType,
+          sizeBytes: audioSizeBytes,
+          durationSeconds: audioDurationSeconds,
+          uploadedAt: new Date(),
+        }
+      : {
+          url: '',
+          publicId: '',
+          originalFilename: '',
+          format: '',
+          resourceType: 'video',
+          sizeBytes: 0,
+          durationSeconds: 0,
+          uploadedAt: null,
+        },
+    sourcePage: trimString(payload.sourcePage),
+    license: trimString(payload.license),
+    releaseStatus: normalizeReleaseStatus(payload.releaseStatus),
+    sortOrder: parseSortOrder(payload.sortOrder),
+  }
+}
+
 const collectSongCloudinaryAssets = (item) => {
   const assets = []
 
@@ -439,10 +547,45 @@ const collectSongCloudinaryAssets = (item) => {
   )
 }
 
+const collectPodcastCloudinaryAssets = (item) => {
+  const assets = []
+
+  if (trimString(item?.coverPublicId)) {
+    assets.push({
+      publicId: trimString(item.coverPublicId),
+      resourceType: 'image',
+    })
+  }
+
+  if (trimString(item?.audio?.publicId)) {
+    assets.push({
+      publicId: trimString(item.audio.publicId),
+      resourceType: trimString(item.audio.resourceType || 'video') || 'video',
+    })
+  }
+
+  return assets.filter(
+    (asset, index, collection) =>
+      collection.findIndex(
+        (candidate) =>
+          candidate.publicId === asset.publicId && candidate.resourceType === asset.resourceType,
+      ) === index,
+  )
+}
+
 const collectStaleSongAssets = (previousItem, nextItem) => {
   const previousAssets = collectSongCloudinaryAssets(previousItem)
   const nextAssets = new Set(
     collectSongCloudinaryAssets(nextItem).map((asset) => `${asset.resourceType}:${asset.publicId}`),
+  )
+
+  return previousAssets.filter((asset) => !nextAssets.has(`${asset.resourceType}:${asset.publicId}`))
+}
+
+const collectStalePodcastAssets = (previousItem, nextItem) => {
+  const previousAssets = collectPodcastCloudinaryAssets(previousItem)
+  const nextAssets = new Set(
+    collectPodcastCloudinaryAssets(nextItem).map((asset) => `${asset.resourceType}:${asset.publicId}`),
   )
 
   return previousAssets.filter((asset) => !nextAssets.has(`${asset.resourceType}:${asset.publicId}`))
@@ -467,6 +610,17 @@ const resourceConfig = {
     validate(payload) {
       if (!payload.title || !payload.artist) {
         return 'Song title and artist are required.'
+      }
+
+      return ''
+    },
+  },
+  podcasts: {
+    model: Podcast,
+    sanitize: sanitizePodcastPayload,
+    validate(payload) {
+      if (!payload.title || !payload.showTitle) {
+        return 'Podcast title and show title are required.'
       }
 
       return ''
@@ -602,6 +756,24 @@ const createImportedSongItem = async (payload) => {
   return created.item
 }
 
+const createImportedPodcastItem = async (payload) => {
+  const created = await createAdminResourceItem('podcasts', payload)
+
+  if (!created) {
+    throw new Error('Podcasts resource is not available.')
+  }
+
+  if (created.validationMessage) {
+    throw new Error(created.validationMessage)
+  }
+
+  if (!created.item) {
+    throw new Error('Podcast could not be created.')
+  }
+
+  return created.item
+}
+
 export const importAdminSongs = async ({ body, audioFiles = [], coverFiles = [] } = {}) => {
   const defaultArtist = trimString(body?.defaultArtist)
   const mood = trimString(body?.mood, 'Chill') || 'Chill'
@@ -625,10 +797,12 @@ export const importAdminSongs = async ({ body, audioFiles = [], coverFiles = [] 
       coverMatched: Boolean(matchedCoverFile),
       coverMatchStrategy: coverAssignment?.strategy || '',
       itemId: '',
+      reasonCode: '',
       message: '',
     }
 
     if (identity.errorMessage) {
+      result.reasonCode = 'identity_not_detected'
       result.message = identity.errorMessage
       results.push(result)
       continue
@@ -644,7 +818,8 @@ export const importAdminSongs = async ({ body, audioFiles = [], coverFiles = [] 
       if (existingSong) {
         result.status = 'skipped'
         result.itemId = String(existingSong._id)
-        result.message = 'Skipped because a song with the same title and artist already exists.'
+        result.reasonCode = 'duplicate_song'
+        result.message = 'Bỏ qua vì đã tồn tại bài hát cùng title + artist trong catalog.'
         results.push(result)
         continue
       }
@@ -709,13 +884,14 @@ export const importAdminSongs = async ({ body, audioFiles = [], coverFiles = [] 
       result.itemId = String(createdSong._id)
       result.message = matchedCoverFile
         ? coverAssignment?.strategy === 'order'
-          ? 'Song imported successfully with cover assigned by file order.'
-          : 'Song imported successfully with matched cover art.'
-        : 'Song imported successfully.'
+          ? 'Import thành công, cover được gán theo thứ tự file.'
+          : 'Import thành công với cover khớp theo tên file.'
+        : 'Import thành công.'
       results.push(result)
     } catch (error) {
       await cleanupCloudinaryAssets(uploadedAssets.filter((asset) => asset.publicId))
-      result.message = error instanceof Error ? error.message : 'Song import failed.'
+      result.reasonCode = 'import_failed'
+      result.message = error instanceof Error ? error.message : 'Import bài hát thất bại.'
       results.push(result)
     }
   }
@@ -745,6 +921,164 @@ export const importAdminSongs = async ({ body, audioFiles = [], coverFiles = [] 
   }
 }
 
+export const importAdminPodcasts = async ({ body, audioFiles = [], coverFiles = [] } = {}) => {
+  const defaultShowTitle = trimString(body?.defaultShowTitle)
+  const host = trimString(body?.host)
+  const category = trimString(body?.category, 'Podcast') || 'Podcast'
+  const license = trimString(body?.license)
+  const sourcePage = trimString(body?.sourcePage)
+  const skipDuplicates = parseBooleanFlag(body?.skipDuplicates, true)
+  const sortOrderStart = parseSortOrder(body?.sortOrderStart)
+  const coverAssignments = assignCoverFilesToAudio(audioFiles, coverFiles)
+  const batchFolder = `admin/podcasts/imports/${Date.now()}`
+  const results = []
+
+  for (const [index, audioFile] of audioFiles.entries()) {
+    const identity = resolvePodcastIdentityFromFilename(audioFile?.originalname, defaultShowTitle)
+    const coverAssignment = coverAssignments.get(getFileIdentity(audioFile)) || null
+    const matchedCoverFile = coverAssignment?.file || null
+    const result = {
+      index,
+      status: 'error',
+      title: identity.title || cleanupSongFilenameStem(getFilenameStem(audioFile?.originalname)),
+      showTitle: identity.showTitle || trimString(defaultShowTitle),
+      host,
+      audioFilename: trimString(audioFile?.originalname),
+      coverFilename: trimString(matchedCoverFile?.originalname),
+      coverMatched: Boolean(matchedCoverFile),
+      coverMatchStrategy: coverAssignment?.strategy || '',
+      itemId: '',
+      reasonCode: '',
+      message: '',
+    }
+
+    if (identity.errorMessage) {
+      result.reasonCode = 'identity_not_detected'
+      result.message = identity.errorMessage
+      results.push(result)
+      continue
+    }
+
+    if (skipDuplicates) {
+      const existingPodcast = await Podcast.findOne({
+        title: identity.title,
+        showTitle: identity.showTitle,
+      }).collation({ locale: 'en', strength: 2 })
+
+      if (existingPodcast) {
+        result.status = 'skipped'
+        result.itemId = String(existingPodcast._id)
+        result.reasonCode = 'duplicate_podcast'
+        result.message = 'Bo qua vi da ton tai podcast cung title + show trong catalog.'
+        results.push(result)
+        continue
+      }
+    }
+
+    const uploadedAssets = []
+
+    try {
+      const uploadedAudio = await uploadCloudinaryFile({
+        filePath: audioFile.path,
+        folder: `${batchFolder}/audio`,
+        resourceType: 'video',
+      })
+
+      if (!trimString(uploadedAudio?.secure_url || uploadedAudio?.url)) {
+        throw new Error(`Cloudinary did not return a valid URL for "${audioFile.originalname}".`)
+      }
+
+      uploadedAssets.push({
+        publicId: trimString(uploadedAudio?.public_id),
+        resourceType: trimString(uploadedAudio?.resource_type || 'video') || 'video',
+      })
+
+      let uploadedCover = null
+
+      if (matchedCoverFile?.path) {
+        uploadedCover = await uploadCloudinaryFile({
+          filePath: matchedCoverFile.path,
+          folder: `${batchFolder}/covers`,
+          resourceType: 'image',
+        })
+
+        if (!trimString(uploadedCover?.secure_url || uploadedCover?.url)) {
+          throw new Error(`Cloudinary did not return a valid cover URL for "${matchedCoverFile.originalname}".`)
+        }
+
+        uploadedAssets.push({
+          publicId: trimString(uploadedCover?.public_id),
+          resourceType: trimString(uploadedCover?.resource_type || 'image') || 'image',
+        })
+      }
+
+      const durationSeconds = toNonNegativeNumber(uploadedAudio?.duration)
+      const createdPodcast = await createImportedPodcastItem({
+        title: identity.title,
+        showTitle: identity.showTitle,
+        host,
+        category,
+        description: '',
+        duration: formatDurationFromSeconds(durationSeconds) || '00:00',
+        sortOrder: sortOrderStart + index,
+        coverUrl: trimString(uploadedCover?.secure_url || uploadedCover?.url),
+        coverPublicId: trimString(uploadedCover?.public_id),
+        audioUrl: trimString(uploadedAudio?.secure_url || uploadedAudio?.url),
+        audioPublicId: trimString(uploadedAudio?.public_id),
+        audioDurationSeconds: durationSeconds,
+        audioFormat: trimString(uploadedAudio?.format) || path.extname(audioFile.originalname).replace('.', ''),
+        audioResourceType: trimString(uploadedAudio?.resource_type || 'video') || 'video',
+        audioOriginalFilename: trimString(audioFile.originalname),
+        audioSizeBytes: toNonNegativeNumber(uploadedAudio?.bytes ?? audioFile?.size),
+        sourcePage,
+        license,
+        releaseStatus: 'published',
+      })
+
+      result.status = 'created'
+      result.itemId = String(createdPodcast._id)
+      result.message = matchedCoverFile
+        ? coverAssignment?.strategy === 'order'
+          ? 'Import thanh cong, cover duoc gan theo thu tu file.'
+          : 'Import thanh cong voi cover khop theo ten file.'
+        : 'Import thanh cong.'
+      results.push(result)
+    } catch (error) {
+      await cleanupCloudinaryAssets(uploadedAssets.filter((asset) => asset.publicId))
+      result.reasonCode = 'import_failed'
+      result.message = error instanceof Error ? error.message : 'Import podcast that bai.'
+      results.push(result)
+    }
+  }
+
+  const createdCount = results.filter((item) => item.status === 'created').length
+  const skippedCount = results.filter((item) => item.status === 'skipped').length
+  const errorCount = results.filter((item) => item.status === 'error').length
+  const matchedCoverCount = results.filter((item) => item.coverMatched).length
+  const orderMatchedCoverCount = results.filter((item) => item.coverMatchStrategy === 'order').length
+
+  return {
+    summary: {
+      totalAudioFiles: audioFiles.length,
+      totalCoverFiles: coverFiles.length,
+      createdCount,
+      skippedCount,
+      errorCount,
+      matchedCoverCount,
+      orderMatchedCoverCount,
+      unmatchedCoverCount: Math.max(audioFiles.length - matchedCoverCount, 0),
+      skipDuplicates,
+      defaultShowTitle,
+      host,
+      category,
+      license,
+      sourcePage,
+      sortOrderStart,
+    },
+    results,
+  }
+}
+
 export const updateAdminResourceItem = async (resource, id, body) => {
   const config = getAdminResourceConfig(resource)
 
@@ -762,7 +1096,7 @@ export const updateAdminResourceItem = async (resource, id, body) => {
     }
   }
 
-  if (resource === 'songs') {
+  if (resource === 'songs' || resource === 'podcasts') {
     const existingItem = await config.model.findById(id)
 
     if (!existingItem) {
@@ -776,7 +1110,11 @@ export const updateAdminResourceItem = async (resource, id, body) => {
 
     existingItem.set(payload)
     await existingItem.save()
-    await cleanupCloudinaryAssets(collectStaleSongAssets(previousSnapshot, existingItem.toObject()))
+    await cleanupCloudinaryAssets(
+      resource === 'songs'
+        ? collectStaleSongAssets(previousSnapshot, existingItem.toObject())
+        : collectStalePodcastAssets(previousSnapshot, existingItem.toObject()),
+    )
 
     return {
       validationMessage: '',
@@ -804,8 +1142,12 @@ export const deleteAdminResourceItem = async (resource, id) => {
 
   const item = await config.model.findByIdAndDelete(id)
 
-  if (resource === 'songs' && item) {
-    await cleanupCloudinaryAssets(collectSongCloudinaryAssets(item.toObject()))
+  if ((resource === 'songs' || resource === 'podcasts') && item) {
+    await cleanupCloudinaryAssets(
+      resource === 'songs'
+        ? collectSongCloudinaryAssets(item.toObject())
+        : collectPodcastCloudinaryAssets(item.toObject()),
+    )
   }
 
   return { item }

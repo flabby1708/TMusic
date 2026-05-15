@@ -3,6 +3,7 @@ import {
   approveArtistApplicationItem,
   createAdminItem,
   deleteAdminItem,
+  importAdminPodcastItems,
   getAdminUserItem,
   getArtistApplicationItem,
   importAdminSongItems,
@@ -19,6 +20,7 @@ import {
 import { createAdminUploadSignature } from '../../controllers/uploadController.js'
 import {
   parseAdminSongBulkImport,
+  parseAdminPodcastBulkImport,
   requireCloudinaryUploadConfig,
 } from '../../middleware/uploadMiddleware.js'
 import { requireAdmin } from '../../middleware/authMiddleware.js'
@@ -33,6 +35,12 @@ adminRouter.post(
   requireCloudinaryUploadConfig,
   parseAdminSongBulkImport,
   importAdminSongItems,
+)
+adminRouter.post(
+  '/podcasts/import',
+  requireCloudinaryUploadConfig,
+  parseAdminPodcastBulkImport,
+  importAdminPodcastItems,
 )
 adminRouter.get('/users', listAdminUserItems)
 adminRouter.get('/users/:id', getAdminUserItem)

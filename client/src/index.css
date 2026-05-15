@@ -786,17 +786,15 @@ a {
   overflow: visible;
 }
 
-.trending-swiper .swiper-slide {
-  height: auto;
-}
-
 .trending-swiper-slide .track-card {
   width: 100%;
+  height: auto;
+  min-height: 0;
 }
 
 .trending-swiper-button {
   position: absolute;
-  top: 5.8rem;
+  top: 5.6rem;
   transform: translateY(-50%);
   width: 2.9rem;
   height: 2.9rem;
@@ -2279,21 +2277,102 @@ a {
 }
 
 .tmusic-admin-shell .tmusic-admin-shell-menu .ant-menu-item {
-  height: 46px;
-  line-height: 46px;
-  margin: 6px 0;
-  border-radius: 12px;
+  position: relative;
+  min-height: 62px;
+  height: auto;
+  margin: 7px 0;
+  border: 1px solid transparent;
+  border-radius: 16px;
+  padding-block: 9px;
+  color: rgba(245, 247, 251, 0.72);
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
+  line-height: 1.2;
+  overflow: hidden;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
 }
 
 .tmusic-admin-shell .tmusic-admin-shell-menu .ant-menu-item-selected {
-  background: linear-gradient(135deg, #ff6b57 0%, #29d4ff 100%);
-  color: #08101a;
+  border-color: rgba(41, 212, 255, 0.26);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(41, 212, 255, 0.08)),
+    rgba(255, 255, 255, 0.045);
+  color: #f8fbff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 14px 32px rgba(0, 0, 0, 0.18);
+}
+
+.tmusic-admin-shell .tmusic-admin-shell-menu .ant-menu-item::before {
+  position: absolute;
+  inset: 12px auto 12px 0;
+  width: 3px;
+  border-radius: 9999px;
+  content: '';
+  opacity: 0;
+  background: #29d4ff;
+  transition: opacity 180ms ease;
+}
+
+.tmusic-admin-shell .tmusic-admin-shell-menu .ant-menu-item:hover {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: #f8fbff;
+  transform: translateX(2px);
+}
+
+.tmusic-admin-shell .tmusic-admin-shell-menu .ant-menu-item-selected::before {
+  opacity: 1;
+}
+
+.tmusic-admin-shell .tmusic-admin-shell-menu .ant-menu-item .anticon {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  margin-inline-end: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  color: rgba(245, 247, 251, 0.68);
+  background: rgba(255, 255, 255, 0.035);
+  font-size: 15px;
 }
 
 .tmusic-admin-shell .tmusic-admin-shell-menu .ant-menu-item-selected .anticon {
-  color: #08101a;
+  border-color: rgba(41, 212, 255, 0.34);
+  color: #dff8ff;
+  background: rgba(41, 212, 255, 0.12);
+}
+
+.tmusic-admin-shell .tmusic-admin-shell-menu .ant-menu-title-content {
+  min-width: 0;
+}
+
+.tmusic-admin-shell-menu-label {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.tmusic-admin-shell-menu-title {
+  color: inherit;
+  font-size: 0.98rem;
+  line-height: 1.15;
+}
+
+.tmusic-admin-shell-menu-description {
+  color: rgba(170, 184, 206, 0.72);
+  font-size: 0.73rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.tmusic-admin-shell .tmusic-admin-shell-menu .ant-menu-item-selected .tmusic-admin-shell-menu-description {
+  color: rgba(223, 248, 255, 0.74);
 }
 
 .tmusic-admin-shell .tmusic-admin-shell-menu .ant-menu-item-disabled {

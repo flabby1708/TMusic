@@ -1,6 +1,5 @@
 import { theme } from 'antd'
 import {
-  AppstoreOutlined,
   BarChartOutlined,
   HomeOutlined,
   LogoutOutlined,
@@ -13,11 +12,6 @@ import { resourceDefinitions } from '../adminConfig.js'
 export const ADMIN_HEADER_HEIGHT = 88
 
 export const headerItems = [
-  {
-    key: 'dashboard',
-    icon: <AppstoreOutlined />,
-    label: 'Tổng quan',
-  },
   {
     key: 'home',
     icon: <HomeOutlined />,
@@ -37,6 +31,7 @@ export const resourceMenuItems = [
     label: 'Thư viện nội dung',
     children: [
       { key: 'songs', label: resourceDefinitions.songs.label },
+      { key: 'podcasts', label: resourceDefinitions.podcasts.label },
       { key: 'albums', label: resourceDefinitions.albums.label },
     ],
   },

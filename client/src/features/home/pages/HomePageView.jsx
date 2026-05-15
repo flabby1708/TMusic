@@ -29,14 +29,12 @@ import {
   SpotifyIcon,
 } from '../../../shared/icons.jsx'
 import {
-  albumMockImages,
   artistMockImages,
   chartMockImages,
   footerLinks,
   libraryPrompts,
   menuLinks,
   radioMockImages,
-  trackMockImages,
 } from '../homeData.js'
 import { useHomePageData } from '../useHomePageData.js'
 import { useAuthSession } from '../../auth/useAuthSession.js'
@@ -311,19 +309,7 @@ function HomePage() {
     swiper.slideTo(nextIndex)
   }
 
-  const getTrackCover = (track) => {
-    if (!track) {
-      return ''
-    }
-
-    if (track.coverUrl) {
-      return track.coverUrl
-    }
-
-    const trackIndex = homeContent.songs.findIndex((item) => item.id === track.id)
-
-    return trackIndex >= 0 ? trackMockImages[trackIndex] : ''
-  }
+  const getTrackCover = (track) => track?.coverUrl || ''
 
   const currentTrackCover = getTrackCover(currentTrack)
   const playbackGateTrackCover = getTrackCover(playbackGateTrack)
@@ -674,9 +660,9 @@ function HomePage() {
           : 'Không gian phát dành riêng cho bạn'
 
   return (
-    <div className="client-cute-theme min-h-screen bg-[color:var(--bg-app)] px-2.5 py-2.5 text-[color:var(--text-primary)]">
-      <div className="mx-auto flex min-h-[calc(100vh-1.25rem)] w-full max-w-[1920px] flex-col gap-2.5">
-        <header className="top-shell flex flex-wrap items-center justify-between gap-2.5 px-3 py-2.5 sm:px-4">
+    <div className="client-cute-theme min-h-screen bg-[color:var(--bg-app)] px-2.5 py-2.5 text-[color:var(--text-primary)] xl:h-screen xl:overflow-hidden">
+      <div className="mx-auto flex min-h-[calc(100vh-1.25rem)] w-full max-w-[1920px] flex-col gap-2.5 xl:h-[calc(100vh-1.25rem)] xl:min-h-0">
+        <header className="top-shell flex flex-wrap items-center justify-between gap-2.5 px-3 py-2.5 sm:px-4 xl:flex-none">
           <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
             <a href="/" className="brand-badge hidden sm:inline-flex" aria-label="Trang chủ TMusic">
               <SpotifyIcon />
@@ -794,8 +780,8 @@ function HomePage() {
           </div>
         </header>
 
-        <div className={`grid flex-1 gap-2.5 ${layoutBottomSpacingClass} xl:grid-cols-[372px_minmax(0,1fr)]`}>
-          <aside className="panel-surface flex min-h-[320px] flex-col overflow-hidden">
+        <div className={`grid flex-1 gap-2.5 ${layoutBottomSpacingClass} xl:min-h-0 xl:overflow-hidden xl:grid-cols-[372px_minmax(0,1fr)]`}>
+          <aside className="panel-surface flex min-h-[320px] flex-col overflow-hidden xl:h-full xl:min-h-0">
             <div className="flex items-center justify-between px-5 py-4.5">
               <div className="flex items-center gap-3 text-[color:var(--text-primary)]">
                 <LibraryIcon />
@@ -819,7 +805,13 @@ function HomePage() {
                   <p className="mt-2.5 max-w-[17rem] text-[0.92rem] leading-7 text-[color:var(--text-secondary)]">
                     {item.description}
                   </p>
-                  <button className="primary-button mt-6">{item.action}</button>
+                  {item.path ? (
+                    <Link to={item.path} className="primary-button mt-6">
+                      {item.action}
+                    </Link>
+                  ) : (
+                    <button className="primary-button mt-6">{item.action}</button>
+                  )}
                 </section>
               ))}
             </div>
@@ -844,11 +836,11 @@ function HomePage() {
             </div>
           </aside>
 
-          <main className="panel-surface relative overflow-hidden">
+          <main className="panel-surface relative overflow-hidden xl:min-h-0">
             <div className="content-veil" />
 
             <div
-              className={`hide-scrollbar relative h-full overflow-y-auto px-4 ${contentBottomSpacingClass} pt-6 sm:px-6 lg:px-8`}
+              className={`hide-scrollbar relative h-full overflow-y-auto overscroll-contain px-4 ${contentBottomSpacingClass} pt-6 sm:px-6 lg:px-8`}
             >
               <audio ref={audioRef} preload="none" />
 
@@ -941,11 +933,11 @@ function HomePage() {
                   >
                     {homeContent.songs.map((track, index) => (
                       <SwiperSlide key={track.id || `${track.title}-${index}`} className="trending-swiper-slide">
-                        <article className="track-card group h-full p-2.5">
+                        <article className="track-card group p-2.5">
                           <div className="relative overflow-hidden rounded-[18px] border border-white/6">
-                            {track.coverUrl || trackMockImages[index] ? (
+                            {track.coverUrl ? (
                               <img
-                                src={track.coverUrl || trackMockImages[index]}
+                                src={track.coverUrl}
                                 alt={track.title}
                                 className="aspect-square h-[168px] w-full object-cover"
                               />
@@ -1103,14 +1095,14 @@ function HomePage() {
 
                 <div className="hide-scrollbar -mx-2 overflow-x-auto pb-4">
                   <div className="flex min-w-max gap-2 px-1">
-                    {homeContent.albums.map((album, index) => (
+                    {homeContent.albums.map((album) => (
                       <article
                         key={album.title}
                         className="track-card group w-[186px] shrink-0 p-2.5"
                       >
-                        {album.coverUrl || albumMockImages[index] ? (
+                        {album.coverUrl ? (
                           <img
-                            src={album.coverUrl || albumMockImages[index]}
+                            src={album.coverUrl}
                             alt={album.title}
                             className="aspect-square h-[168px] w-full rounded-[18px] border border-white/6 object-cover"
                           />

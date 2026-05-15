@@ -282,3 +282,5 @@ export const parseAdminSongBulkImport = (req, res, next) => {
     next()
   })
 }
+
+export const parseAdminPodcastBulkImport = parseAdminSongBulkImport

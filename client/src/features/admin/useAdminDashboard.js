@@ -14,6 +14,9 @@ const redirectToAdminLogin = () => {
   window.location.assign('/admin/login')
 }
 
+const normalizeResourceKey = (resource) =>
+  resourceDefinitions[resource] ? resource : 'songs'
+
 const formatDurationFromSeconds = (value) => {
   const safeValue = Number.isFinite(Number(value)) && Number(value) > 0 ? Math.floor(Number(value)) : 0
 
@@ -44,8 +47,8 @@ const isFileTypeAccepted = (assetType, file) => {
   return file.type.startsWith('image/')
 }
 
-export function useAdminDashboard({ enabled = true } = {}) {
-  const [activeResource, setActiveResource] = useState('songs')
+export function useAdminDashboard({ enabled = true, initialResource = 'songs' } = {}) {
+  const [activeResource, setActiveResource] = useState(() => normalizeResourceKey(initialResource))
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(enabled)
   const [saving, setSaving] = useState(false)
@@ -53,9 +56,13 @@ export function useAdminDashboard({ enabled = true } = {}) {
   const [editingId, setEditingId] = useState('')
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
-  const [formValues, setFormValues] = useState(buildEmptyFormValues('songs'))
+  const [formValues, setFormValues] = useState(() => buildEmptyFormValues(normalizeResourceKey(initialResource)))
 
   const currentResource = resourceDefinitions[activeResource]
+
+  useEffect(() => {
+    setActiveResource(normalizeResourceKey(initialResource))
+  }, [initialResource])
 
   useEffect(() => {
     setFormValues(buildEmptyFormValues(activeResource))
@@ -117,7 +124,7 @@ export function useAdminDashboard({ enabled = true } = {}) {
         [fieldName]: value,
       }
 
-      if (activeResource === 'songs' && fieldName === 'coverUrl') {
+      if ((activeResource === 'songs' || activeResource === 'podcasts') && fieldName === 'coverUrl') {
         nextValues.coverPublicId = ''
       }
 
@@ -128,6 +135,15 @@ export function useAdminDashboard({ enabled = true } = {}) {
         nextValues.masterAudioResourceType = ''
         nextValues.masterAudioOriginalFilename = ''
         nextValues.masterAudioSizeBytes = ''
+      }
+
+      if (activeResource === 'podcasts' && fieldName === 'audioUrl') {
+        nextValues.audioPublicId = ''
+        nextValues.audioDurationSeconds = ''
+        nextValues.audioFormat = ''
+        nextValues.audioResourceType = ''
+        nextValues.audioOriginalFilename = ''
+        nextValues.audioSizeBytes = ''
       }
 
       return nextValues
@@ -270,11 +286,13 @@ export function useAdminDashboard({ enabled = true } = {}) {
           [field.name]: uploadedAsset.secureUrl,
         }
 
-        if (activeResource === 'songs') {
+        if (activeResource === 'songs' || activeResource === 'podcasts') {
           if (field.name === 'coverUrl') {
             nextValues.coverPublicId = uploadedAsset.publicId || ''
           }
+        }
 
+        if (activeResource === 'songs') {
           if (field.name === 'audioUrl') {
             const formattedDuration = formatDurationFromSeconds(uploadedAsset.durationSeconds)
 
@@ -292,12 +310,28 @@ export function useAdminDashboard({ enabled = true } = {}) {
           }
         }
 
+        if (activeResource === 'podcasts' && field.name === 'audioUrl') {
+          const formattedDuration = formatDurationFromSeconds(uploadedAsset.durationSeconds)
+
+          nextValues.audioPublicId = uploadedAsset.publicId || ''
+          nextValues.audioDurationSeconds =
+            uploadedAsset.durationSeconds > 0 ? String(uploadedAsset.durationSeconds) : ''
+          nextValues.audioFormat = uploadedAsset.format || ''
+          nextValues.audioResourceType = uploadedAsset.resourceType || 'video'
+          nextValues.audioOriginalFilename = uploadedAsset.originalFilename || ''
+          nextValues.audioSizeBytes = String(uploadedAsset.sizeBytes || 0)
+
+          if (formattedDuration) {
+            nextValues.duration = formattedDuration
+          }
+        }
+
         return nextValues
       })
 
       setNotice(
         assetType === 'audio'
-          ? 'Tải file nhạc lên Cloudinary thành công.'
+          ? 'Tải file âm thanh lên Cloudinary thành công.'
           : 'Tải ảnh lên Cloudinary thành công.',
       )
 

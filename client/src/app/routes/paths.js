@@ -1,5 +1,6 @@
 export const appPaths = {
   home: '/',
+  podcast: '/podcast',
   section: '/section/:sectionKey',
   search: '/search',
   support: '/support',
@@ -36,7 +37,10 @@ export const appPaths = {
   admin: {
     root: '/admin',
     login: '/admin/login',
+    songs: '/admin/songs',
+    podcasts: '/admin/podcasts',
     importSongs: '/admin/import',
+    importPodcasts: '/admin/podcasts/import',
     artistApplications: '/admin/artist-applications',
   },
   artist: {

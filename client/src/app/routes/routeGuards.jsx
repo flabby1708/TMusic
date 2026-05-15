@@ -84,7 +84,7 @@ export function AdminGuestRoute() {
     <GuestRoute
       loading={loading}
       isAuthenticated={isAuthenticated}
-      redirectTo={appPaths.admin.root}
+      redirectTo={appPaths.admin.songs}
       loadingMessage="Đang kiểm tra phiên quản trị..."
     />
   )

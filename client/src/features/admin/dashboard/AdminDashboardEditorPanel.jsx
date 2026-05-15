@@ -12,6 +12,7 @@ const { TextArea } = Input
 
 function AdminDashboardEditorPanel(props) {
   const {
+    activeResource,
     currentResource,
     editingId,
     formValues,
@@ -26,17 +27,20 @@ function AdminDashboardEditorPanel(props) {
   const {
     token: { borderRadiusLG, colorBorderSecondary, colorTextSecondary },
   } = theme.useToken()
-  const isSongResource = currentResource.label === 'Bài hát'
-  const editorTitle = isSongResource
-    ? editingId
-      ? 'Đang chỉnh sửa bài hát'
-      : 'Thêm bài mới'
-    : editingId
-      ? 'Cập nhật mục đã chọn'
-      : 'Thêm mới'
-  const editorDescription = isSongResource
-    ? 'Chọn bài ở danh sách bên trái để sửa, hoặc tạo bài mới tại đây.'
-    : 'Điền thông tin để tạo mới hoặc chỉnh sửa mục hiện tại.'
+  const isSongResource = activeResource === 'songs'
+  const isPodcastResource = activeResource === 'podcasts'
+  let editorTitle = editingId ? 'Cập nhật mục đã chọn' : 'Thêm mới'
+  let editorDescription = 'Điền thông tin để tạo mới hoặc chỉnh sửa mục hiện tại.'
+
+  if (isSongResource) {
+    editorTitle = editingId ? 'Đang chỉnh sửa bài hát' : 'Thêm bài mới'
+    editorDescription = 'Chọn bài ở danh sách bên trái để sửa, hoặc tạo bài mới tại đây.'
+  }
+
+  if (isPodcastResource) {
+    editorTitle = editingId ? 'Đang chỉnh sửa podcast' : 'Thêm podcast mới'
+    editorDescription = 'Quản lý metadata, audio, cover và nguồn license cho từng tập podcast.'
+  }
 
   const createUploadRequest = (field) => async ({ file, onError, onSuccess }) => {
     try {
@@ -167,7 +171,7 @@ function AdminDashboardEditorPanel(props) {
                         disabled={saving || Boolean(uploadingField)}
                         style={{ borderRadius: 12 }}
                       >
-                        Tải file nhạc lên Cloudinary
+                        {isPodcastResource ? 'Tải podcast lên Cloudinary' : 'Tải file nhạc lên Cloudinary'}
                       </Button>
                     </Upload>
 
@@ -177,7 +181,7 @@ function AdminDashboardEditorPanel(props) {
                         style={{ borderRadius: 12 }}
                         onClick={() => window.open(formValues[field.name], '_blank', 'noopener,noreferrer')}
                       >
-                        Mở file nhạc
+                        {isPodcastResource ? 'Mở podcast' : 'Mở file nhạc'}
                       </Button>
                     ) : null}
                   </div>

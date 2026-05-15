@@ -4,6 +4,7 @@ import {
   createAdminResourceItem,
   deleteAdminResourceItem,
   getAdminResourceConfig,
+  importAdminPodcasts,
   importAdminSongs,
   listAdminResourceItems,
   updateAdminResourceItem,
@@ -86,6 +87,26 @@ export const importAdminSongItems = async (req, res, next) => {
     }
 
     const payload = await importAdminSongs({
+      body: req.body,
+      audioFiles: req.files?.audioFiles || [],
+      coverFiles: req.files?.coverFiles || [],
+    })
+
+    return res.status(201).json(payload)
+  } catch (error) {
+    return next(error)
+  } finally {
+    await cleanupUploadedFiles(req.files)
+  }
+}
+
+export const importAdminPodcastItems = async (req, res, next) => {
+  try {
+    if (!ensureDatabaseReady(res)) {
+      return
+    }
+
+    const payload = await importAdminPodcasts({
       body: req.body,
       audioFiles: req.files?.audioFiles || [],
       coverFiles: req.files?.coverFiles || [],

@@ -9,7 +9,7 @@ import AdminShell from '../../../features/admin/layout/AdminShell.jsx'
 import { useAdminDashboard } from '../../../features/admin/useAdminDashboard'
 import { useAdminSession } from '../../../features/admin/useAdminSession'
 
-function AdminDashboardPage() {
+function AdminDashboardPage({ initialResource = 'songs' }) {
   const { loading: sessionLoading, isAuthenticated } = useAdminSession()
   const adminReady = !sessionLoading && isAuthenticated
   const {
@@ -30,7 +30,7 @@ function AdminDashboardPage() {
     reloadActiveResource,
     saving,
     uploadingField,
-  } = useAdminDashboard({ enabled: adminReady })
+  } = useAdminDashboard({ enabled: adminReady, initialResource })
 
   useEffect(() => {
     if (!sessionLoading && !isAuthenticated) {
@@ -40,6 +40,10 @@ function AdminDashboardPage() {
 
   const handleOpenSongImport = () => {
     window.location.assign(appPaths.admin.importSongs)
+  }
+
+  const handleOpenPodcastImport = () => {
+    window.location.assign(appPaths.admin.importPodcasts)
   }
 
   if (sessionLoading) {
@@ -54,11 +58,16 @@ function AdminDashboardPage() {
     return null
   }
 
+  const isPodcastResource = activeResource === 'podcasts'
+  const shellSubtitle = isPodcastResource
+    ? 'Quản lý show, tập podcast, audio, cover và nguồn license riêng.'
+    : 'Quản lý catalog bài hát, audio, cover và trạng thái hiển thị.'
+
   return (
     <AdminShell
-      eyebrow="Library Ops"
-      title="Tổng quan nội dung"
-      subtitle="Quản lý bài hát, album, nghệ sĩ và những khu vực nội dung chính của TMusic."
+      eyebrow={isPodcastResource ? 'Podcast Ops' : 'Library Ops'}
+      title={currentResource.label}
+      subtitle={shellSubtitle}
     >
       <ConfigProvider theme={adminTheme}>
         <div
@@ -82,6 +91,7 @@ function AdminDashboardPage() {
               onCreateNew={handleReset}
               onDelete={handleDelete}
               onEdit={handleEdit}
+              onOpenPodcastImport={handleOpenPodcastImport}
               onOpenSongImport={handleOpenSongImport}
               onReload={reloadActiveResource}
               saving={saving}
@@ -89,6 +99,7 @@ function AdminDashboardPage() {
 
             <AdminDashboardEditorPanel
               currentResource={currentResource}
+              activeResource={activeResource}
               editingId={editingId}
               formValues={formValues}
               handleAssetUpload={handleAssetUpload}

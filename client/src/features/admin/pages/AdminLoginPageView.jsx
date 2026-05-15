@@ -31,7 +31,7 @@ function AdminLoginPage() {
 
   useEffect(() => {
     if (!sessionLoading && isAuthenticated) {
-      window.location.replace('/admin')
+      window.location.replace('/admin/songs')
     }
   }, [isAuthenticated, sessionLoading])
 
@@ -55,7 +55,7 @@ function AdminLoginPage() {
       setFeedback(payload.message || 'Đăng nhập quản trị thành công.')
 
       window.setTimeout(() => {
-        window.location.assign('/admin')
+        window.location.assign('/admin/songs')
       }, 500)
     } catch (error) {
       setFeedbackTone('error')
