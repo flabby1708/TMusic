@@ -42,6 +42,48 @@ const masterAudioSchema = new mongoose.Schema(
   },
 )
 
+const musicVideoSchema = new mongoose.Schema(
+  {
+    url: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    publicId: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    originalFilename: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    format: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    resourceType: {
+      type: String,
+      default: 'video',
+      trim: true,
+    },
+    sizeBytes: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    uploadedAt: {
+      type: Date,
+      default: null,
+    },
+  },
+  {
+    _id: false,
+  },
+)
+
 const audioVariantSchema = new mongoose.Schema(
   {
     quality: {
@@ -166,6 +208,15 @@ const songSchema = new mongoose.Schema(
     audioVariants: {
       type: [audioVariantSchema],
       default: [],
+    },
+    videoUrl: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    musicVideo: {
+      type: musicVideoSchema,
+      default: () => ({}),
     },
     processingStatus: {
       type: String,

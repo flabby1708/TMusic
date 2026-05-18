@@ -44,6 +44,10 @@ const isFileTypeAccepted = (assetType, file) => {
     return file.type.startsWith('audio/')
   }
 
+  if (assetType === 'video') {
+    return file.type.startsWith('video/')
+  }
+
   return file.type.startsWith('image/')
 }
 
@@ -164,6 +168,47 @@ export function useAdminDashboard({ enabled = true, initialResource = 'songs' } 
     setError('')
   }
 
+  const handleArtistWikiImport = async () => {
+    if (activeResource !== 'artists') {
+      return
+    }
+
+    setSaving(true)
+    setError('')
+    setNotice('')
+
+    try {
+      const payload = await requestAdminJson('/api/admin/artists/import-wiki', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formValues.name,
+          sourceUrl: formValues.sourceUrl,
+        }),
+      })
+
+      await reloadActiveResource()
+
+      if (payload.item) {
+        setEditingId(payload.item._id)
+        setFormValues(toFormValues('artists', payload.item))
+      }
+
+      setNotice(payload.created ? 'Da import artist tu Wiki.' : 'Da cap nhat artist tu Wiki.')
+    } catch (importError) {
+      if (isAdminSessionError(importError)) {
+        redirectToAdminLogin()
+        return
+      }
+
+      setError(importError.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const reloadActiveResource = async () => {
     if (!enabled) {
       return
@@ -263,7 +308,9 @@ export function useAdminDashboard({ enabled = true, initialResource = 'songs' } 
       const typeError = new Error(
         assetType === 'audio'
           ? 'Vui lòng chọn đúng tệp âm thanh.'
-          : 'Vui lòng chọn đúng tệp hình ảnh.',
+          : assetType === 'video'
+            ? 'Vui lòng chọn đúng tệp video.'
+            : 'Vui lòng chọn đúng tệp hình ảnh.',
       )
       setError(typeError.message)
       throw typeError
@@ -308,6 +355,14 @@ export function useAdminDashboard({ enabled = true, initialResource = 'songs' } 
               nextValues.duration = formattedDuration
             }
           }
+
+          if (field.name === 'videoUrl') {
+            nextValues.musicVideoPublicId = uploadedAsset.publicId || ''
+            nextValues.musicVideoFormat = uploadedAsset.format || ''
+            nextValues.musicVideoResourceType = uploadedAsset.resourceType || 'video'
+            nextValues.musicVideoOriginalFilename = uploadedAsset.originalFilename || ''
+            nextValues.musicVideoSizeBytes = String(uploadedAsset.sizeBytes || 0)
+          }
         }
 
         if (activeResource === 'podcasts' && field.name === 'audioUrl') {
@@ -332,7 +387,9 @@ export function useAdminDashboard({ enabled = true, initialResource = 'songs' } 
       setNotice(
         assetType === 'audio'
           ? 'Tải file âm thanh lên Cloudinary thành công.'
-          : 'Tải ảnh lên Cloudinary thành công.',
+          : assetType === 'video'
+            ? 'Tải music video lên Cloudinary thành công.'
+            : 'Tải ảnh lên Cloudinary thành công.',
       )
 
       return uploadedAsset
@@ -359,6 +416,7 @@ export function useAdminDashboard({ enabled = true, initialResource = 'songs' } 
     handleChange,
     handleDelete,
     handleEdit,
+    handleArtistWikiImport,
     handleReset,
     handleSubmit,
     items,

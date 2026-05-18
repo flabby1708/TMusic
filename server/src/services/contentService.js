@@ -9,7 +9,7 @@ const sortByNewest = { createdAt: -1, sortOrder: -1 }
 const publishedSongFilter = { releaseStatus: 'published' }
 const homeSectionLimit = 12
 const homeCacheTtlMs = 60 * 1000
-const homeSongFields = 'title artist duration explicit coverUrl audioUrl audioVariants mood artwork sortOrder'
+const homeSongFields = 'title artist duration explicit coverUrl audioUrl audioVariants videoUrl musicVideo mood artwork sortOrder'
 const homeCache = new Map()
 
 const trimString = (value, fallback = '') => {
@@ -54,7 +54,25 @@ const buildSongCountMeta = (count) => {
   return safeCount === 1 ? '1 bài hát' : `${safeCount} bài hát`
 }
 
-const normalizeArtistNameKey = (value) => trimString(value).toLowerCase()
+const normalizeArtistNameKey = (value) =>
+  trimString(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'd')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+const getArtistLookupKeys = (value) =>
+  [
+    value,
+    ...trimString(value)
+      .split(/\/|,|&|\s+feat\.?\s+|\s+ft\.?\s+/i)
+      .map((item) => item.trim()),
+  ]
+    .map(normalizeArtistNameKey)
+    .filter(Boolean)
+const artistProfileFields = 'name meta aliases realName bio statsLabel sourceLabel sourceUrl verified credits imageUrl initials artwork sortOrder'
 
 const queryHomeSongs = () =>
   Song.find(publishedSongFilter)
@@ -130,6 +148,29 @@ const getPopularArtistsFromSongs = async () => {
 
 const queryPopularArtists = async () => {
   const songArtists = await getPopularArtistsFromSongs()
+  const curatedArtists = await Artist.find()
+    .sort(sortByOrder)
+    .limit(homeSectionLimit * 4)
+    .select(artistProfileFields)
+    .lean()
+  const findCuratedArtist = (name) => {
+    const lookupKeys = getArtistLookupKeys(name)
+
+    return curatedArtists.find((artist) => {
+      const artistKeys = getArtistLookupKeys(artist.name)
+      artistKeys.push(
+        ...(Array.isArray(artist.aliases) ? artist.aliases.map(normalizeArtistNameKey).filter(Boolean) : []),
+      )
+
+      return artistKeys.some((artistKey) =>
+        lookupKeys.some((lookupKey) =>
+          artistKey === lookupKey ||
+          (artistKey.length >= 3 && lookupKey.includes(artistKey)) ||
+          (lookupKey.length >= 3 && artistKey.includes(lookupKey)),
+        ),
+      )
+    })
+  }
   const mergedArtists = []
   const seenArtistNames = new Set()
 
@@ -142,24 +183,21 @@ const queryPopularArtists = async () => {
     }
 
     seenArtistNames.add(key)
+    const curatedArtist = findCuratedArtist(name)
+    const displayName = trimString(curatedArtist?.name) || name
     mergedArtists.push({
-      name,
-      meta: trimString(artist.meta) || buildSongCountMeta(artist.songCount),
-      imageUrl: trimString(artist.imageUrl),
-      initials: buildInitials(name),
-      artwork: '',
+      ...(curatedArtist || {}),
+      name: displayName,
+      meta: trimString(curatedArtist?.meta) || trimString(artist.meta) || buildSongCountMeta(artist.songCount),
+      imageUrl: trimString(curatedArtist?.imageUrl) || trimString(artist.imageUrl),
+      initials: trimString(curatedArtist?.initials) || buildInitials(displayName),
+      artwork: trimString(curatedArtist?.artwork),
     })
   }
 
   if (mergedArtists.length > 0) {
     return mergedArtists.slice(0, homeSectionLimit)
   }
-
-  const curatedArtists = await Artist.find()
-    .sort(sortByOrder)
-    .limit(homeSectionLimit)
-    .select('name meta imageUrl initials artwork sortOrder')
-    .lean()
 
   for (const artist of curatedArtists) {
     const name = trimString(artist.name)

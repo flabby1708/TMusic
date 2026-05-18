@@ -8,6 +8,7 @@ import {
   UserOutlined,
 } from '@ant-design/icons'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { appPaths } from '../../../app/routes/paths.js'
 import { useAdminSession } from '../useAdminSession.js'
 
 const { Content, Header, Sider } = Layout
@@ -22,7 +23,7 @@ const renderAdminMenuLabel = ({ title, description }) => (
 
 const adminMenuItems = [
   {
-    key: '/admin/songs',
+    key: appPaths.admin.songs,
     icon: <SoundOutlined />,
     label: renderAdminMenuLabel({
       title: 'Bài hát',
@@ -30,7 +31,7 @@ const adminMenuItems = [
     }),
   },
   {
-    key: '/admin/podcasts',
+    key: appPaths.admin.podcasts,
     icon: <CustomerServiceOutlined />,
     label: renderAdminMenuLabel({
       title: 'Podcast',
@@ -39,12 +40,31 @@ const adminMenuItems = [
   },
   { type: 'divider' },
   {
-    key: '/admin/users',
+    key: appPaths.admin.users,
     icon: <UserOutlined />,
-    label: 'Người dùng',
+    label: renderAdminMenuLabel({
+      title: 'Người dùng',
+      description: 'Tài khoản nghe nhạc',
+    }),
   },
   {
-    key: '/admin/artist-applications',
+    key: appPaths.admin.artistAccounts,
+    icon: <TeamOutlined />,
+    label: renderAdminMenuLabel({
+      title: 'Nghệ sĩ',
+      description: 'Tài khoản nghệ sĩ',
+    }),
+  },
+  {
+    key: appPaths.admin.admins,
+    icon: <FileProtectOutlined />,
+    label: renderAdminMenuLabel({
+      title: 'Admin',
+      description: 'Quyền quản trị',
+    }),
+  },
+  {
+    key: appPaths.admin.artistApplications,
     icon: <TeamOutlined />,
     label: 'Hồ sơ nghệ sĩ',
   },
@@ -67,7 +87,7 @@ const getSelectedKey = (pathname) =>
     (item) =>
       item?.key &&
       pathname.startsWith(item.key),
-  )?.key || '/admin/songs'
+  )?.key || appPaths.admin.songs
 
 function AdminShell({
   children,
@@ -83,7 +103,7 @@ function AdminShell({
 
   const handleLogout = () => {
     logout()
-    window.location.assign('/admin/login')
+    window.location.assign(appPaths.admin.login)
   }
 
   return (

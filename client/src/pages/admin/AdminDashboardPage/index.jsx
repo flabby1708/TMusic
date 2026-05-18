@@ -21,6 +21,7 @@ function AdminDashboardPage({ initialResource = 'songs' }) {
     handleChange,
     handleDelete,
     handleEdit,
+    handleArtistWikiImport,
     handleAssetUpload,
     handleReset,
     handleSubmit,
@@ -103,6 +104,7 @@ function AdminDashboardPage({ initialResource = 'songs' }) {
               editingId={editingId}
               formValues={formValues}
               handleAssetUpload={handleAssetUpload}
+              handleArtistWikiImport={handleArtistWikiImport}
               handleChange={handleChange}
               handleReset={handleReset}
               handleSubmit={handleSubmit}

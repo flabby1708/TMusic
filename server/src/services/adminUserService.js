@@ -31,15 +31,22 @@ const serializeUser = (user) => {
   }
 }
 
-export const listAdminUsers = async ({ query = '' } = {}) => {
+export const listAdminUsers = async ({ query = '', role = '' } = {}) => {
   const normalizedQuery = trimString(query)
+  const normalizedRole = trimString(role)
   const filter = {}
+
+  if (normalizedRole && allowedRoles.has(normalizedRole)) {
+    filter.role = normalizedRole
+  }
 
   if (normalizedQuery) {
     filter.$or = [
       { displayName: { $regex: normalizedQuery, $options: 'i' } },
       { email: { $regex: normalizedQuery, $options: 'i' } },
       { phoneNumber: { $regex: normalizedQuery, $options: 'i' } },
+      { 'artistProfile.stageName': { $regex: normalizedQuery, $options: 'i' } },
+      { 'artistProfile.bio': { $regex: normalizedQuery, $options: 'i' } },
     ]
   }
 

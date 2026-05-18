@@ -36,12 +36,22 @@ export const resourceMenuItems = [
     ],
   },
   {
-    key: 'users',
-    label: 'Người dùng',
+    key: 'accounts',
+    icon: <UserOutlined />,
+    label: 'Tài khoản',
+    children: [
+      { key: 'users', label: 'Người dùng' },
+      {
+        key: 'artist-accounts',
+        icon: <TeamOutlined />,
+        label: 'Nghệ sĩ',
+      },
+      { key: 'admins', label: 'Admin' },
+    ],
   },
   {
     key: 'sub2',
-    icon: <UserOutlined />,
+    icon: <TeamOutlined />,
     label: 'Nghệ sĩ và kênh',
     children: [
       {

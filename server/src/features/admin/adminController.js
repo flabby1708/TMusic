@@ -9,6 +9,7 @@ import {
   listAdminResourceItems,
   updateAdminResourceItem,
 } from '../../services/adminService.js'
+import { importArtistWikiProfile } from '../../services/artistWikiImportService.js'
 import {
   getAdminUserById,
   listAdminUsers,
@@ -120,6 +121,23 @@ export const importAdminPodcastItems = async (req, res, next) => {
   }
 }
 
+export const importAdminArtistWikiItem = async (req, res, next) => {
+  try {
+    if (!ensureDatabaseReady(res)) {
+      return
+    }
+
+    const payload = await importArtistWikiProfile({
+      name: req.body?.name,
+      sourceUrl: req.body?.sourceUrl,
+    })
+
+    return res.status(payload.created ? 201 : 200).json(payload)
+  } catch (error) {
+    return next(error)
+  }
+}
+
 export const updateAdminItem = async (req, res, next) => {
   try {
     if (!ensureDatabaseReady(res) || !ensureKnownResource(req.params.resource, res)) {
@@ -175,7 +193,7 @@ export const listAdminUserItems = async (req, res, next) => {
       return
     }
 
-    return res.json(await listAdminUsers({ query: req.query.q }))
+    return res.json(await listAdminUsers({ query: req.query.q, role: req.query.role }))
   } catch (error) {
     return next(error)
   }

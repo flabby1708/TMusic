@@ -19,6 +19,7 @@ export function normalizeTrack(song, index) {
     coverUrl: song.coverUrl || '',
     audioUrl: song.audioUrl || '',
     audioVariants: Array.isArray(song.audioVariants) ? song.audioVariants : [],
+    videoUrl: song.videoUrl || song.musicVideo?.url || '',
     tag: song.mood || fallback.tag,
     artwork: song.artwork || fallback.artwork,
   }
@@ -28,8 +29,17 @@ export function normalizeArtist(artist, index) {
   const fallback = fallbackArtists[index % fallbackArtists.length]
 
   return {
+    id: artist._id || artist.id || `artist-${index}`,
     name: artist.name || fallback.name,
     meta: artist.meta || fallback.meta,
+    aliases: Array.isArray(artist.aliases) ? artist.aliases : [],
+    realName: artist.realName || '',
+    bio: artist.bio || '',
+    statsLabel: artist.statsLabel || '',
+    sourceLabel: artist.sourceLabel || '',
+    sourceUrl: artist.sourceUrl || '',
+    verified: Boolean(artist.verified),
+    credits: Array.isArray(artist.credits) ? artist.credits : [],
     initials: artist.initials || fallback.initials,
     imageUrl: artist.imageUrl || '',
     artwork: artist.artwork || fallback.artwork,

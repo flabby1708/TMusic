@@ -12,6 +12,56 @@ const artistSchema = new mongoose.Schema(
       default: 'Nghệ sĩ',
       trim: true,
     },
+    aliases: {
+      type: [String],
+      default: [],
+    },
+    realName: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    bio: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    statsLabel: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    sourceLabel: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    sourceUrl: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    verified: {
+      type: Boolean,
+      default: false,
+    },
+    credits: {
+      type: [
+        {
+          name: {
+            type: String,
+            default: '',
+            trim: true,
+          },
+          role: {
+            type: String,
+            default: '',
+            trim: true,
+          },
+        },
+      ],
+      default: [],
+    },
     imageUrl: {
       type: String,
       default: '',

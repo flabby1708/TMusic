@@ -36,29 +36,45 @@ const artistStatusColor = {
   pending: 'orange',
   approved: 'green',
   rejected: 'red',
+  suspended: 'red',
 }
 
-function AdminUsersPageView() {
+const rolePageName = {
+  user: 'Người dùng',
+  artist: 'Nghệ sĩ',
+  admin: 'Quản trị viên',
+}
+
+function AdminUsersPageView({
+  roleFilter = '',
+  heading = 'Danh sách tài khoản',
+  description = 'Tìm kiếm, khóa/mở khóa tài khoản và cập nhật gói nghe nhạc.',
+  searchPlaceholder = 'Tìm theo tên, email hoặc số điện thoại',
+}) {
   const [items, setItems] = useState([])
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const loadUsers = useCallback(async (nextQuery = query) => {
+  const loadUsers = useCallback(async (nextQuery = '') => {
     setLoading(true)
     setError('')
 
     try {
-      const payload = await fetchAdminUsers(nextQuery)
+      const payload = await fetchAdminUsers({
+        query: nextQuery,
+        role: roleFilter,
+      })
       setItems(payload.items || [])
     } catch (loadError) {
-      setError(loadError.message || 'Không tải được danh sách người dùng.')
+      setError(loadError.message || 'Không tải được danh sách tài khoản.')
     } finally {
       setLoading(false)
     }
-  }, [query])
+  }, [roleFilter])
 
   useEffect(() => {
+    setQuery('')
     void loadUsers('')
   }, [loadUsers])
 
@@ -100,11 +116,11 @@ function AdminUsersPageView() {
           : 'Đã mở khóa tài khoản.',
       )
 
-      await loadUsers()
+      await loadUsers(query)
     } catch (statusError) {
       message.error(statusError.message || 'Cập nhật trạng thái thất bại.')
     }
-  }, [loadUsers])
+  }, [loadUsers, query])
 
   const handleSubscriptionChange = useCallback(async (user, plan) => {
     const isPremium = plan === 'premium'
@@ -118,16 +134,16 @@ function AdminUsersPageView() {
       })
 
       message.success('Đã cập nhật gói người dùng.')
-      await loadUsers()
+      await loadUsers(query)
     } catch (subscriptionError) {
       message.error(subscriptionError.message || 'Cập nhật gói thất bại.')
     }
-  }, [loadUsers])
+  }, [loadUsers, query])
 
   const columns = useMemo(
     () => [
       {
-        title: 'Người dùng',
+        title: roleFilter ? rolePageName[roleFilter] || 'Tài khoản' : 'Người dùng',
         dataIndex: 'displayName',
         key: 'displayName',
         render: (_, item) => (
@@ -135,16 +151,22 @@ function AdminUsersPageView() {
             <strong>{item.displayName || 'Chưa có tên'}</strong>
             <br />
             <Text type="secondary">{item.email}</Text>
+            {item.role === 'artist' && item.artistProfile?.stageName ? (
+              <>
+                <br />
+                <Text type="secondary">Nghệ danh: {item.artistProfile.stageName}</Text>
+              </>
+            ) : null}
           </div>
         ),
       },
-      {
+      !roleFilter && {
         title: 'Vai trò',
         dataIndex: 'role',
         key: 'role',
         render: (role) => <Tag color={roleColor[role] || 'default'}>{role}</Tag>,
       },
-      {
+      (!roleFilter || roleFilter === 'artist') && {
         title: 'Nghệ sĩ',
         dataIndex: 'artistStatus',
         key: 'artistStatus',
@@ -164,7 +186,7 @@ function AdminUsersPageView() {
           </Tag>
         ),
       },
-      {
+      roleFilter !== 'admin' && {
         title: 'Gói',
         dataIndex: ['subscription', 'plan'],
         key: 'subscription',
@@ -198,8 +220,8 @@ function AdminUsersPageView() {
           </Button>
         ),
       },
-    ],
-    [handleSubscriptionChange, handleToggleStatus],
+    ].filter(Boolean),
+    [handleSubscriptionChange, handleToggleStatus, roleFilter],
   )
 
   return (
@@ -227,10 +249,10 @@ function AdminUsersPageView() {
       >
         <Space direction="vertical" size={4}>
           <Title level={4} style={{ margin: 0 }}>
-            Danh sách tài khoản
+            {heading}
           </Title>
           <Text type="secondary">
-            Tìm kiếm, khóa/mở khóa tài khoản và cập nhật gói nghe nhạc.
+            {description}
           </Text>
         </Space>
       </div>
@@ -239,7 +261,7 @@ function AdminUsersPageView() {
         <Space direction="vertical" size={22} style={{ width: '100%' }}>
           <Space.Compact style={{ width: '100%' }}>
             <Input
-              placeholder="Tìm theo tên, email hoặc số điện thoại"
+              placeholder={searchPlaceholder}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               onPressEnter={handleSearch}

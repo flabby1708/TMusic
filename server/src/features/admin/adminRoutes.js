@@ -4,6 +4,7 @@ import {
   createAdminItem,
   deleteAdminItem,
   importAdminPodcastItems,
+  importAdminArtistWikiItem,
   getAdminUserItem,
   getArtistApplicationItem,
   importAdminSongItems,
@@ -42,6 +43,7 @@ adminRouter.post(
   parseAdminPodcastBulkImport,
   importAdminPodcastItems,
 )
+adminRouter.post('/artists/import-wiki', importAdminArtistWikiItem)
 adminRouter.get('/users', listAdminUserItems)
 adminRouter.get('/users/:id', getAdminUserItem)
 adminRouter.patch('/users/:id/status', updateAdminUserStatusItem)

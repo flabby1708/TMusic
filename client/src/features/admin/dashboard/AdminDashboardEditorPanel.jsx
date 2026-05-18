@@ -16,6 +16,7 @@ function AdminDashboardEditorPanel(props) {
     currentResource,
     editingId,
     formValues,
+    handleArtistWikiImport,
     handleAssetUpload,
     handleChange,
     handleReset,
@@ -29,6 +30,7 @@ function AdminDashboardEditorPanel(props) {
   } = theme.useToken()
   const isSongResource = activeResource === 'songs'
   const isPodcastResource = activeResource === 'podcasts'
+  const isArtistResource = activeResource === 'artists'
   let editorTitle = editingId ? 'Cập nhật mục đã chọn' : 'Thêm mới'
   let editorDescription = 'Điền thông tin để tạo mới hoặc chỉnh sửa mục hiện tại.'
 
@@ -40,6 +42,30 @@ function AdminDashboardEditorPanel(props) {
   if (isPodcastResource) {
     editorTitle = editingId ? 'Đang chỉnh sửa podcast' : 'Thêm podcast mới'
     editorDescription = 'Quản lý metadata, audio, cover và nguồn license cho từng tập podcast.'
+  }
+
+  const getUploadAccept = (field) => {
+    if (field.uploadAssetType === 'audio') {
+      return 'audio/*'
+    }
+
+    if (field.uploadAssetType === 'video') {
+      return 'video/*'
+    }
+
+    return 'image/*'
+  }
+
+  const getUploadButtonLabel = (field) => {
+    if (field.uploadAssetType === 'audio') {
+      return isPodcastResource ? 'Tải podcast lên Cloudinary' : 'Tải file nhạc lên Cloudinary'
+    }
+
+    if (field.uploadAssetType === 'video') {
+      return 'Tải music video lên Cloudinary'
+    }
+
+    return 'Tải ảnh lên Cloudinary'
   }
 
   const createUploadRequest = (field) => async ({ file, onError, onSuccess }) => {
@@ -127,6 +153,31 @@ function AdminDashboardEditorPanel(props) {
           </div>
         ) : null}
 
+        {isArtistResource ? (
+          <div
+            style={{
+              marginBottom: 16,
+              padding: 14,
+              borderRadius: 18,
+              border: `1px solid ${colorBorderSecondary}`,
+              background: 'rgba(98, 216, 255, 0.08)',
+            }}
+          >
+            <Text style={{ color: colorTextSecondary, display: 'block', marginBottom: 10 }}>
+              Điền tên nghệ sĩ hoặc Link Wiki/source, rồi import để lấy bio, ảnh, alias và credits vào DB thật.
+            </Text>
+            <Button
+              htmlType="button"
+              onClick={() => void handleArtistWikiImport?.()}
+              loading={saving}
+              disabled={saving || (!formValues.name && !formValues.sourceUrl)}
+              style={{ borderRadius: 12 }}
+            >
+              Import từ Wiki
+            </Button>
+          </div>
+        ) : null}
+
         <form className="space-y-4" onSubmit={handleSubmit}>
           {currentResource.fields.map((field) => (
             <div key={field.name} style={{ display: 'block' }}>
@@ -149,7 +200,7 @@ function AdminDashboardEditorPanel(props) {
                   options={field.options || []}
                   style={{ width: '100%' }}
                 />
-              ) : field.uploadAssetType === 'audio' ? (
+              ) : field.uploadAssetType === 'audio' || field.uploadAssetType === 'video' ? (
                 <div style={{ display: 'grid', gap: 12 }}>
                   <Input
                     type={field.type}
@@ -160,7 +211,7 @@ function AdminDashboardEditorPanel(props) {
 
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
                     <Upload
-                      accept="audio/*"
+                      accept={getUploadAccept(field)}
                       customRequest={createUploadRequest(field)}
                       showUploadList={false}
                       disabled={saving || Boolean(uploadingField)}
@@ -171,7 +222,7 @@ function AdminDashboardEditorPanel(props) {
                         disabled={saving || Boolean(uploadingField)}
                         style={{ borderRadius: 12 }}
                       >
-                        {isPodcastResource ? 'Tải podcast lên Cloudinary' : 'Tải file nhạc lên Cloudinary'}
+                        {getUploadButtonLabel(field)}
                       </Button>
                     </Upload>
 
@@ -181,7 +232,11 @@ function AdminDashboardEditorPanel(props) {
                         style={{ borderRadius: 12 }}
                         onClick={() => window.open(formValues[field.name], '_blank', 'noopener,noreferrer')}
                       >
-                        {isPodcastResource ? 'Mở podcast' : 'Mở file nhạc'}
+                        {field.uploadAssetType === 'video'
+                          ? 'Mở video'
+                          : isPodcastResource
+                            ? 'Mở podcast'
+                            : 'Mở file nhạc'}
                       </Button>
                     ) : null}
                   </div>
@@ -196,7 +251,11 @@ function AdminDashboardEditorPanel(props) {
                         padding: 14,
                       }}
                     >
-                      <audio controls src={formValues[field.name]} style={{ width: '100%' }} />
+                      {field.uploadAssetType === 'video' ? (
+                        <video controls src={formValues[field.name]} style={{ width: '100%' }} />
+                      ) : (
+                        <audio controls src={formValues[field.name]} style={{ width: '100%' }} />
+                      )}
                     </div>
                   ) : null}
                 </div>
@@ -211,7 +270,7 @@ function AdminDashboardEditorPanel(props) {
 
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
                     <Upload
-                      accept={field.uploadAssetType === 'audio' ? 'audio/*' : 'image/*'}
+                      accept={getUploadAccept(field)}
                       customRequest={createUploadRequest(field)}
                       showUploadList={false}
                       disabled={saving || Boolean(uploadingField)}

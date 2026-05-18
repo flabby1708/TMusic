@@ -1,12 +1,18 @@
 import { requestAdminJson } from './adminAuthClient.js'
 
 const getUploadErrorMessage = (assetType) =>
-    assetType === 'audio' ? 'Tải file nhạc lên thất bại.' : 'Tải ảnh lên thất bại.'
+  assetType === 'audio'
+    ? 'Tải file nhạc lên thất bại.'
+    : assetType === 'video'
+      ? 'Tải video lên thất bại.'
+      : 'Tải ảnh lên thất bại.'
 
 const getInvalidResponseMessage = (assetType) =>
   assetType === 'audio'
     ? 'Cloudinary khong tra ve duong dan audio hop le.'
-    : 'Cloudinary không trả về đường dẫn ảnh hợp lệ.'
+    : assetType === 'video'
+      ? 'Cloudinary không trả về đường dẫn video hợp lệ.'
+      : 'Cloudinary không trả về đường dẫn ảnh hợp lệ.'
 
 const toPositiveFiniteNumber = (value) => {
   const parsed = Number(value)
@@ -103,4 +109,11 @@ export const uploadAdminAudio = ({ file, resource }) =>
     file,
     resource,
     assetType: 'audio',
+  })
+
+export const uploadAdminVideo = ({ file, resource }) =>
+  uploadAdminAsset({
+    file,
+    resource,
+    assetType: 'video',
   })

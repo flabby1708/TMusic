@@ -60,7 +60,7 @@ export const createAdminMediaUploadSignature = ({ resource, assetType } = {}) =>
   const normalizedAssetType = trimString(assetType).toLowerCase()
   const folder = `admin/${sanitizeFolderSegment(resource, 'media')}`
 
-  if (normalizedAssetType === 'audio') {
+  if (normalizedAssetType === 'audio' || normalizedAssetType === 'video') {
     return {
       configError: '',
       upload: createCloudinaryVideoUploadSignature({

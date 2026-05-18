@@ -9,6 +9,7 @@
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
     "sync:home": "node src/scripts/syncHomeContent.js",
+    "import:artist-wiki": "node src/scripts/importArtistWikiProfile.js",
     "import:commons-music": "node src/scripts/importCommonsMusic.js",
     "import:song-covers": "node src/scripts/importMissingSongCovers.js",
     "create-admin": "node src/scripts/createAdmin.js"

@@ -6,6 +6,11 @@ const songHiddenFields = [
   'masterAudioResourceType',
   'masterAudioOriginalFilename',
   'masterAudioSizeBytes',
+  'musicVideoPublicId',
+  'musicVideoFormat',
+  'musicVideoResourceType',
+  'musicVideoOriginalFilename',
+  'musicVideoSizeBytes',
 ]
 
 const podcastHiddenFields = [
@@ -52,6 +57,13 @@ export const resourceDefinitions = {
         type: 'url',
         uploadAssetType: 'audio',
         helper: 'Hỗ trợ upload mp3, wav, flac, m4a, aac, ogg lên Cloudinary.',
+      },
+      {
+        name: 'videoUrl',
+        label: 'Link music video',
+        type: 'url',
+        uploadAssetType: 'video',
+        helper: 'Tuỳ chọn. Dùng link file MP4/WebM trực tiếp hoặc upload lên Cloudinary; không dùng link YouTube dạng watch.',
       },
       { name: 'sortOrder', label: 'Thứ tự', type: 'number' },
     ],
@@ -105,6 +117,33 @@ export const resourceDefinitions = {
     fields: [
       { name: 'name', label: 'Tên nghệ sĩ', type: 'text', required: true },
       { name: 'meta', label: 'Loại', type: 'text' },
+      {
+        name: 'aliases',
+        label: 'Alias / tên gọi khác',
+        type: 'text',
+        helper: 'Nhập cách nhau bởi dấu phẩy, ví dụ: MCK, RPT MCK, Nger.',
+      },
+      { name: 'realName', label: 'Tên thật', type: 'text' },
+      { name: 'bio', label: 'About the artist', type: 'textarea' },
+      { name: 'statsLabel', label: 'Dòng mô tả ngắn', type: 'text' },
+      { name: 'sourceLabel', label: 'Tên nguồn', type: 'text' },
+      { name: 'sourceUrl', label: 'Link Wiki/source', type: 'url' },
+      {
+        name: 'verified',
+        label: 'Đã xác minh',
+        type: 'select',
+        options: [
+          { value: 'false', label: 'Chưa xác minh' },
+          { value: 'true', label: 'Đã xác minh' },
+        ],
+        defaultValue: 'false',
+      },
+      {
+        name: 'credits',
+        label: 'Credits',
+        type: 'textarea',
+        helper: 'Dùng JSON: [{"name":"RPT MCK","role":"Main Artist"}] hoặc mỗi dòng "Tên | Vai trò".',
+      },
       { name: 'initials', label: 'Viết tắt', type: 'text' },
       { name: 'imageUrl', label: 'Link ảnh', type: 'url', uploadAssetType: 'image' },
       { name: 'artwork', label: 'Gradient dự phòng', type: 'textarea' },
@@ -182,8 +221,18 @@ export const toFormValues = (resource, item) => {
   for (const field of resourceDefinitions[resource].fields) {
     const rawValue = item[field.name]
 
-    if (field.name === 'initials' && Array.isArray(rawValue)) {
+    if ((field.name === 'initials' || field.name === 'aliases') && Array.isArray(rawValue)) {
       values[field.name] = rawValue.join(', ')
+      continue
+    }
+
+    if (field.name === 'credits' && Array.isArray(rawValue)) {
+      values[field.name] = JSON.stringify(rawValue, null, 2)
+      continue
+    }
+
+    if (field.name === 'verified' && typeof rawValue === 'boolean') {
+      values[field.name] = rawValue ? 'true' : 'false'
       continue
     }
 
@@ -200,6 +249,12 @@ export const toFormValues = (resource, item) => {
     values.masterAudioOriginalFilename = item.masterAudio?.originalFilename || ''
     values.masterAudioSizeBytes =
       item.masterAudio?.sizeBytes == null ? '' : String(item.masterAudio.sizeBytes)
+    values.musicVideoPublicId = item.musicVideo?.publicId || ''
+    values.musicVideoFormat = item.musicVideo?.format || ''
+    values.musicVideoResourceType = item.musicVideo?.resourceType || ''
+    values.musicVideoOriginalFilename = item.musicVideo?.originalFilename || ''
+    values.musicVideoSizeBytes =
+      item.musicVideo?.sizeBytes == null ? '' : String(item.musicVideo.sizeBytes)
   }
 
   if (resource === 'podcasts') {

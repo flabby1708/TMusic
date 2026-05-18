@@ -152,6 +152,14 @@ export function DeviceIcon() {
   )
 }
 
+export function VideoIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4.5 w-4.5 fill-current" aria-hidden="true">
+      <path d="M4.75 5A2.75 2.75 0 0 0 2 7.75v8.5A2.75 2.75 0 0 0 4.75 19h9.5A2.75 2.75 0 0 0 17 16.25v-.68l3.37 2.25A1.05 1.05 0 0 0 22 16.95v-9.9a1.05 1.05 0 0 0-1.63-.87L17 8.43v-.68A2.75 2.75 0 0 0 14.25 5h-9.5Zm0 1.5h9.5c.69 0 1.25.56 1.25 1.25v8.5c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-8.5c0-.69.56-1.25 1.25-1.25Zm12.25 3.74 3.5-2.33v8.18L17 13.76v-3.52Z" />
+    </svg>
+  )
+}
+
 export function ExpandIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-4.5 w-4.5 fill-current" aria-hidden="true">

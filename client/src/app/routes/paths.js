@@ -38,9 +38,13 @@ export const appPaths = {
     root: '/admin',
     login: '/admin/login',
     songs: '/admin/songs',
+    artists: '/admin/artists',
     podcasts: '/admin/podcasts',
     importSongs: '/admin/import',
     importPodcasts: '/admin/podcasts/import',
+    users: '/admin/users',
+    admins: '/admin/admins',
+    artistAccounts: '/admin/artist-accounts',
     artistApplications: '/admin/artist-applications',
   },
   artist: {

@@ -8,11 +8,17 @@ const jsonRequestOptions = (method, payload) => ({
   body: JSON.stringify(payload),
 })
 
-export const fetchAdminUsers = (query = '') => {
+export const fetchAdminUsers = (params = {}) => {
+  const options = typeof params === 'string' ? { query: params } : params
+  const { query = '', role = '' } = options
   const searchParams = new URLSearchParams()
 
   if (query) {
     searchParams.set('q', query)
+  }
+
+  if (role) {
+    searchParams.set('role', role)
   }
 
   const suffix = searchParams.toString() ? `?${searchParams.toString()}` : ''

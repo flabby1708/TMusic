@@ -28,6 +28,18 @@ const sectionConfig = {
     kind: 'tracks',
     empty: 'Chưa có bài hát nào trong danh sách này.',
   },
+  'for-you': {
+    title: 'Gợi ý cho bạn',
+    subtitle: 'Các bài demo được gom từ thư viện và dữ liệu trend hiện có.',
+    kind: 'tracks',
+    empty: 'Chưa có bài hát nào để gợi ý.',
+  },
+  'recommended-radio': {
+    title: 'Gợi ý phát tiếp',
+    subtitle: 'Danh sách phát tiếp demo, có thể thay bằng dữ liệu import sau.',
+    kind: 'tracks',
+    empty: 'Chưa có bài hát nào để phát tiếp.',
+  },
   artists: {
     title: 'Nghệ sĩ phổ biến',
     subtitle: 'Khám phá các nghệ sĩ đang được quan tâm nhiều nhất.',
@@ -76,6 +88,14 @@ function getCardImage(kind, item, index) {
   }
 
   return ''
+}
+
+function getSectionItems(homeContent, sectionKind) {
+  if (sectionKind === 'tracks') {
+    return homeContent.songs || []
+  }
+
+  return homeContent[sectionKind] || []
 }
 
 function formatPlaybackSeconds(value) {
@@ -242,7 +262,7 @@ function HomeSectionPage() {
   const [gateTrack, setGateTrack] = useState(null)
   const config = sectionConfig[sectionKey]
   const sectionKind = config?.kind || 'tracks'
-  const items = config ? homeContent[sectionKind] || [] : []
+  const items = config ? getSectionItems(homeContent, sectionKind) : []
   const playableTracks = sectionKind === 'tracks' ? items.filter((item) => Boolean(item.audioUrl)) : []
   const isLoading = health.loading || homeContent.loading
   const liveLabel = isLoading ? 'Đang tải' : health.error ? 'Dữ liệu mẫu' : 'Dữ liệu trực tiếp'

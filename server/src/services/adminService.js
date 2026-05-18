@@ -36,6 +36,48 @@ const parseInitials = (value) => {
     .filter(Boolean)
 }
 
+const parseStringList = (value) => {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => trimString(item))
+      .filter(Boolean)
+  }
+
+  return trimString(value)
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
+
+const parseCredits = (value) => {
+  const rawCredits = Array.isArray(value) ? value : (() => {
+    const normalizedValue = trimString(value)
+
+    if (!normalizedValue) {
+      return []
+    }
+
+    try {
+      const parsedValue = JSON.parse(normalizedValue)
+      return Array.isArray(parsedValue) ? parsedValue : []
+    } catch {
+      return normalizedValue
+        .split('\n')
+        .map((line) => {
+          const [name, role] = line.split('|').map((part) => trimString(part))
+          return { name, role }
+        })
+    }
+  })()
+
+  return rawCredits
+    .map((item) => ({
+      name: trimString(item?.name),
+      role: trimString(item?.role),
+    }))
+    .filter((item) => item.name || item.role)
+}
+
 const toNonNegativeNumber = (value) => {
   const parsed = Number(value)
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0
@@ -407,12 +449,18 @@ const createDefaultSongAudioVariant = (payload) => {
 
 const sanitizeSongPayload = (payload) => {
   const audioUrl = trimString(payload.audioUrl)
+  const videoUrl = trimString(payload.videoUrl)
   const masterAudioPublicId = trimString(payload.masterAudioPublicId)
   const masterAudioDurationSeconds = toNonNegativeNumber(payload.masterAudioDurationSeconds)
   const masterAudioFormat = trimString(payload.masterAudioFormat)
   const masterAudioResourceType = trimString(payload.masterAudioResourceType || 'video') || 'video'
   const masterAudioOriginalFilename = trimString(payload.masterAudioOriginalFilename)
   const masterAudioSizeBytes = toNonNegativeNumber(payload.masterAudioSizeBytes)
+  const musicVideoPublicId = trimString(payload.musicVideoPublicId)
+  const musicVideoFormat = trimString(payload.musicVideoFormat)
+  const musicVideoResourceType = trimString(payload.musicVideoResourceType || 'video') || 'video'
+  const musicVideoOriginalFilename = trimString(payload.musicVideoOriginalFilename)
+  const musicVideoSizeBytes = toNonNegativeNumber(payload.musicVideoSizeBytes)
   const providedDuration = trimString(payload.duration)
   const inferredDuration = formatDurationFromSeconds(masterAudioDurationSeconds)
 
@@ -450,6 +498,26 @@ const sanitizeSongPayload = (payload) => {
       masterAudioFormat,
       masterAudioSizeBytes,
     }),
+    videoUrl,
+    musicVideo: videoUrl
+      ? {
+          url: videoUrl,
+          publicId: musicVideoPublicId,
+          originalFilename: musicVideoOriginalFilename,
+          format: musicVideoFormat,
+          resourceType: musicVideoResourceType,
+          sizeBytes: musicVideoSizeBytes,
+          uploadedAt: new Date(),
+        }
+      : {
+          url: '',
+          publicId: '',
+          originalFilename: '',
+          format: '',
+          resourceType: 'video',
+          sizeBytes: 0,
+          uploadedAt: null,
+        },
     processingStatus: audioUrl ? 'ready' : 'draft',
     sourceType: 'catalog',
     releaseStatus: normalizeSongReleaseStatus(payload.releaseStatus),
@@ -520,6 +588,13 @@ const collectSongCloudinaryAssets = (item) => {
     assets.push({
       publicId: trimString(item.masterAudio.publicId),
       resourceType: trimString(item.masterAudio.resourceType || 'video') || 'video',
+    })
+  }
+
+  if (trimString(item?.musicVideo?.publicId)) {
+    assets.push({
+      publicId: trimString(item.musicVideo.publicId),
+      resourceType: trimString(item.musicVideo.resourceType || 'video') || 'video',
     })
   }
 
@@ -632,6 +707,14 @@ const resourceConfig = {
       return {
         name: trimString(payload.name),
         meta: trimString(payload.meta, 'Nghe si') || 'Nghe si',
+        aliases: parseStringList(payload.aliases),
+        realName: trimString(payload.realName),
+        bio: trimString(payload.bio),
+        statsLabel: trimString(payload.statsLabel),
+        sourceLabel: trimString(payload.sourceLabel),
+        sourceUrl: trimString(payload.sourceUrl),
+        verified: parseBooleanFlag(payload.verified, false),
+        credits: parseCredits(payload.credits),
         imageUrl: trimString(payload.imageUrl),
         initials: trimString(payload.initials),
         artwork: trimString(payload.artwork),

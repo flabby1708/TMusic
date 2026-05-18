@@ -1,8 +1,17 @@
 import { Layout, Menu, Typography, theme } from 'antd'
+import { appPaths } from '../../../app/routes/paths.js'
 import { ADMIN_HEADER_HEIGHT, resourceMenuItems } from './adminDashboardTheme'
 
 const { Sider } = Layout
 const { Text, Title } = Typography
+
+const adminRouteByMenuKey = {
+  users: appPaths.admin.users,
+  artists: appPaths.admin.artists,
+  'artist-accounts': appPaths.admin.artistAccounts,
+  admins: appPaths.admin.admins,
+  'artist-applications': appPaths.admin.artistApplications,
+}
 
 function AdminDashboardSidebar({ activeResource, currentResource, onSelectResource }) {
   const {
@@ -47,7 +56,7 @@ function AdminDashboardSidebar({ activeResource, currentResource, onSelectResour
           mode="inline"
           theme="dark"
           selectedKeys={[activeResource]}
-          defaultOpenKeys={['sub1', 'sub2', 'sub3']}
+          defaultOpenKeys={['sub1', 'accounts', 'sub2', 'sub3']}
           style={{
             borderInlineEnd: 0,
             background: 'transparent',
@@ -55,13 +64,8 @@ function AdminDashboardSidebar({ activeResource, currentResource, onSelectResour
           }}
           items={resourceMenuItems}
           onClick={({ key }) => {
-            if (key === 'users') {
-              window.location.assign('/admin/users')
-              return
-            }
-
-            if (key === 'artist-applications') {
-              window.location.assign('/admin/artist-applications')
+            if (adminRouteByMenuKey[key]) {
+              window.location.assign(adminRouteByMenuKey[key])
               return
             }
 
