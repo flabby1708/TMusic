@@ -69,6 +69,24 @@ const mapMasterAudio = (masterAudio) => {
   }
 }
 
+const mapMusicVideo = (musicVideo) => {
+  const url = trimString(musicVideo?.url)
+
+  if (!url) {
+    return null
+  }
+
+  return {
+    url,
+    publicId: trimString(musicVideo?.publicId),
+    originalFilename: trimString(musicVideo?.originalFilename),
+    format: trimString(musicVideo?.format),
+    resourceType: trimString(musicVideo?.resourceType) || 'video',
+    sizeBytes: toNonNegativeNumber(musicVideo?.sizeBytes),
+    uploadedAt: musicVideo?.uploadedAt || null,
+  }
+}
+
 const buildLegacyVariantFromAudioUrl = (item) => {
   const audioUrl = trimString(item?.audioUrl)
 
@@ -111,12 +129,15 @@ export const mapTrackRecord = (item) => {
     duration: item.duration || '00:00',
     mood: item.mood || '',
     audioUrl: item.audioUrl || readyNormalVariant?.url || '',
+    videoUrl: trimString(item.videoUrl || item.musicVideo?.url),
     sourceType: item.sourceType || 'catalog',
     releaseStatus: item.releaseStatus || 'draft',
+    sortOrder: toNonNegativeNumber(item.sortOrder),
     processingStatus,
     createdAt: item.createdAt || null,
     updatedAt: item.updatedAt || null,
     masterAudio: mapMasterAudio(item.masterAudio),
+    musicVideo: mapMusicVideo(item.musicVideo),
     audioVariants,
   }
 }

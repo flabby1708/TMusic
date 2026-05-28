@@ -1,0 +1,1 @@
+Hiện tại logic của hệ thống là hiển thị các bài hát do nghệ sĩ đăng tải, sau đó phía admin sẽ duyệt bài. Tuy nhiên, bên client hiện vẫn đang sử dụng logic cũ, tức là chỉ hiển thị các bài hát do admin đăng. Mình muốn cập nhật lại logic để hiển thị các bài hát do nghệ sĩ đăng tải và loại bỏ toàn bộ các bài hát do admin đăng trước đó.

@@ -297,6 +297,30 @@ export function useAdminDashboard({ enabled = true, initialResource = 'songs' } 
     }
   }
 
+  const handleApprove = async (item) => {
+    setSaving(true)
+    setError('')
+    setNotice('')
+
+    try {
+      await requestAdminJson(`/api/admin/${activeResource}/${item._id}/approve`, {
+        method: 'PATCH',
+      })
+
+      await reloadActiveResource()
+      setNotice('Đã duyệt nội dung và cho phép hiển thị ngoài client.')
+    } catch (approveError) {
+      if (isAdminSessionError(approveError)) {
+        redirectToAdminLogin()
+        return
+      }
+
+      setError(approveError.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const handleAssetUpload = async (field, file) => {
     if (!file) {
       throw new Error('Chưa chọn tệp upload.')
@@ -413,6 +437,7 @@ export function useAdminDashboard({ enabled = true, initialResource = 'songs' } 
     error,
     formValues,
     handleAssetUpload,
+    handleApprove,
     handleChange,
     handleDelete,
     handleEdit,

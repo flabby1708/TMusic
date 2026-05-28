@@ -1,54 +1,163 @@
 import { useEffect } from 'react'
+import heroImage from '../../../assets/hero.png'
+import { ArrowIcon, PlayIcon, SpotifyIcon } from '../../../shared/icons.jsx'
 import { useArtistSession } from '../useArtistSession.js'
-import { ArrowIcon, SpotifyIcon } from '../../../shared/icons.jsx'
 
-const valueCards = [
+const stats = [
   {
-    title: 'Đăng ký nhanh',
-    description: 'Chỉ cần tên hiển thị, nghệ danh và một đoạn giới thiệu ngắn để bắt đầu.',
+    value: '03',
+    label: 'bước lên sóng',
   },
   {
-    title: 'Duyệt minh bạch',
-    description: 'Tài khoản mới vào trạng thái chờ duyệt và thấy ngay tiến độ trong bảng điều khiển.',
+    value: '24h',
+    label: 'theo dõi trạng thái',
   },
   {
-    title: 'Quản lý phát hành',
-    description: 'Khi đã được duyệt, bạn có thể tiếp tục đến luồng tải nhạc lên và phát hành.',
+    value: '01',
+    label: 'dashboard riêng',
   },
 ]
 
-const onboardingSteps = [
+const workflow = [
   {
     step: '01',
-    title: 'Tạo tài khoản',
-    copy: 'Bắt đầu ở cổng nghệ sĩ bằng biểu mẫu đăng ký riêng cho nhà sáng tạo.',
+    title: 'Tạo hồ sơ',
+    copy: 'Điền tên liên hệ, nghệ danh và giới thiệu ngắn để đội ngũ TMusic nhận diện đúng màu sắc âm nhạc.',
   },
   {
     step: '02',
-    title: 'Chờ duyệt hồ sơ',
-    copy: 'Đội ngũ quản trị sẽ xem xét thông tin trước khi mở quyền tải nhạc lên và phát hành.',
+    title: 'Chờ duyệt',
+    copy: 'Hồ sơ mới được đưa vào trạng thái chờ duyệt. Nghệ sĩ vẫn có thể đăng nhập để theo dõi tiến độ.',
   },
   {
     step: '03',
-    title: 'Vào bảng điều khiển',
-    copy: 'Theo dõi trạng thái, danh sách phát hành và các bước tiếp theo trong cùng một nơi.',
+    title: 'Mở phát hành',
+    copy: 'Khi được chấp thuận, dashboard nghệ sĩ mở quyền tải nhạc lên và quản lý danh sách phát hành.',
   },
 ]
 
-const quickFacts = [
+const benefits = [
   {
-    label: 'Lối vào',
-    value: 'Tách riêng',
+    title: 'Phiên nghệ sĩ tách riêng',
+    copy: 'Không ghi đè phiên người nghe, phù hợp cho creator vừa nghe nhạc vừa quản lý bản phát hành.',
   },
   {
-    label: 'Trạng thái',
-    value: 'Chờ duyệt / Đã duyệt',
+    title: 'Thông tin duyệt rõ ràng',
+    copy: 'Trạng thái hồ sơ nằm ngay trong dashboard, giúp biết bước tiếp theo mà không phải hỏi lại admin.',
   },
   {
-    label: 'Bước tiếp theo',
-    value: 'Bảng điều khiển + tải nhạc',
+    title: 'Sẵn sàng mở rộng',
+    copy: 'Luồng đăng ký, đăng nhập và upload được tách sẵn để sau này bổ sung analytics hoặc quyền đội nhóm.',
   },
 ]
+
+const releaseRows = [
+  {
+    title: 'Midnight Demo',
+    meta: 'Single - đang soát metadata',
+    progress: '76%',
+  },
+  {
+    title: 'Neon Session',
+    meta: 'EP - chờ ảnh bìa',
+    progress: '48%',
+  },
+  {
+    title: 'Live Cut',
+    meta: 'Track - sẵn sàng gửi duyệt',
+    progress: '92%',
+  },
+]
+
+const checklist = ['Hồ sơ nghệ danh', 'Email liên hệ', 'Tiểu sử ngắn', 'Ảnh bìa bản phát hành']
+
+function StudioPreview({ className = '' }) {
+  return (
+    <div className={`relative ${className}`}>
+      <div className="relative overflow-hidden rounded-[6px] border border-white/16 bg-[color:var(--bg-elevated)] p-4 shadow-[0_8px_16px_rgba(0,0,0,0.4)] sm:p-5">
+        <div className="absolute inset-x-0 top-0 h-28 bg-white/[0.04]" />
+        <div className="relative grid gap-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="grid h-12 w-12 place-items-center rounded-full bg-[color:oklch(78.5%_0.115_274.713_/_0.15)] text-[color:var(--primary)]">
+                <SpotifyIcon />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-[color:var(--text-primary)]">Studio nghệ sĩ</p>
+                <p className="text-xs text-[color:var(--text-secondary)]">Không gian TMusic</p>
+              </div>
+            </div>
+            <span className="rounded-full border border-[color:var(--primary)] bg-[color:oklch(78.5%_0.115_274.713_/_0.15)] px-3 py-1 text-xs font-bold text-[color:var(--primary)]">
+              Sẵn sàng
+            </span>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-[0.9fr_1.1fr]">
+            <div className="relative min-h-56 overflow-hidden rounded-[6px] border border-white/16 bg-[color:var(--bg-surface-2)] p-4">
+              <img
+                src={heroImage}
+                alt=""
+                className="absolute bottom-[-2.4rem] right-[-1.8rem] h-56 w-56 object-contain opacity-90"
+              />
+              <div className="relative">
+                <p className="text-xs font-bold text-[color:var(--primary)]">Hồ sơ nổi bật</p>
+                <h2 className="mt-3 max-w-56 font-display text-2xl font-bold leading-8 text-[color:var(--text-primary)]">
+                  Lên lịch phát hành đầu tiên
+                </h2>
+                <p className="mt-3 max-w-44 text-sm leading-6 text-[color:var(--text-secondary)]">
+                  Kiểm tra hồ sơ và chuẩn bị bản nhạc trước khi gửi duyệt.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="absolute bottom-4 left-4 inline-flex h-11 w-11 items-center justify-center rounded-full bg-[color:var(--primary)] text-black"
+                aria-label="Xem trước bản phát hành"
+              >
+                <PlayIcon />
+              </button>
+            </div>
+
+            <div className="grid gap-3">
+              {releaseRows.map((row) => (
+                <div
+                  key={row.title}
+                  className="rounded-[8px] border border-white/12 bg-white/[0.065] p-3"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-bold text-[color:var(--text-primary)]">{row.title}</p>
+                      <p className="mt-1 text-xs text-[color:var(--text-secondary)]">
+                        {row.meta}
+                      </p>
+                    </div>
+                    <span className="text-sm font-bold text-[color:var(--primary)]">{row.progress}</span>
+                  </div>
+                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/[0.08]">
+                    <div
+                      className="h-full rounded-full bg-[color:var(--primary)]"
+                      style={{ width: row.progress }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid gap-2 sm:grid-cols-4">
+            {checklist.map((item) => (
+              <div
+                key={item}
+                className="rounded-[8px] border border-white/12 bg-white/[0.055] px-3 py-3 text-xs font-bold text-[color:var(--text-secondary)]"
+              >
+                {item}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function ArtistPortalPage() {
   const { isAuthenticated, loading } = useArtistSession()
@@ -62,7 +171,7 @@ function ArtistPortalPage() {
   if (loading) {
     return (
       <div className="grid min-h-screen place-items-center bg-[color:var(--bg-app)] px-4 text-[color:var(--text-primary)]">
-        <div className="rounded-[28px] border border-white/10 bg-white/[0.04] px-6 py-5 text-center">
+        <div className="rounded-[8px] border border-white/10 bg-white/[0.04] px-6 py-5 text-center">
           Đang mở cổng nghệ sĩ...
         </div>
       </div>
@@ -70,201 +179,141 @@ function ArtistPortalPage() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_10%_0%,rgba(255,132,92,0.18),transparent_28%),radial-gradient(circle_at_100%_14%,rgba(48,213,255,0.18),transparent_28%),linear-gradient(180deg,#06101c_0%,#040810_100%)] text-[color:var(--text-primary)]">
+    <div className="relative min-h-screen overflow-hidden bg-[color:var(--bg-app)] text-[color:var(--text-primary)]">
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute left-[-8rem] top-20 h-64 w-64 rounded-full bg-[color:rgba(255,107,87,0.13)] blur-3xl" />
-        <div className="absolute right-[-5rem] top-28 h-56 w-56 rounded-full bg-[color:rgba(41,212,255,0.12)] blur-3xl" />
-        <div className="absolute inset-x-0 top-0 h-[32rem] bg-[linear-gradient(180deg,rgba(255,255,255,0.04),transparent_58%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:120px_120px] opacity-20" />
+        <div className="absolute inset-x-0 top-0 h-[36rem] bg-white/[0.02]" />
       </div>
 
-      <div className="relative mx-auto max-w-6xl px-4 py-5 sm:px-6 lg:px-10">
-        <header className="flex flex-wrap items-center justify-between gap-3 rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] px-4 py-3 backdrop-blur-xl sm:px-5">
+      <div className="relative mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 bg-[color:var(--bg-app)] px-4 py-3">
           <a href="/" className="inline-flex items-center gap-3">
-            <span className="brand-badge h-11 w-11 rounded-2xl">
+            <span className="brand-badge h-11 w-11 rounded-[8px]">
               <SpotifyIcon />
             </span>
             <span>
-              <span className="block text-xs font-bold uppercase tracking-[0.2em] text-[color:var(--text-dim)]">
+              <span className="block text-xs font-bold uppercase tracking-normal text-[color:var(--text-dim)]">
                 TMusic
               </span>
-              <span className="font-display text-lg font-extrabold text-white">Cổng nghệ sĩ</span>
+              <span className="font-display text-lg font-bold text-[color:var(--text-primary)]">Cổng nghệ sĩ</span>
             </span>
           </a>
 
-          <div className="flex flex-wrap gap-3">
+          <nav className="flex flex-wrap gap-3" aria-label="Điều hướng nghệ sĩ">
             <a href="/artist/login" className="secondary-button">
               Đăng nhập
             </a>
             <a href="/artist/register" className="primary-button gap-2">
-              Bắt đầu đăng ký
+              Đăng ký
               <ArrowIcon />
             </a>
-          </div>
+          </nav>
         </header>
 
-        <main className="py-8 sm:py-10 lg:py-14">
-          <section className="grid gap-8 lg:grid-cols-[1.04fr_0.96fr] lg:items-center">
-            <div className="max-w-2xl">
-              <div className="inline-flex rounded-full border border-[color:rgba(255,255,255,0.12)] bg-white/[0.05] px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] text-[color:#ffe1d8]">
-                Không gian dành cho nhà sáng tạo
-              </div>
+        <main>
+          <section className="relative min-h-[calc(100vh-6.5rem)] overflow-hidden py-12 sm:py-16 lg:py-20">
+            <StudioPreview className="absolute right-[-20rem] top-16 hidden w-[50rem] rotate-[-2deg] lg:block xl:right-[-11rem]" />
 
-              <h1 className="mt-6 font-display text-[3.25rem] font-extrabold leading-none tracking-[-0.07em] text-white sm:text-[4.8rem]">
-                Một lối vào gọn gàng hơn cho nghệ sĩ phát hành nhạc trên TMusic.
+            <div className="relative z-10 max-w-3xl pt-6 lg:pt-16">
+              <p className="inline-flex rounded-full border border-[color:var(--primary)] bg-[color:oklch(78.5%_0.115_274.713_/_0.15)] px-4 py-2 text-sm font-bold text-[color:var(--primary)]">
+                Không gian phát hành cho nhà sáng tạo
+              </p>
+              <h1 className="mt-6 font-display text-[32px] font-bold leading-[40px] tracking-normal text-[color:var(--text-primary)] sm:text-[32px] lg:text-[32px]">
+                Cổng nghệ sĩ TMusic
               </h1>
-              <p className="mt-6 max-w-xl text-base leading-8 text-[color:var(--text-secondary)] sm:text-lg">
-                Trang này chỉ giữ những gì cần cho quá trình bắt đầu của nghệ sĩ: đăng ký nhanh,
-                chờ duyệt rõ ràng và đi thẳng vào bảng điều khiển khi tài khoản đã sẵn sàng.
+              <p className="mt-6 max-w-2xl text-base leading-8 text-[color:var(--text-secondary)] sm:text-lg">
+                Một trang vào gọn hơn cho nghệ sĩ đăng ký, theo dõi trạng thái duyệt và đi tiếp vào
+                dashboard phát hành khi hồ sơ đã sẵn sàng.
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3">
                 <a href="/artist/register" className="primary-button gap-2">
-                  Tạo tài khoản nghệ sĩ
+                  Tạo hồ sơ nghệ sĩ
                   <ArrowIcon />
                 </a>
                 <a href="/artist/login" className="secondary-button">
-                  Đã có tài khoản
+                  Tôi đã có tài khoản
                 </a>
               </div>
 
-              <div className="mt-8 grid gap-3 sm:grid-cols-3">
-                {quickFacts.map((item) => (
-                  <article
+              <div className="mt-10 grid max-w-2xl gap-3 sm:grid-cols-3">
+                {stats.map((item) => (
+                  <div
                     key={item.label}
-                    className="rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] px-4 py-4 backdrop-blur"
+                    className="rounded-[8px] border border-white/12 bg-white/[0.065] px-4 py-4 backdrop-blur"
                   >
-                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-[color:var(--text-dim)]">
+                    <p className="font-display text-[32px] font-bold leading-[40px] text-[color:var(--text-primary)]">{item.value}</p>
+                    <p className="mt-1 text-sm text-[color:var(--text-secondary)]">
                       {item.label}
                     </p>
-                    <p className="mt-3 font-display text-xl font-extrabold text-white">
-                      {item.value}
-                    </p>
-                  </article>
+                  </div>
                 ))}
               </div>
             </div>
 
-            <div className="relative">
-              <div className="absolute inset-0 translate-x-4 translate-y-5 rounded-[38px] bg-[linear-gradient(180deg,rgba(255,107,87,0.18),rgba(41,212,255,0.12))] blur-2xl" />
-              <div className="relative rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,24,38,0.96),rgba(8,14,24,0.98))] p-5 shadow-[0_34px_80px_rgba(0,0,0,0.3)] sm:p-6">
-                <div className="rounded-[30px] border border-white/8 bg-white/[0.03] p-5">
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-[0.2em] text-[color:var(--text-dim)]">
-                        Luồng khởi tạo nghệ sĩ
-                      </p>
-                      <h2 className="mt-3 font-display text-3xl font-extrabold tracking-tight text-white">
-                        Nhìn nhanh hành trình vào cổng nghệ sĩ
-                      </h2>
-                    </div>
+            <StudioPreview className="relative z-10 mt-10 lg:hidden" />
+          </section>
 
-                    <div className="rounded-full border border-[color:rgba(255,188,87,0.26)] bg-[color:rgba(255,188,87,0.12)] px-3 py-1.5 text-sm font-bold text-[color:#ffe4b2]">
-                      Chờ duyệt
-                    </div>
-                  </div>
+          <section className="grid gap-6 py-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
+            <div>
+              <p className="text-sm font-bold text-[color:var(--primary)]">Luồng bắt đầu</p>
+              <h2 className="mt-3 font-display text-[32px] font-bold leading-[40px] tracking-normal text-[color:var(--text-primary)]">
+                Từ hồ sơ mới đến bản phát hành đầu tiên.
+              </h2>
+              <p className="mt-4 max-w-lg text-base leading-8 text-[color:var(--text-secondary)]">
+                Trang chào mừng giải thích nhanh quy trình, rồi điều hướng thẳng đến đăng ký hoặc
+                đăng nhập.
+              </p>
+            </div>
 
-                  <div className="mt-5 grid gap-4 sm:grid-cols-[1.1fr_0.9fr]">
-                    <article className="rounded-[26px] border border-[color:rgba(255,107,87,0.18)] bg-[linear-gradient(180deg,rgba(255,107,87,0.12),rgba(255,107,87,0.04))] p-4">
-                      <p className="text-xs font-bold uppercase tracking-[0.18em] text-[color:#ffd7d1]">
-                        Hồ sơ nghệ sĩ
-                      </p>
-                      <p className="mt-3 font-display text-2xl font-extrabold text-white">
-                        Nghệ danh + tiểu sử + định hướng phát hành
-                      </p>
-                      <p className="mt-3 text-sm leading-7 text-[color:#ffe1d8]">
-                        Biểu mẫu đăng ký chỉ giữ lại các thông tin cần thiết để bắt đầu, tránh cảm
-                        giác nặng tính nội bộ.
-                      </p>
-                    </article>
-
-                    <div className="grid gap-4">
-                      <article className="rounded-[24px] border border-white/8 bg-white/[0.04] p-4">
-                        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[color:var(--text-dim)]">
-                          Hội đồng duyệt
-                        </p>
-                        <p className="mt-3 text-sm leading-7 text-[color:var(--text-secondary)]">
-                          Quản trị viên sẽ duyệt hồ sơ. Khi được chấp thuận, luồng tải nhạc lên và
-                          phát hành sẽ được mở.
-                        </p>
-                      </article>
-
-                      <article className="rounded-[24px] border border-[color:rgba(41,212,255,0.22)] bg-[color:rgba(41,212,255,0.09)] p-4">
-                        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[color:#dff8ff]">
-                          Sẵn sàng vào bảng điều khiển
-                        </p>
-                        <p className="mt-3 text-sm leading-7 text-[color:#dff8ff]">
-                          Nếu nghệ sĩ đã đăng nhập, hệ thống sẽ đưa thẳng vào bảng điều khiển để
-                          tránh một màn hình trung gian không cần thiết.
-                        </p>
-                      </article>
-                    </div>
-                  </div>
-
-                  <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                    {onboardingSteps.map((item) => (
-                      <article
-                        key={item.step}
-                        className="rounded-[24px] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-4"
-                      >
-                        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[color:var(--text-dim)]">
-                          Bước {item.step}
-                        </p>
-                        <h3 className="mt-3 font-display text-xl font-extrabold text-white">
-                          {item.title}
-                        </h3>
-                        <p className="mt-2 text-sm leading-7 text-[color:var(--text-secondary)]">
-                          {item.copy}
-                        </p>
-                      </article>
-                    ))}
-                  </div>
-                </div>
-              </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              {workflow.map((item) => (
+                <article
+                  key={item.step}
+                  className="rounded-[6px] border border-white/12 bg-white/[0.06] p-5"
+                >
+                  <p className="text-sm font-bold text-[color:var(--primary)]">Bước {item.step}</p>
+                  <h3 className="mt-4 font-display text-2xl font-bold text-[color:var(--text-primary)]">{item.title}</h3>
+                  <p className="mt-3 text-sm leading-7 text-[color:var(--text-secondary)]">{item.copy}</p>
+                </article>
+              ))}
             </div>
           </section>
 
-          <section className="mt-10 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-            <article className="rounded-[34px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] p-6 backdrop-blur sm:p-7">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[color:var(--text-dim)]">
-                Vì sao trang này vẫn cần
-              </p>
-              <h2 className="mt-4 font-display text-3xl font-extrabold tracking-tight text-white">
-                Hữu ích cho người mới, không cản đường người đã vào luồng.
-              </h2>
-              <p className="mt-4 text-sm leading-8 text-[color:var(--text-secondary)] sm:text-base">
-                Trang chào mừng vẫn có giá trị với nghệ sĩ mới vì giải thích rất nhanh những gì sẽ
-                diễn ra tiếp theo. Nếu đã có phiên đăng nhập, hệ thống sẽ bỏ qua trang này và đưa
-                thẳng vào bảng điều khiển.
-              </p>
-              <div className="mt-6 flex flex-wrap gap-3">
+          <section className="grid gap-4 py-8 md:grid-cols-3">
+            {benefits.map((card) => (
+              <article
+                key={card.title}
+                className="rounded-[6px] border border-white/12 bg-[color:var(--bg-elevated)] p-5"
+              >
+                <div className="h-1.5 w-16 rounded-full bg-[color:var(--primary)]" />
+                <h3 className="mt-5 font-display text-2xl font-bold text-[color:var(--text-primary)]">{card.title}</h3>
+                <p className="mt-3 text-sm leading-7 text-[color:var(--text-secondary)]">{card.copy}</p>
+              </article>
+            ))}
+          </section>
+
+          <section className="pb-12 pt-8">
+            <div className="grid gap-5 overflow-hidden rounded-[6px] border border-white/14 bg-[color:var(--bg-elevated)] p-5 sm:p-7 lg:grid-cols-[1fr_auto] lg:items-center">
+              <div>
+                <p className="text-sm font-bold text-[color:var(--primary)]">Sẵn sàng phát hành</p>
+                <h2 className="mt-3 font-display text-3xl font-bold leading-tight tracking-normal text-[color:var(--text-primary)] sm:text-[32px] sm:leading-[40px]">
+                  Đưa nghệ danh của bạn vào TMusic bằng một hồ sơ ngắn.
+                </h2>
+                <p className="mt-3 max-w-2xl text-sm leading-7 text-[color:var(--text-secondary)] sm:text-base">
+                  Nghệ sĩ đã đăng nhập sẽ được chuyển thẳng vào dashboard, còn người mới có thể bắt
+                  đầu bằng form đăng ký riêng.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-3 lg:justify-end">
                 <a href="/artist/register" className="primary-button gap-2">
                   Đăng ký ngay
                   <ArrowIcon />
                 </a>
                 <a href="/artist/login" className="secondary-button">
-                  Vào đăng nhập nghệ sĩ
+                  Vào đăng nhập
                 </a>
               </div>
-            </article>
-
-            <div className="grid gap-4 md:grid-cols-3">
-              {valueCards.map((card) => (
-                <article
-                  key={card.title}
-                  className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(11,19,33,0.94),rgba(9,15,25,0.98))] p-6 shadow-[0_20px_44px_rgba(0,0,0,0.18)]"
-                >
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05] font-display text-lg font-extrabold text-white">
-                    {card.title.slice(0, 1)}
-                  </div>
-                  <h3 className="mt-5 font-display text-2xl font-extrabold text-white">
-                    {card.title}
-                  </h3>
-                  <p className="mt-3 text-sm leading-7 text-[color:var(--text-secondary)]">
-                    {card.description}
-                  </p>
-                </article>
-              ))}
             </div>
           </section>
         </main>

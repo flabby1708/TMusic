@@ -1,5 +1,10 @@
 # TMusic Agent Rules
 
+## Design System
+
+- For new UI work, use the Spotify Retoned Accent design system in `DESIGN.md`.
+- Reuse tokens from `client/src/themeConfig.js` instead of reintroducing the old coral/cyan theme colors.
+
 ## Validation
 
 - Do not run `npm run build`, `npm run build -w client`, or other full production build commands by default.

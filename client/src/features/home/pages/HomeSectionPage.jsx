@@ -114,7 +114,7 @@ function SectionCard({ sectionKey, item, index, isActive, isPlaying, isBuffering
     return (
       <article className="track-card section-page-card p-2.5">
         {imageUrl ? (
-          <img src={imageUrl} alt={item.name} className="aspect-square w-full rounded-[18px] object-cover" />
+          <img src={imageUrl} alt={item.name} className="aspect-square w-full rounded-[8px] object-cover" />
         ) : (
           <div className="artist-portrait aspect-square w-full" style={{ backgroundImage: item.artwork }}>
             <div className="artist-glow" />
@@ -165,16 +165,16 @@ function SectionCard({ sectionKey, item, index, isActive, isPlaying, isBuffering
 
   return (
     <article className="track-card section-page-card p-2.5">
-      <div className="relative overflow-hidden rounded-[18px]">
+      <div className="relative overflow-hidden rounded-[8px]">
         {imageUrl ? (
           <img
             src={imageUrl}
             alt={item.title}
-            className="aspect-square h-[168px] w-full rounded-[18px] object-cover"
+            className="aspect-square h-[168px] w-full rounded-[8px] object-cover"
           />
         ) : (
           <div
-            className="album-art album-cover aspect-square h-[168px] w-full rounded-[18px]"
+            className="album-art album-cover aspect-square h-[168px] w-full rounded-[8px]"
             style={{ backgroundImage: item.artwork }}
           >
             <div className="album-overlay" />
@@ -527,10 +527,10 @@ function HomeSectionPage() {
                         <img
                           src={currentTrackCover}
                           alt={currentTrack.title}
-                          className="h-14 w-14 shrink-0 rounded-[14px] object-cover shadow-[0_14px_28px_rgba(0,0,0,0.35)]"
+                          className="h-14 w-14 shrink-0 rounded-[8px] object-cover shadow-[0_14px_28px_rgba(0,0,0,0.35)]"
                         />
                       ) : (
-                        <div className="player-cover-fallback h-14 w-14 shrink-0 rounded-[14px]">
+                        <div className="player-cover-fallback h-14 w-14 shrink-0 rounded-[8px]">
                           <span>{currentTrack.title.slice(0, 2).toUpperCase()}</span>
                         </div>
                       )}

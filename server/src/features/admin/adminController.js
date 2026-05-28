@@ -1,11 +1,9 @@
 import { getDatabaseStatus } from '../../config/db.js'
-import { cleanupUploadedFiles } from '../../middleware/uploadMiddleware.js'
 import {
+  approveAdminArtistContentItem,
   createAdminResourceItem,
   deleteAdminResourceItem,
   getAdminResourceConfig,
-  importAdminPodcasts,
-  importAdminSongs,
   listAdminResourceItems,
   updateAdminResourceItem,
 } from '../../services/adminService.js'
@@ -49,6 +47,20 @@ const ensureKnownResource = (resource, res) => {
   return false
 }
 
+const adminReviewOnlyResources = new Set(['songs', 'podcasts'])
+
+const ensureResourceCanBeMutatedByAdmin = (resource, res) => {
+  if (!adminReviewOnlyResources.has(resource)) {
+    return true
+  }
+
+  res.status(405).json({
+    message: 'Songs and podcasts are submitted by artists. Admin can only review and approve them.',
+  })
+
+  return false
+}
+
 export const listAdminItems = async (req, res, next) => {
   try {
     if (!ensureDatabaseReady(res) || !ensureKnownResource(req.params.resource, res)) {
@@ -67,6 +79,10 @@ export const createAdminItem = async (req, res, next) => {
       return
     }
 
+    if (!ensureResourceCanBeMutatedByAdmin(req.params.resource, res)) {
+      return
+    }
+
     const { item, validationMessage } = await createAdminResourceItem(req.params.resource, req.body)
 
     if (validationMessage) {
@@ -78,46 +94,6 @@ export const createAdminItem = async (req, res, next) => {
     return res.status(201).json({ item })
   } catch (error) {
     return next(error)
-  }
-}
-
-export const importAdminSongItems = async (req, res, next) => {
-  try {
-    if (!ensureDatabaseReady(res)) {
-      return
-    }
-
-    const payload = await importAdminSongs({
-      body: req.body,
-      audioFiles: req.files?.audioFiles || [],
-      coverFiles: req.files?.coverFiles || [],
-    })
-
-    return res.status(201).json(payload)
-  } catch (error) {
-    return next(error)
-  } finally {
-    await cleanupUploadedFiles(req.files)
-  }
-}
-
-export const importAdminPodcastItems = async (req, res, next) => {
-  try {
-    if (!ensureDatabaseReady(res)) {
-      return
-    }
-
-    const payload = await importAdminPodcasts({
-      body: req.body,
-      audioFiles: req.files?.audioFiles || [],
-      coverFiles: req.files?.coverFiles || [],
-    })
-
-    return res.status(201).json(payload)
-  } catch (error) {
-    return next(error)
-  } finally {
-    await cleanupUploadedFiles(req.files)
   }
 }
 
@@ -141,6 +117,10 @@ export const importAdminArtistWikiItem = async (req, res, next) => {
 export const updateAdminItem = async (req, res, next) => {
   try {
     if (!ensureDatabaseReady(res) || !ensureKnownResource(req.params.resource, res)) {
+      return
+    }
+
+    if (!ensureResourceCanBeMutatedByAdmin(req.params.resource, res)) {
       return
     }
 
@@ -174,6 +154,10 @@ export const deleteAdminItem = async (req, res, next) => {
       return
     }
 
+    if (!ensureResourceCanBeMutatedByAdmin(req.params.resource, res)) {
+      return
+    }
+
     const { item } = await deleteAdminResourceItem(req.params.resource, req.params.id)
 
     if (!item) {
@@ -183,6 +167,38 @@ export const deleteAdminItem = async (req, res, next) => {
     }
 
     return res.status(204).send()
+  } catch (error) {
+    return next(error)
+  }
+}
+
+export const approveAdminArtistContent = async (req, res, next) => {
+  try {
+    if (!ensureDatabaseReady(res) || !ensureKnownResource(req.params.resource, res)) {
+      return
+    }
+
+    const result = await approveAdminArtistContentItem(req.params.resource, req.params.id)
+
+    if (!result) {
+      return res.status(404).json({
+        message: 'Unknown admin resource.',
+      })
+    }
+
+    if (result.validationMessage) {
+      return res.status(400).json({
+        message: result.validationMessage,
+      })
+    }
+
+    if (!result.item) {
+      return res.status(404).json({
+        message: 'Item not found.',
+      })
+    }
+
+    return res.json({ item: result.item })
   } catch (error) {
     return next(error)
   }

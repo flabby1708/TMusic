@@ -13,7 +13,7 @@ function AppFooter({ compact = false }) {
     <footer className={`footer-shell ${compact ? '' : 'mt-8'}`}>
       <div className="footer-grid">
         <Link to="/" className="footer-brand" aria-label="Trang chủ TMusic">
-          <span className="brand-badge h-11 w-11 rounded-[14px]">
+          <span className="brand-badge h-11 w-11 rounded-[8px]">
             <SpotifyIcon />
           </span>
           <span className="font-display text-[1.55rem] font-extrabold tracking-[-0.06em] text-[color:var(--text-primary)]">

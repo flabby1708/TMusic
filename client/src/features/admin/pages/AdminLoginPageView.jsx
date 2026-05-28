@@ -76,7 +76,7 @@ function AdminLoginPage() {
             href="/"
             className="mb-6 inline-flex items-center gap-3 text-sm font-semibold text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
           >
-            <span className="brand-badge h-11 w-11 rounded-2xl">
+            <span className="brand-badge h-11 w-11 rounded-[8px]">
               <SpotifyIcon />
             </span>
             Quay lại TMusic
@@ -97,7 +97,7 @@ function AdminLoginPage() {
           </p>
 
           <div className="mt-8 grid gap-3 sm:grid-cols-3">
-            <article className="rounded-[24px] border border-[color:var(--border-soft)] bg-[color:rgba(255,255,255,0.04)] p-4">
+            <article className="rounded-[12px] border border-[color:var(--border-soft)] bg-[color:rgba(255,255,255,0.04)] p-4">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-[color:var(--text-dim)]">
                 Phạm vi
               </p>
@@ -105,7 +105,7 @@ function AdminLoginPage() {
                 Quản lý bài hát, nghệ sĩ, album, radio và bảng xếp hạng.
               </p>
             </article>
-            <article className="rounded-[24px] border border-[color:var(--border-soft)] bg-[color:rgba(255,255,255,0.04)] p-4">
+            <article className="rounded-[12px] border border-[color:var(--border-soft)] bg-[color:rgba(255,255,255,0.04)] p-4">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-[color:var(--text-dim)]">
                 Phân quyền
               </p>
@@ -113,7 +113,7 @@ function AdminLoginPage() {
                 Backend chặn toàn bộ <code>/api/admin/*</code> bằng middleware role admin.
               </p>
             </article>
-            <article className="rounded-[24px] border border-[color:var(--border-soft)] bg-[color:rgba(255,255,255,0.04)] p-4">
+            <article className="rounded-[12px] border border-[color:var(--border-soft)] bg-[color:rgba(255,255,255,0.04)] p-4">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-[color:var(--text-dim)]">
                 Phiên đăng nhập
               </p>
@@ -125,8 +125,8 @@ function AdminLoginPage() {
         </section>
 
         <section className="w-full max-w-md">
-          <div className="rounded-[32px] border border-[color:var(--border-soft)] bg-[linear-gradient(180deg,rgba(16,25,40,0.95),rgba(10,16,27,0.98))] p-5 shadow-[0_28px_80px_rgba(0,0,0,0.28)] sm:p-7">
-            <div className="rounded-[26px] border border-[color:rgba(255,255,255,0.06)] bg-[color:rgba(255,255,255,0.03)] p-5 sm:p-6">
+          <div className="rounded-[14px] border border-[color:var(--border-soft)] bg-[linear-gradient(180deg,rgba(16,25,40,0.95),rgba(10,16,27,0.98))] p-5 shadow-[0_28px_80px_rgba(0,0,0,0.28)] sm:p-7">
+            <div className="rounded-[12px] border border-[color:rgba(255,255,255,0.06)] bg-[color:rgba(255,255,255,0.03)] p-5 sm:p-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.18em] text-[color:var(--text-dim)]">
@@ -136,7 +136,7 @@ function AdminLoginPage() {
                     Đăng nhập quản trị
                   </h2>
                 </div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[color:rgba(41,212,255,0.24)] bg-[color:rgba(41,212,255,0.08)] text-[color:#dff8ff]">
+                <div className="flex h-12 w-12 items-center justify-center rounded-[10px] border border-[color:rgba(41,212,255,0.24)] bg-[color:rgba(41,212,255,0.08)] text-[color:#dff8ff]">
                   <ShieldLockIcon />
                 </div>
               </div>
@@ -153,7 +153,7 @@ function AdminLoginPage() {
                     placeholder="admin@tmusic.local"
                     autoComplete="email"
                     required
-                    className="w-full rounded-2xl border border-[color:rgba(255,255,255,0.16)] bg-[color:rgba(255,255,255,0.03)] px-4 py-3.5 text-sm text-white outline-none transition focus:border-[color:rgba(41,212,255,0.4)] focus:bg-[color:rgba(255,255,255,0.05)]"
+                    className="w-full rounded-[10px] border border-[color:rgba(255,255,255,0.16)] bg-[color:rgba(255,255,255,0.03)] px-4 py-3.5 text-sm text-white outline-none transition focus:border-[color:rgba(41,212,255,0.4)] focus:bg-[color:rgba(255,255,255,0.05)]"
                   />
                 </label>
 
@@ -168,7 +168,7 @@ function AdminLoginPage() {
                     placeholder="Nhập mật khẩu quản trị"
                     autoComplete="current-password"
                     required
-                    className="w-full rounded-2xl border border-[color:rgba(255,255,255,0.16)] bg-[color:rgba(255,255,255,0.03)] px-4 py-3.5 text-sm text-white outline-none transition focus:border-[color:rgba(41,212,255,0.4)] focus:bg-[color:rgba(255,255,255,0.05)]"
+                    className="w-full rounded-[10px] border border-[color:rgba(255,255,255,0.16)] bg-[color:rgba(255,255,255,0.03)] px-4 py-3.5 text-sm text-white outline-none transition focus:border-[color:rgba(41,212,255,0.4)] focus:bg-[color:rgba(255,255,255,0.05)]"
                   />
                 </label>
 
@@ -183,7 +183,7 @@ function AdminLoginPage() {
 
               {feedback ? (
                 <div
-                  className={`mt-4 rounded-2xl border px-4 py-3 text-sm leading-6 ${noteToneClasses[feedbackTone]}`}
+                  className={`mt-4 rounded-[10px] border px-4 py-3 text-sm leading-6 ${noteToneClasses[feedbackTone]}`}
                 >
                   {feedback}
                 </div>

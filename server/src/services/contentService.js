@@ -1,15 +1,19 @@
-import Album from '../models/Album.js'
 import Artist from '../models/Artist.js'
 import Chart from '../models/Chart.js'
+import Podcast from '../models/Podcast.js'
 import Radio from '../models/Radio.js'
 import Song from '../models/Song.js'
 
 const sortByOrder = { sortOrder: 1, createdAt: 1 }
 const sortByNewest = { createdAt: -1, sortOrder: -1 }
-const publishedSongFilter = { releaseStatus: 'published' }
+const publishedArtistSongFilter = {
+  releaseStatus: 'published',
+  sourceType: 'artist',
+}
+const publishedPodcastFilter = { releaseStatus: 'published' }
 const homeSectionLimit = 12
 const homeCacheTtlMs = 60 * 1000
-const homeSongFields = 'title artist duration explicit coverUrl audioUrl audioVariants videoUrl musicVideo mood artwork sortOrder'
+const homeSongFields = 'title artist duration explicit coverUrl audioUrl audioVariants videoUrl musicVideo mood artwork sortOrder sourceType releaseStatus processingStatus'
 const homeCache = new Map()
 
 const trimString = (value, fallback = '') => {
@@ -75,7 +79,7 @@ const getArtistLookupKeys = (value) =>
 const artistProfileFields = 'name meta aliases realName bio statsLabel sourceLabel sourceUrl verified credits imageUrl initials artwork sortOrder'
 
 const queryHomeSongs = () =>
-  Song.find(publishedSongFilter)
+  Song.find(publishedArtistSongFilter)
     .sort(sortByNewest)
     .limit(homeSectionLimit)
     .select(homeSongFields)
@@ -85,7 +89,7 @@ const getPopularArtistsFromSongs = async () => {
   return Song.aggregate([
     {
       $match: {
-        ...publishedSongFilter,
+        ...publishedArtistSongFilter,
         artist: { $type: 'string', $ne: '' },
       },
     },
@@ -220,28 +224,20 @@ const queryPopularArtists = async () => {
 }
 
 const queryPopularAlbumsAndSingles = async () => {
-  const songSingles = await Song.find(publishedSongFilter)
+  const songSingles = await Song.find(publishedArtistSongFilter)
     .sort(sortByNewest)
     .limit(homeSectionLimit)
     .select('title artist coverUrl sortOrder createdAt')
     .lean()
 
-  if (songSingles.length > 0) {
-    return songSingles.map((song) => ({
-      title: trimString(song.title),
-      artist: trimString(song.artist),
-      coverUrl: trimString(song.coverUrl),
-      artwork: '',
-      sortOrder: song.sortOrder,
-      sourceType: 'single',
-    }))
-  }
-
-  return Album.find()
-    .sort(sortByOrder)
-    .limit(homeSectionLimit)
-    .select('title artist coverUrl artwork sortOrder')
-    .lean()
+  return songSingles.map((song) => ({
+    title: trimString(song.title),
+    artist: trimString(song.artist),
+    coverUrl: trimString(song.coverUrl),
+    artwork: '',
+    sortOrder: song.sortOrder,
+    sourceType: 'single',
+  }))
 }
 
 const queryHomeRadios = () =>
@@ -258,13 +254,13 @@ const queryHomeCharts = () =>
     .select('title subtitle coverUrl artwork sortOrder')
     .lean()
 
-export const getHomeSongs = () => getCachedHomeSection('home:songs', queryHomeSongs)
+export const getHomeSongs = () => getCachedHomeSection('home:artist-songs', queryHomeSongs)
 
 export const getHomePopularArtists = () =>
-  getCachedHomeSection('home:popular-artists', queryPopularArtists)
+  getCachedHomeSection('home:artist-popular-artists', queryPopularArtists)
 
 export const getHomeAlbums = () =>
-  getCachedHomeSection('home:albums', queryPopularAlbumsAndSingles)
+  getCachedHomeSection('home:artist-albums', queryPopularAlbumsAndSingles)
 
 export const getHomeRadios = () => getCachedHomeSection('home:radios', queryHomeRadios)
 
@@ -301,7 +297,7 @@ export const getPaginatedSongList = async ({ page = 1, limit = 30, query = '' } 
   const pageSize = Math.min(parsePositiveInteger(limit, 30), 50)
   const skip = (currentPage - 1) * pageSize
   const normalizedQuery = trimString(query)
-  const filter = { ...publishedSongFilter }
+  const filter = { ...publishedArtistSongFilter }
 
   if (normalizedQuery) {
     filter.$text = { $search: normalizedQuery }
@@ -315,6 +311,37 @@ export const getPaginatedSongList = async ({ page = 1, limit = 30, query = '' } 
   const [items, total] = await Promise.all([
     Song.find(filter, projection).sort(sort).skip(skip).limit(pageSize).lean(),
     Song.countDocuments(filter),
+  ])
+
+  return {
+    items,
+    page: currentPage,
+    limit: pageSize,
+    total,
+    totalPages: Math.ceil(total / pageSize),
+    hasNextPage: currentPage * pageSize < total,
+  }
+}
+
+export const getPublishedPodcastList = async ({ page = 1, limit = 30, query = '' } = {}) => {
+  const currentPage = parsePositiveInteger(page, 1)
+  const pageSize = Math.min(parsePositiveInteger(limit, 30), 50)
+  const skip = (currentPage - 1) * pageSize
+  const normalizedQuery = trimString(query)
+  const filter = { ...publishedPodcastFilter }
+
+  if (normalizedQuery) {
+    filter.$text = { $search: normalizedQuery }
+  }
+
+  const sort = normalizedQuery
+    ? { score: { $meta: 'textScore' }, sortOrder: 1, createdAt: -1 }
+    : { sortOrder: 1, createdAt: -1 }
+  const projection = normalizedQuery ? { score: { $meta: 'textScore' } } : {}
+
+  const [items, total] = await Promise.all([
+    Podcast.find(filter, projection).sort(sort).skip(skip).limit(pageSize).lean(),
+    Podcast.countDocuments(filter),
   ])
 
   return {

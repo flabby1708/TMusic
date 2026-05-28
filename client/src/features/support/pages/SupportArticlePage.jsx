@@ -10,19 +10,19 @@ function SupportArticleHeader() {
     <header className="sticky top-0 z-40 border-b border-[color:var(--border-soft)] bg-[color:rgba(9,17,29,0.94)] px-5 py-4 text-[color:var(--text-primary)] shadow-[0_18px_44px_rgba(0,0,0,0.28)] backdrop-blur-xl sm:px-8 lg:px-14">
       <div className="mx-auto flex max-w-[1320px] flex-wrap items-center justify-between gap-4">
         <Link to={appPaths.home} className="flex items-center gap-2.5" aria-label="Trang chủ TMusic">
-          <span className="brand-badge h-11 w-11 rounded-[14px]">
+          <span className="brand-badge h-11 w-11 rounded-[8px]">
             <SpotifyIcon />
           </span>
-          <span className="font-display text-[1.7rem] font-extrabold tracking-[-0.06em]">
+          <span className="font-display text-[1.7rem] font-bold tracking-normal">
             TMusic
           </span>
         </Link>
 
-        <nav className="flex items-center gap-5 text-sm font-extrabold text-[color:var(--text-secondary)] sm:text-base">
-          <Link to={appPaths.support} className="transition hover:text-[color:var(--text-primary)]">
+        <nav className="flex items-center gap-5 text-sm font-semibold text-[color:var(--text-secondary)] sm:text-base">
+          <Link to={appPaths.support} className="top-nav-link">
             Trung tâm hỗ trợ
           </Link>
-          <Link to={appPaths.auth.login} className="primary-button px-5 py-2.5">
+          <Link to={appPaths.auth.login} className="primary-button top-action-link px-5 py-2.5">
             Đăng nhập
           </Link>
         </nav>

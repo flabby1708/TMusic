@@ -149,17 +149,17 @@ function SupportHeader() {
       <div className="mx-auto flex max-w-[1780px] flex-wrap items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-7 lg:gap-10">
           <a href={appPaths.home} className="flex items-center gap-2.5" aria-label="Trang chủ TMusic">
-            <span className="brand-badge h-11 w-11 rounded-[14px]">
+            <span className="brand-badge h-11 w-11 rounded-[8px]">
               <SpotifyIcon />
             </span>
-            <span className="font-display text-[1.85rem] font-extrabold tracking-[-0.06em] text-[color:var(--text-primary)]">
+            <span className="font-display text-[1.85rem] font-bold tracking-normal text-[color:var(--text-primary)]">
               TMusic
             </span>
           </a>
 
-          <nav className="hidden items-center gap-8 text-[1rem] font-extrabold text-[color:var(--text-secondary)] md:flex">
+          <nav className="hidden items-center gap-8 text-[1rem] font-semibold text-[color:var(--text-secondary)] md:flex">
             <div className="premium-nav-item">
-              <a href={appPaths.home} className="transition hover:text-[color:var(--text-primary)]">
+              <a href={appPaths.home} className="top-nav-link">
                 Premium
               </a>
 
@@ -178,7 +178,7 @@ function SupportHeader() {
                 </div>
               </div>
             </div>
-            <a href={appPaths.home} className="transition hover:text-[color:var(--tertiary)]">
+            <a href={appPaths.home} className="top-nav-link">
               Cài đặt ứng dụng
             </a>
           </nav>
@@ -192,10 +192,10 @@ function SupportHeader() {
           >
             <GlobalOutlined />
           </button>
-          <a href={appPaths.auth.register} className="secondary-button hidden sm:inline-flex">
+          <a href={appPaths.auth.register} className="secondary-button top-action-link hidden sm:inline-flex">
             Đăng ký
           </a>
-          <a href={appPaths.auth.login} className="primary-button px-8 py-3.5 sm:px-10">
+          <a href={appPaths.auth.login} className="primary-button top-action-link px-8 py-3.5 sm:px-10">
             Đăng nhập
           </a>
         </div>
@@ -220,7 +220,7 @@ function SupportPageView() {
               TMusic
             </h1>
 
-            <label className="search-shell mt-16 flex h-[60px] rounded-[16px] px-4 shadow-[0_18px_40px_rgba(0,0,0,0.24)]">
+            <label className="search-shell mt-16 flex h-[60px] rounded-[10px] px-4 shadow-[0_18px_40px_rgba(0,0,0,0.24)]">
               <SearchOutlined className="text-[1.55rem] text-[color:var(--tertiary)]" />
               <input
                 type="search"
@@ -285,7 +285,7 @@ function SupportPageView() {
               </p>
             </div>
 
-            <div className="mt-8 overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.035] shadow-[0_24px_70px_rgba(0,0,0,0.24)]">
+            <div className="mt-8 overflow-hidden rounded-[14px] border border-white/10 bg-white/[0.035] shadow-[0_24px_70px_rgba(0,0,0,0.24)]">
               {quickHelpLinks.map((item) => (
                 <a
                   key={item.title}

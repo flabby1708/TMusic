@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { appPaths } from '../../../app/routes/paths.js'
 import {
   HomeIcon,
@@ -49,16 +49,16 @@ function SearchResultCard({ type, item, imageUrl, isTrack, isActive, isPlaying, 
 
   return (
     <article className="track-card section-page-card p-2.5">
-      <div className="relative overflow-hidden rounded-[18px]">
+      <div className="relative overflow-hidden rounded-[8px]">
         {imageUrl ? (
           <img
             src={imageUrl}
             alt={title}
-            className="aspect-square h-[168px] w-full rounded-[18px] object-cover"
+            className="aspect-square h-[168px] w-full rounded-[8px] object-cover"
           />
         ) : (
           <div
-            className="album-art album-cover aspect-square h-[168px] w-full rounded-[18px]"
+            className="album-art album-cover aspect-square h-[168px] w-full rounded-[8px]"
             style={{ backgroundImage: item.artwork }}
           >
             <div className="album-overlay" />
@@ -101,6 +101,7 @@ function SearchResultCard({ type, item, imageUrl, isTrack, isActive, isPlaying, 
 }
 
 function SearchPage() {
+  const navigate = useNavigate()
   const audioRef = useRef(null)
   const lastVolumeRef = useRef(72)
   const [searchParams] = useSearchParams()
@@ -115,6 +116,7 @@ function SearchPage() {
   const [durationSeconds, setDurationSeconds] = useState(0)
   const [volumeLevel, setVolumeLevel] = useState(72)
   const [gateTrack, setGateTrack] = useState(null)
+  const [searchInput, setSearchInput] = useState(query)
 
   const results = useMemo(
     () => [
@@ -147,6 +149,40 @@ function SearchPage() {
   )
 
   const isLoading = health.loading || homeContent.loading
+  const resultCounts = useMemo(
+    () =>
+      results.reduce(
+        (counts, result) => ({
+          ...counts,
+          [result.kind]: (counts[result.kind] || 0) + 1,
+        }),
+        { track: 0, artist: 0, album: 0 },
+      ),
+    [results],
+  )
+  const discoveryItems = useMemo(
+    () => [
+      ...homeContent.songs.slice(0, 6).map((track, index) => ({
+        type: 'Bài hát',
+        kind: 'track',
+        item: track,
+        imageUrl: track.coverUrl || trackMockImages[index] || '',
+      })),
+      ...homeContent.artists.slice(0, 4).map((artist, index) => ({
+        type: 'Nghệ sĩ',
+        kind: 'artist',
+        item: artist,
+        imageUrl: artist.imageUrl || artistMockImages[index] || '',
+      })),
+      ...homeContent.albums.slice(0, 4).map((album, index) => ({
+        type: 'Album',
+        kind: 'album',
+        item: album,
+        imageUrl: album.coverUrl || albumMockImages[index] || '',
+      })),
+    ],
+    [homeContent.albums, homeContent.artists, homeContent.songs],
+  )
   const playableResultTracks = results
     .filter((result) => result.kind === 'track' && result.item.audioUrl)
     .map((result) => result.item)
@@ -159,6 +195,10 @@ function SearchPage() {
     currentTrack?.coverUrl ||
     trackMockImages[homeContent.songs.findIndex((track) => track.id === currentTrack?.id)] ||
     ''
+
+  useEffect(() => {
+    setSearchInput(query)
+  }, [query])
 
   useEffect(() => {
     const audio = audioRef.current
@@ -336,6 +376,19 @@ function SearchPage() {
     })
   }
 
+  const handleSearchSubmit = (event) => {
+    event.preventDefault()
+
+    const nextQuery = searchInput.trim()
+
+    if (!nextQuery) {
+      navigate(appPaths.search)
+      return
+    }
+
+    navigate(`${appPaths.search}?q=${encodeURIComponent(nextQuery)}`)
+  }
+
   return (
     <div className="client-cute-theme min-h-screen bg-[color:var(--bg-app)] px-2.5 py-2.5 text-[color:var(--text-primary)]">
       <div className="mx-auto flex min-h-[calc(100vh-1.25rem)] w-full max-w-[1920px] flex-col gap-2.5">
@@ -356,7 +409,18 @@ function SearchPage() {
             }`}
           >
             <audio ref={audioRef} preload="none" />
-            <section className="mb-6">
+            <section className="search-foundry mb-6">
+              <form className="search-foundry-form mb-5" onSubmit={handleSearchSubmit}>
+                <SearchIcon />
+                <input
+                  type="search"
+                  value={searchInput}
+                  onChange={(event) => setSearchInput(event.target.value)}
+                  placeholder="Tìm bài hát, nghệ sĩ hoặc album"
+                  aria-label="Tìm kiếm trên TMusic"
+                />
+                <button type="submit">Tìm kiếm</button>
+              </form>
               <p className="section-kicker">Tìm kiếm</p>
               <h1 className="mt-3 font-display text-[2rem] font-extrabold leading-tight text-[color:var(--text-primary)] sm:text-[2.6rem]">
                 {query ? `Kết quả cho "${query}"` : 'Nhập từ khóa để tìm nhạc'}
@@ -371,6 +435,27 @@ function SearchPage() {
               ) : null}
             </section>
 
+            {query ? (
+              <div className="search-result-chips mb-5" aria-label="Tổng quan kết quả">
+                <span>{results.length} kết quả</span>
+                <span>{resultCounts.track} bài hát</span>
+                <span>{resultCounts.artist} nghệ sĩ</span>
+                <span>{resultCounts.album} album</span>
+              </div>
+            ) : (
+              <div className="search-result-chips mb-5" aria-label="Gợi ý tìm kiếm">
+                <button type="button" onClick={() => setSearchInput('Keshi')}>
+                  Keshi
+                </button>
+                <button type="button" onClick={() => setSearchInput('Bol4')}>
+                  Bol4
+                </button>
+                <button type="button" onClick={() => setSearchInput('Limbo')}>
+                  Limbo
+                </button>
+              </div>
+            )}
+
             {isLoading ? (
               <section className="section-page-grid" aria-label="Đang tải kết quả">
                 {Array.from({ length: 8 }).map((_, index) => (
@@ -381,8 +466,8 @@ function SearchPage() {
                   </div>
                 ))}
               </section>
-            ) : results.length > 0 ? (
-              <section className="section-page-grid">
+            ) : query && results.length > 0 ? (
+              <section className="section-page-grid" aria-label="Kết quả tìm kiếm">
                 {results.map((result, index) => (
                   <SearchResultCard
                     key={`${result.type}-${result.item.id || result.item.name || result.item.title}-${index}`}
@@ -395,7 +480,7 @@ function SearchPage() {
                   />
                 ))}
               </section>
-            ) : (
+            ) : query ? (
               <section className="section-empty-state">
                 <SearchIcon />
                 <h2 className="mt-4 font-display text-[1.6rem] font-extrabold text-[color:var(--text-primary)]">
@@ -408,6 +493,44 @@ function SearchPage() {
                   Quay lại trang chủ
                 </Link>
               </section>
+            ) : (
+              <>
+                <section className="search-browse-grid mb-8" aria-label="Duyệt tất cả">
+                  <button type="button" onClick={() => setSearchInput('Pop')}>
+                    <strong>Nhạc thịnh hành</strong>
+                    <span>Bài hát đang có trong thư viện</span>
+                  </button>
+                  <button type="button" onClick={() => setSearchInput('Album')}>
+                    <strong>Album</strong>
+                    <span>Tìm theo tuyển tập và bản phát hành</span>
+                  </button>
+                  <button type="button" onClick={() => setSearchInput('Nghệ sĩ')}>
+                    <strong>Nghệ sĩ</strong>
+                    <span>Khám phá hồ sơ nghệ sĩ</span>
+                  </button>
+                </section>
+
+                <section>
+                  <div className="mb-4 flex items-center justify-between gap-4">
+                    <h2 className="font-display text-[1.35rem] font-bold text-[color:var(--text-primary)]">
+                      Gợi ý tìm nhanh
+                    </h2>
+                  </div>
+                  <div className="section-page-grid">
+                    {discoveryItems.map((result, index) => (
+                      <SearchResultCard
+                        key={`discovery-${result.kind}-${result.item.id || result.item.name || result.item.title}-${index}`}
+                        {...result}
+                        isTrack={result.kind === 'track'}
+                        isActive={currentTrack?.id === result.item.id}
+                        isPlaying={isPlaying}
+                        isBuffering={isBuffering}
+                        onPlay={() => void toggleTrack(result.item)}
+                      />
+                    ))}
+                  </div>
+                </section>
+              </>
             )}
 
             {playbackError ? (
@@ -423,10 +546,10 @@ function SearchPage() {
                         <img
                           src={currentTrackCover}
                           alt={currentTrack.title}
-                          className="h-14 w-14 shrink-0 rounded-[14px] object-cover shadow-[0_14px_28px_rgba(0,0,0,0.35)]"
+                          className="h-14 w-14 shrink-0 rounded-[8px] object-cover shadow-[0_14px_28px_rgba(0,0,0,0.35)]"
                         />
                       ) : (
-                        <div className="player-cover-fallback h-14 w-14 shrink-0 rounded-[14px]">
+                        <div className="player-cover-fallback h-14 w-14 shrink-0 rounded-[8px]">
                           <span>{currentTrack.title.slice(0, 2).toUpperCase()}</span>
                         </div>
                       )}

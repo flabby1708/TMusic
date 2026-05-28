@@ -1,4 +1,4 @@
-import { Avatar, Button, Layout, Menu, Space, Typography } from 'antd'
+import { Avatar, Button, ConfigProvider, Layout, Menu, Space, Typography } from 'antd'
 import {
   CustomerServiceOutlined,
   FileProtectOutlined,
@@ -9,10 +9,13 @@ import {
 } from '@ant-design/icons'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { appPaths } from '../../../app/routes/paths.js'
+import themeConfig from '../../../themeConfig.js'
+import { adminTheme } from '../dashboard/adminDashboardTheme.jsx'
 import { useAdminSession } from '../useAdminSession.js'
 
 const { Content, Header, Sider } = Layout
 const { Text, Title } = Typography
+const { colors } = themeConfig
 
 const renderAdminMenuLabel = ({ title, description }) => (
   <span className="tmusic-admin-shell-menu-label">
@@ -107,24 +110,23 @@ function AdminShell({
   }
 
   return (
-    <Layout
-      className="tmusic-admin-shell"
-      style={{
-        height: '100vh',
-        minHeight: '100vh',
-        overflow: 'hidden',
-        background:
-          'radial-gradient(circle at 8% 0%, rgba(255, 107, 87, 0.2), transparent 34%), radial-gradient(circle at 92% 12%, rgba(41, 212, 255, 0.16), transparent 32%), linear-gradient(145deg, #0d1525 0%, #08111d 46%, #060b16 100%)',
-      }}
-    >
+    <ConfigProvider theme={adminTheme}>
+      <Layout
+        className="tmusic-admin-shell"
+        style={{
+          height: '100vh',
+          minHeight: '100vh',
+          overflow: 'hidden',
+          background: colors.backgroundPrimary,
+        }}
+      >
       <Sider
         width={300}
         theme="dark"
         style={{
-          background:
-            'linear-gradient(180deg, rgba(15, 24, 40, 0.96) 0%, rgba(8, 17, 29, 0.98) 48%, rgba(6, 11, 22, 0.98) 100%)',
-          borderRight: '1px solid rgba(255, 255, 255, 0.08)',
-          boxShadow: '18px 0 50px rgba(0, 0, 0, 0.24)',
+          background: colors.backgroundSecondary,
+          borderRight: `1px solid ${colors.dividerSubtle}`,
+          boxShadow: 'none',
           position: 'sticky',
           top: 0,
           height: '100vh',
@@ -135,9 +137,8 @@ function AdminShell({
         <div
           style={{
             padding: '28px 24px 24px',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-            background:
-              'radial-gradient(circle at 18% 8%, rgba(255, 107, 87, 0.1), transparent 36%), radial-gradient(circle at 82% 22%, rgba(41, 212, 255, 0.1), transparent 34%)',
+            borderBottom: `1px solid ${colors.dividerSubtle}`,
+            background: colors.backgroundSecondary,
           }}
         >
           <Space align="center" size={14}>
@@ -145,14 +146,14 @@ function AdminShell({
               style={{
                 width: 54,
                 height: 54,
-                borderRadius: 18,
+                borderRadius: '50%',
                 display: 'grid',
                 placeItems: 'center',
-                background: 'linear-gradient(135deg, #ff6b57 0%, #29d4ff 100%)',
-                boxShadow: '0 18px 44px rgba(255, 107, 87, 0.22)',
+                background: colors.primaryAccent,
+                boxShadow: 'none',
               }}
             >
-              <CustomerServiceOutlined style={{ color: '#08101a', fontSize: 26 }} />
+              <CustomerServiceOutlined style={{ color: colors.textInverse, fontSize: 26 }} />
             </div>
             <div style={{ minWidth: 0 }}>
               <Title level={3} style={{ color: '#fff', margin: 0, lineHeight: 1.05 }}>
@@ -198,9 +199,8 @@ function AdminShell({
             justifyContent: 'space-between',
             gap: 18,
             padding: '18px 34px',
-            background:
-              'linear-gradient(90deg, rgba(13, 21, 37, 0.94) 0%, rgba(8, 17, 29, 0.88) 62%, rgba(15, 24, 40, 0.92) 100%)',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+            background: colors.backgroundPrimary,
+            borderBottom: `1px solid ${colors.dividerSubtle}`,
             backdropFilter: 'blur(18px)',
             position: 'sticky',
             top: 0,
@@ -211,7 +211,7 @@ function AdminShell({
           <div style={{ minWidth: 0 }}>
             <Text
               style={{
-                color: '#29d4ff',
+                color: colors.primaryAccent,
                 display: 'block',
                 fontSize: 12,
                 fontWeight: 800,
@@ -240,14 +240,18 @@ function AdminShell({
             <Avatar
               size={42}
               style={{
-                background: 'linear-gradient(135deg, #ff6b57 0%, #29d4ff 100%)',
-                color: '#08101a',
+                background: colors.primaryAccent,
+                color: colors.textInverse,
                 fontWeight: 900,
               }}
             >
               {displayName.slice(0, 1).toUpperCase()}
             </Avatar>
-            <Button icon={<LogoutOutlined />} ghost onClick={handleLogout}>
+            <Button
+              className="tmusic-admin-logout-button"
+              icon={<LogoutOutlined />}
+              onClick={handleLogout}
+            >
               Đăng xuất
             </Button>
           </Space>
@@ -260,14 +264,14 @@ function AdminShell({
             overflowY: 'auto',
             overflowX: 'hidden',
             overscrollBehavior: 'contain',
-            background:
-              'radial-gradient(circle at 0% 0%, rgba(255, 107, 87, 0.06), transparent 28%), radial-gradient(circle at 100% 0%, rgba(41, 212, 255, 0.06), transparent 28%)',
+            background: colors.backgroundPrimary,
           }}
         >
           {children}
         </Content>
       </Layout>
-    </Layout>
+      </Layout>
+    </ConfigProvider>
   )
 }
 

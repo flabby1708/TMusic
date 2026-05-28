@@ -1,13 +1,12 @@
 import { Router } from 'express'
 import {
   approveArtistApplicationItem,
+  approveAdminArtistContent,
   createAdminItem,
   deleteAdminItem,
-  importAdminPodcastItems,
   importAdminArtistWikiItem,
   getAdminUserItem,
   getArtistApplicationItem,
-  importAdminSongItems,
   listAdminItems,
   listAdminUserItems,
   listArtistApplicationItems,
@@ -19,11 +18,6 @@ import {
   suspendArtistApplicationItem,
 } from './adminController.js'
 import { createAdminUploadSignature } from '../../controllers/uploadController.js'
-import {
-  parseAdminSongBulkImport,
-  parseAdminPodcastBulkImport,
-  requireCloudinaryUploadConfig,
-} from '../../middleware/uploadMiddleware.js'
 import { requireAdmin } from '../../middleware/authMiddleware.js'
 
 const adminRouter = Router()
@@ -31,18 +25,6 @@ const adminRouter = Router()
 adminRouter.use(requireAdmin)
 
 adminRouter.post('/uploads/sign', createAdminUploadSignature)
-adminRouter.post(
-  '/songs/import',
-  requireCloudinaryUploadConfig,
-  parseAdminSongBulkImport,
-  importAdminSongItems,
-)
-adminRouter.post(
-  '/podcasts/import',
-  requireCloudinaryUploadConfig,
-  parseAdminPodcastBulkImport,
-  importAdminPodcastItems,
-)
 adminRouter.post('/artists/import-wiki', importAdminArtistWikiItem)
 adminRouter.get('/users', listAdminUserItems)
 adminRouter.get('/users/:id', getAdminUserItem)
@@ -58,6 +40,7 @@ adminRouter.patch('/artist-applications/:id/suspend', suspendArtistApplicationIt
 
 adminRouter.get('/:resource', listAdminItems)
 adminRouter.post('/:resource', createAdminItem)
+adminRouter.patch('/:resource/:id/approve', approveAdminArtistContent)
 adminRouter.put('/:resource/:id', updateAdminItem)
 adminRouter.delete('/:resource/:id', deleteAdminItem)
 

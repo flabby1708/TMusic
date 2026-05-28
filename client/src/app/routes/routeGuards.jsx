@@ -7,7 +7,7 @@ import { appPaths } from './paths.js'
 function RouteLoader({ message }) {
   return (
     <div className="grid min-h-screen place-items-center bg-[color:var(--bg-app)] px-4 text-[color:var(--text-primary)]">
-      <div className="rounded-[28px] border border-white/10 bg-white/[0.04] px-6 py-5 text-center">
+      <div className="rounded-[12px] border border-white/10 bg-white/[0.04] px-6 py-5 text-center">
         {message}
       </div>
     </div>
@@ -46,6 +46,19 @@ export function UserGuestRoute() {
       loading={loading}
       isAuthenticated={isAuthenticated}
       redirectTo={appPaths.home}
+      loadingMessage="Đang kiểm tra phiên người dùng..."
+    />
+  )
+}
+
+export function UserProtectedRoute() {
+  const { loading, isAuthenticated } = useAuthSession()
+
+  return (
+    <ProtectedRoute
+      loading={loading}
+      isAuthenticated={isAuthenticated}
+      redirectTo={appPaths.auth.login}
       loadingMessage="Đang kiểm tra phiên người dùng..."
     />
   )

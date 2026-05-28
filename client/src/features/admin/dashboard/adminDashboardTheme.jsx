@@ -7,7 +7,10 @@ import {
   TeamOutlined,
   UserOutlined,
 } from '@ant-design/icons'
+import themeConfig from '../../../themeConfig.js'
 import { resourceDefinitions } from '../adminConfig.js'
+
+const { colors, radii, shadows } = themeConfig
 
 export const ADMIN_HEADER_HEIGHT = 88
 
@@ -74,51 +77,53 @@ export const resourceMenuItems = [
 export const adminTheme = {
   algorithm: theme.darkAlgorithm,
   token: {
-    colorPrimary: '#ff6b57',
-    colorInfo: '#29d4ff',
-    borderRadius: 16,
-    borderRadiusLG: 24,
-    colorBgBase: '#070d17',
-    colorBgContainer: '#101826',
-    colorBgElevated: '#0c1320',
-    colorText: '#f5f7fb',
-    colorTextSecondary: '#aab8ce',
-    colorBorderSecondary: 'rgba(123, 136, 157, 0.18)',
+    colorPrimary: colors.primaryAccentHex,
+    colorInfo: colors.primaryAccentHex,
+    colorError: colors.error,
+    colorWarning: colors.warning,
+    borderRadius: Number.parseInt(radii.card, 10),
+    borderRadiusLG: Number.parseInt(radii.badge, 10),
+    colorBgBase: colors.backgroundPrimary,
+    colorBgContainer: colors.backgroundSecondary,
+    colorBgElevated: colors.backgroundTertiary,
+    colorText: colors.textPrimary,
+    colorTextSecondary: colors.textSecondary,
+    colorTextTertiary: colors.textTertiary,
+    colorBorderSecondary: colors.dividerSubtle,
   },
   components: {
     Layout: {
       bodyBg: 'transparent',
-      headerBg: 'rgba(8, 16, 28, 0.94)',
-      siderBg: '#101826',
-      triggerBg: '#101826',
+      headerBg: colors.backgroundPrimary,
+      siderBg: colors.backgroundSecondary,
+      triggerBg: colors.backgroundSecondary,
     },
     Menu: {
       darkItemBg: 'transparent',
       darkSubMenuItemBg: 'transparent',
-      itemBorderRadius: 14,
-      subMenuItemBorderRadius: 12,
-      itemSelectedBg: 'rgba(255, 107, 87, 0.18)',
-      itemSelectedColor: '#ffffff',
-      itemColor: '#aab8ce',
+      itemBorderRadius: Number.parseInt(radii.card, 10),
+      subMenuItemBorderRadius: Number.parseInt(radii.card, 10),
+      itemSelectedBg: 'oklch(78.5% 0.115 274.713 / 0.15)',
+      itemSelectedColor: colors.textPrimary,
+      itemColor: colors.textSecondary,
     },
     Button: {
-      borderRadius: 14,
-      controlHeight: 42,
+      borderRadius: Number.parseInt(radii.pill, 10),
+      controlHeight: 48,
     },
   },
 }
 
 export const shellStyles = {
   minHeight: '100vh',
-  background:
-    'radial-gradient(circle at top left, rgba(41, 212, 255, 0.12), transparent 24%), radial-gradient(circle at bottom right, rgba(255, 107, 87, 0.16), transparent 32%), linear-gradient(180deg, #08111d 0%, #050912 100%)',
+  background: colors.backgroundPrimary,
 }
 
 export const panelStyle = (token) => ({
   background: token.colorBgContainer,
   border: `1px solid ${token.colorBorderSecondary}`,
   borderRadius: token.borderRadiusLG,
-  boxShadow: '0 24px 60px rgba(0, 0, 0, 0.24)',
+  boxShadow: shadows.raised,
 })
 
 export const fieldLabelStyle = {
@@ -126,11 +131,11 @@ export const fieldLabelStyle = {
   marginBottom: 8,
   fontSize: 13,
   fontWeight: 700,
-  color: '#aab8ce',
+  color: colors.textSecondary,
 }
 
 export const inputStyle = {
-  borderRadius: 14,
+  borderRadius: Number.parseInt(radii.card, 10),
 }
 
 export function getAdminDisplayName(user) {

@@ -27,6 +27,7 @@ const toPublicUser = (user) => ({
   displayName: user.displayName,
   email: user.email,
   role: user.role,
+  accountStatus: user.accountStatus || 'active',
   artistStatus: user.artistStatus || 'none',
   artistProfile: {
     stageName: user.artistProfile?.stageName || '',

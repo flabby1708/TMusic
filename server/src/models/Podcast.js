@@ -98,6 +98,17 @@ const podcastSchema = new mongoose.Schema(
       type: podcastAudioSchema,
       default: () => ({}),
     },
+    ownerUserId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+      index: true,
+    },
+    sourceType: {
+      type: String,
+      enum: ['catalog', 'artist'],
+      default: 'catalog',
+    },
     sourcePage: {
       type: String,
       default: '',
@@ -124,6 +135,7 @@ const podcastSchema = new mongoose.Schema(
 )
 
 podcastSchema.index({ releaseStatus: 1, sortOrder: 1, createdAt: -1 })
+podcastSchema.index({ releaseStatus: 1, sourceType: 1 })
 podcastSchema.index({ showTitle: 1, title: 1 })
 podcastSchema.index({ title: 'text', showTitle: 'text', host: 'text', category: 'text' })
 

@@ -1,6 +1,5 @@
 ﻿import { useEffect } from 'react'
 import { ConfigProvider } from 'antd'
-import { appPaths } from '../../../app/routes/paths.js'
 import AdminDashboardEditorPanel from '../../../features/admin/dashboard/AdminDashboardEditorPanel.jsx'
 import AdminDashboardLoadingState from '../../../features/admin/dashboard/AdminDashboardLoadingState.jsx'
 import AdminDashboardResourcePanel from '../../../features/admin/dashboard/AdminDashboardResourcePanel.jsx'
@@ -21,6 +20,7 @@ function AdminDashboardPage({ initialResource = 'songs' }) {
     handleChange,
     handleDelete,
     handleEdit,
+    handleApprove,
     handleArtistWikiImport,
     handleAssetUpload,
     handleReset,
@@ -39,14 +39,6 @@ function AdminDashboardPage({ initialResource = 'songs' }) {
     }
   }, [isAuthenticated, sessionLoading])
 
-  const handleOpenSongImport = () => {
-    window.location.assign(appPaths.admin.importSongs)
-  }
-
-  const handleOpenPodcastImport = () => {
-    window.location.assign(appPaths.admin.importPodcasts)
-  }
-
   if (sessionLoading) {
     return (
       <ConfigProvider theme={adminTheme}>
@@ -60,9 +52,12 @@ function AdminDashboardPage({ initialResource = 'songs' }) {
   }
 
   const isPodcastResource = activeResource === 'podcasts'
-  const shellSubtitle = isPodcastResource
-    ? 'Quản lý show, tập podcast, audio, cover và nguồn license riêng.'
-    : 'Quản lý catalog bài hát, audio, cover và trạng thái hiển thị.'
+  const isReviewOnlyResource = activeResource === 'songs' || activeResource === 'podcasts'
+  const shellSubtitle = isReviewOnlyResource
+    ? isPodcastResource
+      ? 'Xem podcast nghệ sĩ gửi lên và duyệt để hiển thị ngoài client.'
+      : 'Xem bài hát nghệ sĩ gửi lên và duyệt để hiển thị ngoài client.'
+    : 'Quản lý dữ liệu thư viện và tài nguyên hiển thị.'
 
   return (
     <AdminShell
@@ -73,7 +68,7 @@ function AdminDashboardPage({ initialResource = 'songs' }) {
       <ConfigProvider theme={adminTheme}>
         <div
           style={{
-            borderRadius: 32,
+            borderRadius: 14,
             padding: 26,
             background:
               'linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.028))',
@@ -81,7 +76,13 @@ function AdminDashboardPage({ initialResource = 'songs' }) {
             boxShadow: '0 24px 80px rgba(0, 0, 0, 0.26)',
           }}
         >
-          <div className="grid items-start gap-6 2xl:grid-cols-[minmax(0,1fr)_minmax(360px,440px)]">
+          <div
+            className={
+              isReviewOnlyResource
+                ? 'grid items-start gap-6'
+                : 'grid items-start gap-6 2xl:grid-cols-[minmax(0,1fr)_minmax(360px,440px)]'
+            }
+          >
             <AdminDashboardResourcePanel
               activeResource={activeResource}
               currentResource={currentResource}
@@ -92,26 +93,27 @@ function AdminDashboardPage({ initialResource = 'songs' }) {
               onCreateNew={handleReset}
               onDelete={handleDelete}
               onEdit={handleEdit}
-              onOpenPodcastImport={handleOpenPodcastImport}
-              onOpenSongImport={handleOpenSongImport}
+              onApprove={handleApprove}
               onReload={reloadActiveResource}
               saving={saving}
             />
 
-            <AdminDashboardEditorPanel
-              currentResource={currentResource}
-              activeResource={activeResource}
-              editingId={editingId}
-              formValues={formValues}
-              handleAssetUpload={handleAssetUpload}
-              handleArtistWikiImport={handleArtistWikiImport}
-              handleChange={handleChange}
-              handleReset={handleReset}
-              handleSubmit={handleSubmit}
-              notice={notice}
-              saving={saving}
-              uploadingField={uploadingField}
-            />
+            {isReviewOnlyResource ? null : (
+              <AdminDashboardEditorPanel
+                currentResource={currentResource}
+                activeResource={activeResource}
+                editingId={editingId}
+                formValues={formValues}
+                handleAssetUpload={handleAssetUpload}
+                handleArtistWikiImport={handleArtistWikiImport}
+                handleChange={handleChange}
+                handleReset={handleReset}
+                handleSubmit={handleSubmit}
+                notice={notice}
+                saving={saving}
+                uploadingField={uploadingField}
+              />
+            )}
           </div>
         </div>
       </ConfigProvider>

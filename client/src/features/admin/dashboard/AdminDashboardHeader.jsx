@@ -1,7 +1,9 @@
 import { Avatar, Layout, Menu, theme } from 'antd'
+import themeConfig from '../../../themeConfig.js'
 import { ADMIN_HEADER_HEIGHT, getAdminDisplayName, headerItems } from './adminDashboardTheme'
 
 const { Header } = Layout
+const { colors } = themeConfig
 
 function AdminDashboardHeader({ selectedKeys = [], user, onMenuClick }) {
   const {
@@ -40,12 +42,12 @@ function AdminDashboardHeader({ selectedKeys = [], user, onMenuClick }) {
           style={{
             width: 42,
             height: 42,
-            borderRadius: 16,
+            borderRadius: '50%',
             display: 'grid',
             placeItems: 'center',
-            background: 'linear-gradient(180deg, #ff8a78 0%, #ff6b57 100%)',
-            color: '#08101a',
-            fontWeight: 900,
+            background: colors.primaryAccent,
+            color: colors.textInverse,
+            fontWeight: 700,
           }}
         >
           TM
@@ -86,9 +88,9 @@ function AdminDashboardHeader({ selectedKeys = [], user, onMenuClick }) {
         <Avatar
           size={42}
           style={{
-            background: 'rgba(41, 212, 255, 0.16)',
-            color: '#dff8ff',
-            fontWeight: 800,
+            background: 'oklch(78.5% 0.115 274.713 / 0.16)',
+            color: colors.primaryAccent,
+            fontWeight: 700,
           }}
         >
           {getAdminDisplayName(user).slice(0, 2).toUpperCase()}

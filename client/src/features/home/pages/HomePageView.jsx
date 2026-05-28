@@ -7,10 +7,8 @@ import {
   ChevronLeftSmallIcon,
   ChevronRightSmallIcon,
   DeviceIcon,
-  DownloadIcon,
   ExpandIcon,
   GlobeIcon,
-  HomeIcon,
   LibraryIcon,
   LyricsIcon,
   MuteIcon,
@@ -23,7 +21,6 @@ import {
   RepeatIcon,
   RepeatOneIcon,
   SearchIcon,
-  SearchTrailingIcon,
   ShuffleIcon,
   SpeakerIcon,
   SpotifyIcon,
@@ -35,35 +32,23 @@ import {
   chartMockImages,
   footerLinks,
   libraryPrompts,
-  menuLinks,
   radioMockImages,
   trackMockImages,
 } from '../homeData.js'
+import {
+  buildAlbumPath,
+  buildSuggestedRadioItems,
+  buildUserAlbumItems,
+  buildUserMixItems,
+} from '../albumLibrary.js'
 import { useHomePageData } from '../useHomePageData.js'
 import { useAuthSession } from '../../auth/useAuthSession.js'
 import GuestPlaybackGateModal from '../components/GuestPlaybackGateModal.jsx'
 import AppFooter from '../../footer/AppFooter.jsx'
+import ClientAppHeader from '../../client/layout/headers/app/ClientAppHeader.jsx'
+import ClientAppShell from '../../client/layout/shells/ClientAppShell.jsx'
 import 'swiper/css'
 import 'swiper/css/navigation'
-
-const premiumHoverPlans = [
-  {
-    title: 'Individual',
-    description: '1 account - For one person.',
-  },
-  {
-    title: 'Duo',
-    description: '2 accounts - For couples under one roof.',
-  },
-  {
-    title: 'Family',
-    description: '6 accounts - For family members under one roof.',
-  },
-  {
-    title: 'Student',
-    description: '1 account - Discount for eligible students.',
-  },
-]
 
 const userLibraryFilters = [
   { id: 'all', label: 'Tất cả' },
@@ -388,13 +373,26 @@ function DemoCover({ item, className = '' }) {
   )
 }
 
-function DemoPlayBadge({ item, currentTrack, isPlaying, isBuffering, className = '' }) {
+function DemoPlayBadge({
+  item,
+  currentTrack,
+  isPlaying,
+  isBuffering,
+  className = '',
+  onClick,
+}) {
   const isActive = Boolean(item?.track?.id && currentTrack?.id === item.track.id)
 
   return (
-    <span
-      className={`grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[color:var(--primary)] text-[#221017] shadow-[0_10px_22px_rgba(255,141,154,0.18)] transition group-hover:scale-105 group-hover:bg-[color:var(--primary-hover)] ${className}`}
-      aria-hidden="true"
+    <button
+      type="button"
+      className={`grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[color:var(--primary)] text-[#221017] shadow-[0_10px_22px_rgba(255,141,154,0.18)] transition hover:scale-105 hover:bg-[color:var(--primary-hover)] ${className}`}
+      aria-label={`${isActive && isPlaying ? 'Tạm dừng' : 'Phát'} ${item.title}`}
+      title={`${isActive && isPlaying ? 'Tạm dừng' : 'Phát'} ${item.title}`}
+      onClick={(event) => {
+        event.stopPropagation()
+        onClick?.(event)
+      }}
     >
       {isActive && isBuffering ? (
         <span className="player-loading-dot" />
@@ -403,7 +401,7 @@ function DemoPlayBadge({ item, currentTrack, isPlaying, isBuffering, className =
       ) : (
         <PlayIcon />
       )}
-    </span>
+    </button>
   )
 }
 
@@ -448,48 +446,12 @@ function HomePage() {
     [homeContent.songs],
   )
   const userAlbumItems = useMemo(() => {
-    const tracks = homeContent.songs.length > 0 ? homeContent.songs : playableTracks
-    const getDemoTrack = (index = 0) => tracks[index % Math.max(tracks.length, 1)] || null
-    const firstTrack = getDemoTrack(0)
-    const albumItems = homeContent.albums.slice(0, 5).map((album, index) => ({
-      title: album.title,
-      subtitle: album.artist || 'Album',
-      type: 'album',
-      imageUrl: album.coverUrl || albumMockImages[index % albumMockImages.length] || '',
-      artwork: album.artwork,
-      track: getDemoTrack(index + 1),
-    }))
-    const artistItems = homeContent.artists.slice(0, 2).map((artist, index) => ({
-      title: artist.name,
-      subtitle: artist.meta || 'Nghệ sĩ',
-      type: 'artist',
-      imageUrl: artist.imageUrl || '',
-      artwork: artist.artwork,
-      track:
-        tracks.find((track) => track.artist?.toLowerCase().includes(artist.name.toLowerCase())) ||
-        getDemoTrack(index + 3),
-    }))
-
-    return [
-      {
-        title: `Tuyển tập của ${userDisplayName}`,
-        subtitle: `Thư viện cá nhân của ${userDisplayName}`,
-        type: 'playlist',
-        imageUrl: firstTrack?.coverUrl || trackMockImages[0] || '',
-        artwork: firstTrack?.artwork,
-        track: firstTrack,
-      },
-      {
-        title: 'Bài hát đã thích',
-        subtitle: `${Math.max(homeContent.songs.length, 1)} bài hát`,
-        type: 'playlist',
-        liked: true,
-        track: firstTrack,
-      },
-      ...albumItems,
-      ...artistItems,
-    ].slice(0, 8)
-  }, [homeContent.albums, homeContent.artists, homeContent.songs, playableTracks, userDisplayName])
+    return buildUserAlbumItems({
+      homeContent,
+      playableTracks,
+      userDisplayName,
+    })
+  }, [homeContent, playableTracks, userDisplayName])
   const filteredUserAlbumItems = useMemo(() => {
     if (activeUserLibraryFilter === 'all') {
       return userAlbumItems
@@ -498,43 +460,43 @@ function HomePage() {
     return userAlbumItems.filter((item) => item.type === activeUserLibraryFilter)
   }, [activeUserLibraryFilter, userAlbumItems])
   const userMixItems = useMemo(() => {
-    const tracks = homeContent.songs.length > 0 ? homeContent.songs : playableTracks
-
-    return Array.from({ length: Math.min(6, Math.max(tracks.length, 4)) }, (_, index) => {
-      const track = tracks[index % Math.max(tracks.length, 1)] || {}
-      const nextTrack = tracks[(index + 1) % Math.max(tracks.length, 1)] || {}
-      const isPrimaryMix = index === 0
-
-      return {
-        title: isPrimaryMix ? 'Gợi ý hôm nay' : `Mix ngẫu nhiên ${String(index).padStart(2, '0')}`,
-        subtitle: isPrimaryMix
-          ? 'Tổng hợp demo từ các bài trend, chờ dữ liệu import thật.'
-          : [track.artist, nextTrack.artist, 'và các bài cùng vibe'].filter(Boolean).join(', '),
-        imageUrl:
-          track.coverUrl ||
-          albumMockImages[index % albumMockImages.length] ||
-          trackMockImages[index % trackMockImages.length] ||
-          '',
-        artwork: track.artwork,
-        track,
-      }
+    return buildUserMixItems({
+      homeContent,
+      playableTracks,
     })
-  }, [homeContent.songs, playableTracks])
+  }, [homeContent, playableTracks])
   const suggestedRadioItems = useMemo(() => {
-    const tracks = homeContent.songs.length > 0 ? homeContent.songs : playableTracks
-
-    return Array.from({ length: Math.min(5, Math.max(tracks.length, 4)) }, (_, index) => {
-      const track = tracks[(index + 2) % Math.max(tracks.length, 1)] || {}
-
-      return {
-        title: `${track.artist || 'TMusic'}: phát tiếp`,
-        subtitle: `Gợi ý dựa trên ${track.title || 'các bài trend gần đây'}`,
-        imageUrl: track.coverUrl || trackMockImages[index % trackMockImages.length] || '',
-        artwork: track.artwork,
-        track,
-      }
+    return buildSuggestedRadioItems({
+      homeContent,
+      playableTracks,
     })
-  }, [homeContent.songs, playableTracks])
+  }, [homeContent, playableTracks])
+  const searchSuggestions = useMemo(
+    () => [
+      ...homeContent.songs.slice(0, 6).map((track, index) => ({
+        type: 'Bài hát',
+        title: track.title,
+        subtitle: track.artist || track.tag || 'TMusic',
+        imageUrl: track.coverUrl || trackMockImages[index % trackMockImages.length] || '',
+        query: track.title,
+      })),
+      ...homeContent.artists.slice(0, 4).map((artist, index) => ({
+        type: 'Nghệ sĩ',
+        title: artist.name,
+        subtitle: artist.meta || 'Nghệ sĩ',
+        imageUrl: artist.imageUrl || artistMockImages[index % artistMockImages.length] || '',
+        query: artist.name,
+      })),
+      ...homeContent.albums.slice(0, 4).map((album, index) => ({
+        type: 'Album',
+        title: album.title,
+        subtitle: album.artist || 'Album',
+        imageUrl: album.coverUrl || albumMockImages[index % albumMockImages.length] || '',
+        query: album.title,
+      })),
+    ],
+    [homeContent.albums, homeContent.artists, homeContent.songs],
+  )
 
   const syncTrendingNavigationState = (swiper) => {
     const nextState = getTrendingNavigationState(swiper)
@@ -879,6 +841,17 @@ function HomePage() {
     navigate(`/search?q=${encodeURIComponent(query)}`)
   }
 
+  const handleSearchSuggestionSelect = (item) => {
+    const query = item?.query || item?.title || ''
+
+    if (!query.trim()) {
+      return
+    }
+
+    setSearchQuery(query)
+    navigate(`/search?q=${encodeURIComponent(query)}`)
+  }
+
   const openPlaybackGate = (track) => {
     setPlaybackError('')
     setPlaybackGateTrack(track)
@@ -991,6 +964,23 @@ function HomePage() {
     }
 
     await playTrack(track)
+  }
+
+  const handleOpenAlbumItem = (item) => {
+    if (authLoading) {
+      return
+    }
+
+    if (!isAuthenticated) {
+      navigate('/login')
+      return
+    }
+
+    navigate(buildAlbumPath(item), {
+      state: {
+        albumItem: item,
+      },
+    })
   }
 
   const handleDemoPlaybackClick = async (item) => {
@@ -1141,127 +1131,24 @@ function HomePage() {
           : 'Không gian phát dành riêng cho bạn'
 
   return (
-    <div className="client-cute-theme min-h-screen bg-[color:var(--bg-app)] px-2.5 py-2.5 text-[color:var(--text-primary)] xl:h-screen xl:overflow-hidden">
-      <div className="mx-auto flex min-h-[calc(100vh-1.25rem)] w-full max-w-[1920px] flex-col gap-2.5 xl:h-[calc(100vh-1.25rem)] xl:min-h-0">
-        <header className="top-shell flex flex-wrap items-center justify-between gap-2.5 px-3 py-2.5 sm:px-4 xl:flex-none">
-          <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
-            <a href="/" className="brand-badge hidden sm:inline-flex" aria-label="Trang chủ TMusic">
-              <SpotifyIcon />
-            </a>
-            <a href="/" className="brand-word hidden md:inline-flex" aria-label="TMusic home">
-              TMusic
-            </a>
-
-            <a href="/" className="icon-frame" aria-label="Trang chủ">
-              <HomeIcon />
-            </a>
-
-            <form className="search-shell min-w-0 flex-1" onSubmit={handleSearchSubmit}>
-              <SearchIcon />
-              <input
-                className="search-input"
-                type="text"
-                placeholder="Bạn muốn phát nội dung gì?"
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-              />
-              <div className="search-divider" />
-              <button
-                type="submit"
-                className="text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
-                aria-label="Tìm kiếm"
-              >
-                <SearchTrailingIcon />
-              </button>
-            </form>
-          </div>
-
-          <div className="flex items-center gap-2.5 sm:gap-3.5">
-            <nav className="hidden items-center gap-4 text-[0.92rem] font-semibold text-[color:var(--text-secondary)] lg:flex">
-              {menuLinks.map((item) =>
-                item.label === 'Premium' ? (
-                  <div key={item.label} className="premium-nav-item">
-                    <Link
-                      to={item.path}
-                      className="transition hover:text-[color:var(--text-primary)]"
-                    >
-                      {item.label}
-                    </Link>
-
-                    <div className="premium-hover-panel" aria-label="Explore Premium plans">
-                      <h3>Explore Premium</h3>
-                      <div className="premium-hover-list">
-                        {premiumHoverPlans.map((plan) => (
-                          <Link key={plan.title} to={item.path} className="premium-hover-card">
-                            <span>
-                              <strong>{plan.title}</strong>
-                              <small>{plan.description}</small>
-                            </span>
-                            <ChevronRightSmallIcon />
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <Link
-                    key={item.label}
-                    to={item.path}
-                    className="transition hover:text-[color:var(--text-primary)]"
-                  >
-                    {item.label}
-                  </Link>
-                ),
-              )}
-            </nav>
-
-            <div className="hidden h-7 w-px bg-white/10 lg:block" />
-
-            <button
-              className="download-link hidden items-center gap-2 md:inline-flex"
-              title="Cài đặt ứng dụng TMusic"
-            >
-              <DownloadIcon />
-              Cài đặt ứng dụng
-            </button>
-
-            {isAuthenticated ? (
-              <>
-                <div className="hidden items-center gap-3 rounded-full border border-white/10 bg-white/[0.04] px-2 py-1.5 md:flex">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[color:rgba(255,107,87,0.22)] font-display text-sm font-extrabold text-[color:var(--text-primary)]">
-                    {userInitials}
-                  </div>
-                  <div className="max-w-[11rem] pr-1">
-                    <p className="text-[0.68rem] font-bold uppercase tracking-[0.18em] text-[color:var(--text-dim)]">
-                      Đang đăng nhập
-                    </p>
-                    <p className="truncate text-sm font-bold text-[color:var(--text-primary)]">
-                      {userDisplayName}
-                    </p>
-                    <p className="mt-1 truncate text-[0.68rem] font-bold uppercase tracking-[0.18em] text-[color:var(--text-dim)]">
-                      Gói {userPlanMeta.label}
-                    </p>
-                  </div>
-                </div>
-
-                <button type="button" className="secondary-button" onClick={handleLogout}>
-                  Đăng xuất
-                </button>
-              </>
-            ) : (
-              <>
-                <a href="/register" className="secondary-button hidden sm:inline-flex">
-                  Đăng ký
-                </a>
-                <a href="/login" className="primary-button">
-                  Đăng nhập
-                </a>
-              </>
-            )}
-          </div>
-        </header>
-
-        <div
+    <ClientAppShell
+      fullHeight
+      header={
+        <ClientAppHeader
+          searchQuery={searchQuery}
+          onSearchQueryChange={setSearchQuery}
+          onSearchSubmit={handleSearchSubmit}
+          searchSuggestions={searchSuggestions}
+          onSearchSuggestionSelect={handleSearchSuggestionSelect}
+          isAuthenticated={isAuthenticated}
+          user={user}
+          userInitials={userInitials}
+          userDisplayName={userDisplayName}
+          onLogout={handleLogout}
+        />
+      }
+    >
+      <div
           className={`grid flex-1 gap-2.5 ${layoutBottomSpacingClass} xl:min-h-0 xl:overflow-hidden ${
             hasCurrentTrackVideo
               ? 'xl:grid-cols-[372px_minmax(0,1fr)_360px]'
@@ -1309,30 +1196,35 @@ function HomePage() {
                     <span className="text-sm font-bold">Gần đây</span>
                   </div>
                   {userAlbumItems.map((item, index) => (
-                    <button
+                    <div
                       key={`${item.title}-${index}`}
-                      type="button"
-                      onClick={() => void handleDemoPlaybackClick(item)}
                       className="flex w-full items-center gap-3 rounded-[8px] p-2 text-left transition hover:bg-white/8"
-                      aria-label={`Phát ${item.title}`}
                     >
-                      <DemoCover item={item} className="h-14 w-14 shrink-0 rounded-[6px] object-cover" />
-                      <span className="min-w-0">
-                        <strong className="block truncate text-[0.98rem] text-[color:var(--text-primary)]">
-                          {item.title}
-                        </strong>
-                        <small className="mt-1 block truncate text-[0.84rem] font-semibold text-[color:var(--text-secondary)]">
-                          {item.subtitle}
-                        </small>
-                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenAlbumItem(item)}
+                        className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                        aria-label={`Mở ${item.title}`}
+                      >
+                        <DemoCover item={item} className="h-14 w-14 shrink-0 rounded-[6px] object-cover" />
+                        <span className="min-w-0">
+                          <strong className="block truncate text-[0.98rem] text-[color:var(--text-primary)]">
+                            {item.title}
+                          </strong>
+                          <small className="mt-1 block truncate text-[0.84rem] font-semibold text-[color:var(--text-secondary)]">
+                            {item.subtitle}
+                          </small>
+                        </span>
+                      </button>
                       <DemoPlayBadge
                         item={item}
                         currentTrack={currentTrack}
                         isPlaying={isPlaying}
                         isBuffering={isBuffering}
                         className="ml-auto h-8 w-8 opacity-90"
+                        onClick={() => void handleDemoPlaybackClick(item)}
                       />
-                    </button>
+                    </div>
                   ))}
                 </div>
               ) : (
@@ -1399,10 +1291,10 @@ function HomePage() {
                             type="button"
                             aria-pressed={isActiveFilter}
                             onClick={() => setActiveUserLibraryFilter(filter.id)}
-                            className={`rounded-full px-4 py-2 text-sm font-bold transition ${
+                            className={`rounded-[10px] border px-4 py-2 text-sm font-bold transition ${
                               isActiveFilter
-                                ? 'bg-white text-black'
-                                : 'bg-white/10 text-[color:var(--text-primary)] hover:bg-white/16'
+                                ? 'border-[color:rgba(255,141,154,0.42)] bg-[color:rgba(255,141,154,0.18)] text-white'
+                                : 'border-white/10 bg-white/10 text-[color:var(--text-primary)] hover:bg-white/16'
                             }`}
                           >
                             {filter.label}
@@ -1413,30 +1305,35 @@ function HomePage() {
 
                     <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                       {filteredUserAlbumItems.map((item, index) => (
-                        <button
+                        <div
                           key={`${item.title}-shortcut-${index}`}
-                          type="button"
-                          onClick={() => void handleDemoPlaybackClick(item)}
                           className="group flex min-h-[3.75rem] items-center overflow-hidden rounded-[6px] bg-white/10 text-left transition hover:bg-white/16"
-                          aria-label={`Phát ${item.title}`}
                         >
-                          <DemoCover item={item} className="h-16 w-16 shrink-0 object-cover" />
-                          <span className="min-w-0 px-3">
-                            <strong className="block truncate text-[0.98rem] text-[color:var(--text-primary)]">
-                              {item.title}
-                            </strong>
-                            <small className="mt-1 block truncate text-[0.78rem] font-semibold text-[color:var(--text-secondary)]">
-                              {item.subtitle}
-                            </small>
-                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenAlbumItem(item)}
+                            className="flex min-w-0 flex-1 items-center text-left"
+                            aria-label={`Mở ${item.title}`}
+                          >
+                            <DemoCover item={item} className="h-16 w-16 shrink-0 object-cover" />
+                            <span className="min-w-0 px-3">
+                              <strong className="block truncate text-[0.98rem] text-[color:var(--text-primary)]">
+                                {item.title}
+                              </strong>
+                              <small className="mt-1 block truncate text-[0.78rem] font-semibold text-[color:var(--text-secondary)]">
+                                {item.subtitle}
+                              </small>
+                            </span>
+                          </button>
                           <DemoPlayBadge
                             item={item}
                             currentTrack={currentTrack}
                             isPlaying={isPlaying}
                             isBuffering={isBuffering}
                             className="ml-auto mr-3 opacity-90"
+                            onClick={() => void handleDemoPlaybackClick(item)}
                           />
-                        </button>
+                        </div>
                       ))}
                     </div>
                   </section>
@@ -1457,33 +1354,45 @@ function HomePage() {
                     <div className="hide-scrollbar -mx-2 overflow-x-auto pb-4">
                       <div className="flex min-w-max gap-3 px-2">
                         {userMixItems.map((item, index) => (
-                          <button
+                          <article
                             key={`${item.title}-${index}`}
-                            type="button"
                             className="track-card group w-[190px] shrink-0 p-2.5 text-left"
-                            onClick={() => void handleDemoPlaybackClick(item)}
-                            aria-label={`Phát ${item.title}`}
                           >
-                            <span className="relative block">
-                              <DemoCover
-                                item={item}
-                                className="aspect-square w-full rounded-[8px] object-cover"
-                              />
+                            <div className="relative">
+                              <button
+                                type="button"
+                                className="block w-full"
+                                onClick={() => handleOpenAlbumItem(item)}
+                                aria-label={`Mở ${item.title}`}
+                              >
+                                <DemoCover
+                                  item={item}
+                                  className="aspect-square w-full rounded-[8px] object-cover"
+                                />
+                              </button>
                               <DemoPlayBadge
                                 item={item}
                                 currentTrack={currentTrack}
                                 isPlaying={isPlaying}
                                 isBuffering={isBuffering}
                                 className="absolute bottom-2 right-2 opacity-95"
+                                onClick={() => void handleDemoPlaybackClick(item)}
                               />
-                            </span>
-                            <h3 className="mt-3 font-display text-[0.98rem] font-bold leading-6 text-[color:var(--text-primary)]">
-                              {item.title}
-                            </h3>
-                            <p className="mt-1 max-w-[11rem] text-[0.84rem] leading-5 text-[color:var(--text-secondary)]">
-                              {item.subtitle}
-                            </p>
-                          </button>
+                            </div>
+                            <button
+                              type="button"
+                              className="block w-full text-left"
+                              onClick={() => handleOpenAlbumItem(item)}
+                              aria-label={`Mở ${item.title}`}
+                            >
+                              <h3 className="mt-3 font-display text-[0.98rem] font-bold leading-6 text-[color:var(--text-primary)]">
+                                {item.title}
+                              </h3>
+                              <p className="mt-1 max-w-[11rem] text-[0.84rem] leading-5 text-[color:var(--text-secondary)]">
+                                {item.subtitle}
+                              </p>
+                            </button>
+                          </article>
                         ))}
                       </div>
                     </div>
@@ -1505,33 +1414,45 @@ function HomePage() {
                     <div className="hide-scrollbar -mx-2 overflow-x-auto pb-4">
                       <div className="flex min-w-max gap-3 px-2">
                         {suggestedRadioItems.map((item, index) => (
-                          <button
+                          <article
                             key={`${item.title}-${index}`}
-                            type="button"
                             className="track-card group w-[190px] shrink-0 p-2.5 text-left"
-                            onClick={() => void handleDemoPlaybackClick(item)}
-                            aria-label={`Phát ${item.title}`}
                           >
-                            <span className="relative block">
-                              <DemoCover
-                                item={item}
-                                className="aspect-square w-full rounded-[8px] object-cover"
-                              />
+                            <div className="relative">
+                              <button
+                                type="button"
+                                className="block w-full"
+                                onClick={() => handleOpenAlbumItem(item)}
+                                aria-label={`Mở ${item.title}`}
+                              >
+                                <DemoCover
+                                  item={item}
+                                  className="aspect-square w-full rounded-[8px] object-cover"
+                                />
+                              </button>
                               <DemoPlayBadge
                                 item={item}
                                 currentTrack={currentTrack}
                                 isPlaying={isPlaying}
                                 isBuffering={isBuffering}
                                 className="absolute bottom-2 right-2 opacity-95"
+                                onClick={() => void handleDemoPlaybackClick(item)}
                               />
-                            </span>
-                            <h3 className="mt-3 font-display text-[0.98rem] font-bold leading-6 text-[color:var(--text-primary)]">
-                              {item.title}
-                            </h3>
-                            <p className="mt-1 max-w-[11rem] text-[0.84rem] leading-5 text-[color:var(--text-secondary)]">
-                              {item.subtitle}
-                            </p>
-                          </button>
+                            </div>
+                            <button
+                              type="button"
+                              className="block w-full text-left"
+                              onClick={() => handleOpenAlbumItem(item)}
+                              aria-label={`Mở ${item.title}`}
+                            >
+                              <h3 className="mt-3 font-display text-[0.98rem] font-bold leading-6 text-[color:var(--text-primary)]">
+                                {item.title}
+                              </h3>
+                              <p className="mt-1 max-w-[11rem] text-[0.84rem] leading-5 text-[color:var(--text-secondary)]">
+                                {item.subtitle}
+                              </p>
+                            </button>
+                          </article>
                         ))}
                       </div>
                     </div>
@@ -1550,7 +1471,7 @@ function HomePage() {
                       </span>
                       {isAuthenticated ? (
                         <span
-                          className={`rounded-full border px-3 py-1 text-[0.72rem] font-bold uppercase tracking-[0.16em] ${userPlanMeta.badgeClass}`}
+                          className={`rounded-[8px] border px-3 py-1 text-[0.72rem] font-bold uppercase tracking-[0.16em] ${userPlanMeta.badgeClass}`}
                         >
                           {userPlanMeta.label}
                         </span>
@@ -1629,7 +1550,7 @@ function HomePage() {
                     {homeContent.songs.map((track, index) => (
                       <SwiperSlide key={track.id || `${track.title}-${index}`} className="trending-swiper-slide">
                         <article className="track-card group p-2.5">
-                          <div className="relative overflow-hidden rounded-[18px] border border-white/6">
+                          <div className="relative overflow-hidden rounded-[8px] border border-white/6">
                             {track.coverUrl ? (
                               <img
                                 src={track.coverUrl}
@@ -1803,11 +1724,11 @@ function HomePage() {
                           <img
                             src={album.coverUrl}
                             alt={album.title}
-                            className="aspect-square h-[168px] w-full rounded-[18px] border border-white/6 object-cover"
+                            className="aspect-square h-[168px] w-full rounded-[8px] border border-white/6 object-cover"
                           />
                         ) : (
                           <div
-                            className="album-art album-cover aspect-square h-[168px] w-full rounded-[18px] border border-white/6"
+                            className="album-art album-cover aspect-square h-[168px] w-full rounded-[8px] border border-white/6"
                             style={{ backgroundImage: album.artwork }}
                           >
                             <div className="album-overlay" />
@@ -2132,10 +2053,10 @@ function HomePage() {
                     <img
                       src={currentTrackCover}
                       alt={currentTrack.title}
-                      className="h-14 w-14 shrink-0 rounded-[14px] object-cover shadow-[0_14px_28px_rgba(0,0,0,0.35)]"
+                      className="h-14 w-14 shrink-0 rounded-[8px] object-cover shadow-[0_14px_28px_rgba(0,0,0,0.35)]"
                     />
                   ) : (
-                    <div className="player-cover-fallback h-14 w-14 shrink-0 rounded-[14px]">
+                    <div className="player-cover-fallback h-14 w-14 shrink-0 rounded-[8px]">
                       <span>{currentTrack.title.slice(0, 2).toUpperCase()}</span>
                     </div>
                   )}
@@ -2311,8 +2232,7 @@ function HomePage() {
             </a>
           </div>
         ) : null}
-      </div>
-    </div>
+    </ClientAppShell>
   )
 }
 

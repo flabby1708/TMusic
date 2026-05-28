@@ -13,6 +13,7 @@ import {
   getHomeSongItems,
 } from '../features/home/homeController.js'
 import releaseRouter from '../features/artist/releaseRoutes.js'
+import podcastRouter from '../features/podcasts/podcastRoutes.js'
 import { getHealth } from '../features/system/systemController.js'
 import songRouter from '../features/songs/songRoutes.js'
 import trackRouter from '../features/tracks/trackRoutes.js'
@@ -34,5 +35,6 @@ router.use('/releases', releaseRouter)
 router.use('/tracks', trackRouter)
 router.use('/admin', adminRouter)
 router.use('/songs', songRouter)
+router.use('/podcasts', podcastRouter)
 
 export default router

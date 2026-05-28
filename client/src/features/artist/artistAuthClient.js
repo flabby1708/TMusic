@@ -77,6 +77,30 @@ export const fetchAuthenticatedArtist = () => {
 
 export const fetchArtistReleases = () => requestArtistJson('/api/releases')
 
+export const submitArtistSong = (formData) =>
+  requestArtistJson('/api/releases/songs', {
+    method: 'POST',
+    body: formData,
+  })
+
+export const updateArtistSong = (songId, formData) =>
+  requestArtistJson(`/api/releases/songs/${songId}`, {
+    method: 'PATCH',
+    body: formData,
+  })
+
+export const importArtistSongs = (formData) =>
+  requestArtistJson('/api/releases/songs/import', {
+    method: 'POST',
+    body: formData,
+  })
+
+export const importArtistPodcasts = (formData) =>
+  requestArtistJson('/api/releases/podcasts/import', {
+    method: 'POST',
+    body: formData,
+  })
+
 export const createArtistTrackDraft = (payload) =>
   requestArtistJson('/api/tracks', buildJsonRequestOptions(payload))
 

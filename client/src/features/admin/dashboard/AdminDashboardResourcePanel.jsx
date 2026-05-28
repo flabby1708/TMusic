@@ -1,10 +1,28 @@
 import { useMemo, useState } from 'react'
 import { Alert, Button, Empty, Input, Spin, Tag, Typography, theme } from 'antd'
-import { CloudUploadOutlined, DeleteOutlined, EditOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
+import { CheckCircleOutlined, DeleteOutlined, EditOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
 
 const { Text, Title } = Typography
 
 const normalizeSearchValue = (value) => String(value || '').trim().toLowerCase()
+
+const releaseStatusLabel = {
+  draft: 'Bản nháp',
+  pending: 'Chờ duyệt',
+  published: 'Đã duyệt',
+}
+
+const getReleaseStatusColor = (status) => {
+  if (status === 'published') {
+    return 'green'
+  }
+
+  if (status === 'pending') {
+    return 'gold'
+  }
+
+  return 'default'
+}
 
 function AdminDashboardResourcePanel(props) {
   const {
@@ -14,8 +32,7 @@ function AdminDashboardResourcePanel(props) {
     error,
     items,
     loading,
-    onOpenPodcastImport,
-    onOpenSongImport,
+    onApprove,
     onCreateNew,
     onDelete,
     onEdit,
@@ -23,6 +40,7 @@ function AdminDashboardResourcePanel(props) {
     saving,
   } = props
   const [itemSearchQuery, setItemSearchQuery] = useState('')
+  const [failedCoverUrls, setFailedCoverUrls] = useState(() => ({}))
   const {
     token: { borderRadiusLG, colorBorderSecondary, colorTextSecondary },
   } = theme.useToken()
@@ -56,9 +74,8 @@ function AdminDashboardResourcePanel(props) {
           gap: 16,
           marginBottom: 20,
           padding: 22,
-          borderRadius: 24,
-          background:
-            'linear-gradient(135deg, rgba(255,107,87,0.1), rgba(41,212,255,0.06), rgba(255,255,255,0.03))',
+          borderRadius: 14,
+          background: 'rgba(255, 255, 255, 0.03)',
           border: `1px solid ${colorBorderSecondary}`,
         }}
       >
@@ -77,7 +94,9 @@ function AdminDashboardResourcePanel(props) {
             {currentResource.label}
           </Title>
           <Text style={{ color: colorTextSecondary }}>
-            Quản lý danh sách, chỉnh sửa nội dung và cập nhật tài nguyên nhanh chóng.
+            {isAudioResource
+              ? 'Xem nội dung nghệ sĩ gửi lên và duyệt để đưa ra client.'
+              : 'Quản lý danh sách, chỉnh sửa nội dung và cập nhật tài nguyên nhanh chóng.'}
           </Text>
         </div>
 
@@ -86,19 +105,12 @@ function AdminDashboardResourcePanel(props) {
             {items.length} mục
           </Tag>
           <Tag color={editingId ? 'warning' : 'success'} style={{ borderRadius: 999 }}>
-            {editingId ? 'Đang sửa' : 'Sẵn sàng tạo mới'}
+            {isAudioResource ? 'Chế độ duyệt' : editingId ? 'Đang sửa' : 'Sẵn sàng tạo mới'}
           </Tag>
-          {isSongsResource ? (
+          {isAudioResource ? null : isSongsResource ? (
             <>
               <Button icon={<PlusOutlined />} onClick={onCreateNew} style={{ borderRadius: 12 }}>
                 Thêm bài mới
-              </Button>
-              <Button
-                icon={<CloudUploadOutlined />}
-                onClick={onOpenSongImport}
-                style={{ borderRadius: 12 }}
-              >
-                Import nhạc hàng loạt
               </Button>
             </>
           ) : (
@@ -106,15 +118,6 @@ function AdminDashboardResourcePanel(props) {
               <Button icon={<PlusOutlined />} onClick={onCreateNew} style={{ borderRadius: 12 }}>
                 {isPodcastResource ? 'Thêm podcast mới' : 'Thêm mới'}
               </Button>
-              {isPodcastResource ? (
-                <Button
-                  icon={<CloudUploadOutlined />}
-                  onClick={onOpenPodcastImport}
-                  style={{ borderRadius: 12 }}
-                >
-                  Import podcast hàng loạt
-                </Button>
-              ) : null}
             </>
           )}
           <Button icon={<ReloadOutlined />} onClick={() => void onReload()} style={{ borderRadius: 12 }}>
@@ -124,7 +127,7 @@ function AdminDashboardResourcePanel(props) {
       </div>
 
       {error && !loading ? (
-        <Alert type="error" message={error} showIcon style={{ marginBottom: 16, borderRadius: 18 }} />
+        <Alert type="error" message={error} showIcon style={{ marginBottom: 16, borderRadius: 10 }} />
       ) : null}
 
       {loading ? (
@@ -163,19 +166,19 @@ function AdminDashboardResourcePanel(props) {
               justifyContent: 'space-between',
               gap: 12,
               padding: 18,
-              borderRadius: 22,
+              borderRadius: 12,
               background: 'rgba(255, 255, 255, 0.035)',
               border: `1px solid ${colorBorderSecondary}`,
             }}
           >
             <div>
               <Title level={4} style={{ margin: 0 }}>
-                {isPodcastResource ? 'Danh sách podcast đã thêm' : 'Danh sách bài đã thêm'}
+                {isPodcastResource ? 'Podcast nghệ sĩ gửi lên' : 'Bài hát nghệ sĩ gửi lên'}
               </Title>
               <Text style={{ color: colorTextSecondary }}>
                 {isPodcastResource
-                  ? 'Podcast được tách riêng khỏi catalog bài hát để quản lý audio, show và license.'
-                  : 'Chọn một bài để sửa, xóa hoặc quản lý lại sau.'}
+                  ? 'Admin chỉ duyệt podcast để hiển thị ngoài client, thao tác import nằm ở cổng nghệ sĩ.'
+                  : 'Admin chỉ duyệt bài hát để hiển thị ngoài client, thao tác import nằm ở cổng nghệ sĩ.'}
               </Text>
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10 }}>
@@ -209,21 +212,33 @@ function AdminDashboardResourcePanel(props) {
             <div style={{ display: 'grid', gap: 10 }}>
               {filteredAudioItems.map((item) => {
                 const isEditing = item._id === editingId
-                const hasCover = Boolean(item.coverUrl)
+                const coverUrl = item.coverUrl || ''
+                const hasCover = Boolean(coverUrl)
+                const coverFailed = hasCover && failedCoverUrls[coverUrl]
                 const hasAudio = Boolean(item.audioUrl)
                 const isPublished = item.releaseStatus === 'published'
+                const isPending = item.releaseStatus === 'pending'
                 const title = item.title || (isPodcastResource ? 'Chưa đặt tên podcast' : 'Chưa đặt tên')
                 const subtitle = isPodcastResource
                   ? [item.showTitle, item.host].filter(Boolean).join(' / ') || 'Chưa có show'
                   : item.artist || 'Chưa có nghệ sĩ'
+                const ownerLabel = item.ownerName ? `Nghệ sĩ gửi: ${item.ownerName}` : 'Chưa rõ nghệ sĩ gửi'
 
                 return (
                   <article
                     key={item._id}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => onEdit(item)}
+                    role={isAudioResource ? undefined : 'button'}
+                    tabIndex={isAudioResource ? undefined : 0}
+                    onClick={() => {
+                      if (!isAudioResource) {
+                        onEdit(item)
+                      }
+                    }}
                     onKeyDown={(event) => {
+                      if (isAudioResource) {
+                        return
+                      }
+
                       if (event.key === 'Enter' || event.key === ' ') {
                         event.preventDefault()
                         onEdit(item)
@@ -231,20 +246,58 @@ function AdminDashboardResourcePanel(props) {
                     }}
                     style={{
                       display: 'grid',
-                      gridTemplateColumns: 'minmax(0, 1fr) auto',
+                      gridTemplateColumns: '88px minmax(0, 1fr) auto',
                       gap: 16,
                       alignItems: 'center',
                       padding: 16,
-                      cursor: 'pointer',
-                      borderRadius: 22,
-                      border: `1px solid ${isEditing ? 'rgba(41, 212, 255, 0.48)' : colorBorderSecondary}`,
+                      cursor: isAudioResource ? 'default' : 'pointer',
+                      borderRadius: 12,
+                      border: `1px solid ${isEditing ? 'oklch(78.5% 0.115 274.713 / 0.48)' : colorBorderSecondary}`,
                       background: isEditing
-                        ? 'linear-gradient(90deg, rgba(41, 212, 255, 0.12), rgba(255, 255, 255, 0.04))'
+                        ? 'oklch(78.5% 0.115 274.713 / 0.12)'
                         : 'rgba(255, 255, 255, 0.025)',
-                      boxShadow: isEditing ? '0 12px 28px rgba(41, 212, 255, 0.1)' : 'none',
+                      boxShadow: isEditing ? '0 12px 28px oklch(78.5% 0.115 274.713 / 0.1)' : 'none',
                       transition: 'border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease',
                     }}
                   >
+                    <div
+                      style={{
+                        width: 88,
+                        height: 88,
+                        display: 'grid',
+                        placeItems: 'center',
+                        overflow: 'hidden',
+                        borderRadius: 10,
+                        border: `1px solid ${colorBorderSecondary}`,
+                        background: 'rgba(255, 255, 255, 0.035)',
+                        color: colorTextSecondary,
+                        fontSize: 12,
+                        fontWeight: 700,
+                        textAlign: 'center',
+                      }}
+                    >
+                      {hasCover && !coverFailed ? (
+                        <img
+                          src={coverUrl}
+                          alt={title}
+                          onError={() => {
+                            setFailedCoverUrls((current) => ({
+                              ...current,
+                              [coverUrl]: true,
+                            }))
+                          }}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            display: 'block',
+                          }}
+                        />
+                      ) : (
+                        <span>{hasCover ? 'Ảnh lỗi' : isPodcastResource ? 'Podcast' : 'No cover'}</span>
+                      )}
+                    </div>
+
                     <div style={{ minWidth: 0 }}>
                       <div
                         style={{
@@ -268,6 +321,9 @@ function AdminDashboardResourcePanel(props) {
                       <Text style={{ color: colorTextSecondary }}>
                         {subtitle}
                       </Text>
+                      <Text style={{ color: colorTextSecondary, display: 'block', marginTop: 4 }}>
+                        {ownerLabel}
+                      </Text>
 
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
                         <Tag style={{ borderRadius: 999 }}>ID {item._id.slice(-6)}</Tag>
@@ -275,8 +331,8 @@ function AdminDashboardResourcePanel(props) {
                           Thứ tự {item.sortOrder ?? 0}
                         </Tag>
                         {item.duration ? <Tag style={{ borderRadius: 999 }}>{item.duration}</Tag> : null}
-                        <Tag color={isPublished ? 'green' : 'default'} style={{ borderRadius: 999 }}>
-                          {isPublished ? 'Đang hiển thị' : 'Đang ẩn'}
+                        <Tag color={getReleaseStatusColor(item.releaseStatus)} style={{ borderRadius: 999 }}>
+                          {releaseStatusLabel[item.releaseStatus] || item.releaseStatus || 'Chưa rõ'}
                         </Tag>
                         {isPodcastResource && item.license ? (
                           <Tag color="blue" style={{ borderRadius: 999 }}>
@@ -299,19 +355,33 @@ function AdminDashboardResourcePanel(props) {
                     </div>
 
                     <div style={{ display: 'flex', gap: 10 }} onClick={(event) => event.stopPropagation()}>
-                      <Button icon={<EditOutlined />} onClick={() => onEdit(item)} style={{ borderRadius: 12 }}>
-                        Sửa
-                      </Button>
-                      <Button
-                        danger
-                        type="primary"
-                        icon={<DeleteOutlined />}
-                        onClick={() => void onDelete(item)}
-                        disabled={saving}
-                        style={{ borderRadius: 12 }}
-                      >
-                        Xóa
-                      </Button>
+                      {isAudioResource ? (
+                        <Button
+                          type="primary"
+                          icon={<CheckCircleOutlined />}
+                          onClick={() => void onApprove(item)}
+                          disabled={saving || !isPending}
+                          style={{ borderRadius: 12 }}
+                        >
+                          {isPublished ? 'Đã duyệt' : 'Duyệt'}
+                        </Button>
+                      ) : (
+                        <>
+                          <Button icon={<EditOutlined />} onClick={() => onEdit(item)} style={{ borderRadius: 12 }}>
+                            Sửa
+                          </Button>
+                          <Button
+                            danger
+                            type="primary"
+                            icon={<DeleteOutlined />}
+                            onClick={() => void onDelete(item)}
+                            disabled={saving}
+                            style={{ borderRadius: 12 }}
+                          >
+                            Xóa
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </article>
                 )
@@ -332,13 +402,13 @@ function AdminDashboardResourcePanel(props) {
                 key={item._id}
                 style={{
                   overflow: 'hidden',
-                  borderRadius: 26,
-                  border: `1px solid ${isEditing ? 'rgba(41, 212, 255, 0.36)' : colorBorderSecondary}`,
+                  borderRadius: 14,
+                  border: `1px solid ${isEditing ? 'oklch(78.5% 0.115 274.713 / 0.36)' : colorBorderSecondary}`,
                   background: isEditing
-                    ? 'linear-gradient(180deg, rgba(41, 212, 255, 0.1), rgba(255, 255, 255, 0.04))'
-                    : 'linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.025))',
+                    ? 'oklch(78.5% 0.115 274.713 / 0.1)'
+                    : 'rgba(255, 255, 255, 0.035)',
                   boxShadow: isEditing
-                    ? '0 10px 30px rgba(41, 212, 255, 0.1)'
+                    ? '0 10px 30px oklch(78.5% 0.115 274.713 / 0.1)'
                     : '0 8px 24px rgba(0, 0, 0, 0.1)',
                   transition: 'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease',
                 }}
@@ -364,8 +434,7 @@ function AdminDashboardResourcePanel(props) {
                       height: 190,
                       display: 'grid',
                       placeItems: 'center',
-                      background:
-                        'linear-gradient(135deg, rgba(255, 107, 87, 0.18), rgba(41, 212, 255, 0.14))',
+                      background: 'oklch(78.5% 0.115 274.713 / 0.14)',
                       fontWeight: 700,
                       fontSize: 16,
                     }}

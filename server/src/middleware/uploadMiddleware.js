@@ -32,6 +32,8 @@ const ALLOWED_IMAGE_MIME_TYPES = new Set([
   'image/avif',
 ])
 const ALLOWED_IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.avif'])
+const ALLOWED_VIDEO_MIME_TYPES = new Set(['video/mp4', 'video/webm', 'video/quicktime'])
+const ALLOWED_VIDEO_EXTENSIONS = new Set(['.mp4', '.webm', '.mov'])
 
 const trimString = (value) => (typeof value === 'string' ? value.trim() : '')
 const adminImportTempDirectory = path.join(os.tmpdir(), 'tmusic-admin-import')
@@ -140,6 +142,74 @@ const createAdminSongImportUploadMiddleware = () => {
         }
 
         callback(new Error('Only image files in jpg, png, webp, gif, or avif format are allowed.'))
+        return
+      }
+
+      callback(new Error('Unexpected upload field.'))
+    },
+  })
+}
+
+const isAllowedVideoFile = (file) => {
+  const mimeType = trimString(file?.mimetype).toLowerCase()
+
+  if (mimeType && ALLOWED_VIDEO_MIME_TYPES.has(mimeType)) {
+    return true
+  }
+
+  const extension = path.extname(trimString(file?.originalname)).toLowerCase()
+  return Boolean(extension && ALLOWED_VIDEO_EXTENSIONS.has(extension))
+}
+
+const createArtistSongSubmissionUploadMiddleware = () => {
+  mkdirSync(adminImportTempDirectory, { recursive: true })
+
+  return multer({
+    storage: multer.diskStorage({
+      destination: (_req, _file, callback) => {
+        callback(null, adminImportTempDirectory)
+      },
+      filename: (_req, file, callback) => {
+        callback(
+          null,
+          `${Date.now()}-${crypto.randomUUID()}${path.extname(trimString(file?.originalname)).toLowerCase()}`,
+        )
+      },
+    }),
+    limits: {
+      fileSize: getTrackUploadMaxBytes(),
+      files: 3,
+    },
+    fileFilter: (_req, file, callback) => {
+      if (file.fieldname === 'audioFile') {
+        if (isAllowedAudioFile(file)) {
+          callback(null, true)
+          return
+        }
+
+        callback(
+          new Error('Only audio files in mp3, wav, flac, m4a, aac, or ogg format are allowed.'),
+        )
+        return
+      }
+
+      if (file.fieldname === 'coverFile') {
+        if (isAllowedImageFile(file)) {
+          callback(null, true)
+          return
+        }
+
+        callback(new Error('Only image files in jpg, png, webp, gif, or avif format are allowed.'))
+        return
+      }
+
+      if (file.fieldname === 'videoFile') {
+        if (isAllowedVideoFile(file)) {
+          callback(null, true)
+          return
+        }
+
+        callback(new Error('Only video files in mp4, webm, or mov format are allowed.'))
         return
       }
 
@@ -284,3 +354,89 @@ export const parseAdminSongBulkImport = (req, res, next) => {
 }
 
 export const parseAdminPodcastBulkImport = parseAdminSongBulkImport
+
+export const parseArtistSongSubmission = (req, res, next) => {
+  createArtistSongSubmissionUploadMiddleware().fields([
+    { name: 'audioFile', maxCount: 1 },
+    { name: 'coverFile', maxCount: 1 },
+    { name: 'videoFile', maxCount: 1 },
+  ])(req, res, (error) => {
+    if (error instanceof multer.MulterError) {
+      void cleanupUploadedFiles(req.files)
+      res.status(400).json({
+        message:
+          error.code === 'LIMIT_FILE_SIZE'
+            ? `Upload file is too large. Maximum size is ${Math.floor(getTrackUploadMaxBytes() / (1024 * 1024))}MB.`
+            : error.message || 'Song submission payload is invalid.',
+      })
+      return
+    }
+
+    if (error) {
+      void cleanupUploadedFiles(req.files)
+      res.status(400).json({
+        message: error.message || 'Song submission payload is invalid.',
+      })
+      return
+    }
+
+    if (!Array.isArray(req.files?.audioFile) || req.files.audioFile.length === 0) {
+      void cleanupUploadedFiles(req.files)
+      res.status(400).json({
+        message: 'Audio file is required.',
+      })
+      return
+    }
+
+    const coverFile = req.files?.coverFile?.[0]
+
+    if (coverFile && Number(coverFile.size) > getImportImageMaxBytes()) {
+      void cleanupUploadedFiles(req.files)
+      res.status(400).json({
+        message: `Cover image "${coverFile.originalname}" is too large. Maximum size is ${Math.floor(getImportImageMaxBytes() / (1024 * 1024))}MB.`,
+      })
+      return
+    }
+
+    next()
+  })
+}
+
+export const parseArtistSongUpdate = (req, res, next) => {
+  createArtistSongSubmissionUploadMiddleware().fields([
+    { name: 'audioFile', maxCount: 1 },
+    { name: 'coverFile', maxCount: 1 },
+    { name: 'videoFile', maxCount: 1 },
+  ])(req, res, (error) => {
+    if (error instanceof multer.MulterError) {
+      void cleanupUploadedFiles(req.files)
+      res.status(400).json({
+        message:
+          error.code === 'LIMIT_FILE_SIZE'
+            ? `Upload file is too large. Maximum size is ${Math.floor(getTrackUploadMaxBytes() / (1024 * 1024))}MB.`
+            : error.message || 'Song update payload is invalid.',
+      })
+      return
+    }
+
+    if (error) {
+      void cleanupUploadedFiles(req.files)
+      res.status(400).json({
+        message: error.message || 'Song update payload is invalid.',
+      })
+      return
+    }
+
+    const coverFile = req.files?.coverFile?.[0]
+
+    if (coverFile && Number(coverFile.size) > getImportImageMaxBytes()) {
+      void cleanupUploadedFiles(req.files)
+      res.status(400).json({
+        message: `Cover image "${coverFile.originalname}" is too large. Maximum size is ${Math.floor(getImportImageMaxBytes() / (1024 * 1024))}MB.`,
+      })
+      return
+    }
+
+    next()
+  })
+}

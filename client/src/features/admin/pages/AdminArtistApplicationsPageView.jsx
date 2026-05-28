@@ -264,11 +264,13 @@ function AdminArtistApplicationsPageView() {
 
   return (
     <Card
+      className="tmusic-admin-main-card"
       bordered={false}
       style={{
-        borderRadius: 32,
-        background: 'rgba(255, 255, 255, 0.96)',
-        boxShadow: '0 24px 80px rgba(0, 0, 0, 0.28)',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        borderRadius: 12,
+        background: '#1f1f1f',
+        boxShadow: 'none',
         overflow: 'hidden',
       }}
       styles={{
@@ -279,25 +281,61 @@ function AdminArtistApplicationsPageView() {
     >
       <div
         style={{
-          padding: '32px 32px',
-          borderBottom: '1px solid rgba(15, 23, 42, 0.08)',
-          background:
-            'linear-gradient(135deg, rgba(255,107,87,0.14), rgba(41,212,255,0.08), rgba(255,255,255,0.74))',
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          gap: 16,
+          padding: '24px 24px',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          background: '#1f1f1f',
         }}
       >
         <Space direction="vertical" size={4}>
-          <Title level={4} style={{ margin: 0 }}>
+          <Text
+            style={{
+              color: 'oklch(78.5% 0.115 274.713)',
+              fontSize: 12,
+              fontWeight: 700,
+              textTransform: 'uppercase',
+            }}
+          >
+            Artist Review
+          </Text>
+          <Title level={4} style={{ margin: 0, color: '#ffffff' }}>
             Hồ sơ nghệ sĩ
           </Title>
-          <Text type="secondary">
+          <Text style={{ color: '#b3b3b3' }}>
             Duyệt, từ chối hoặc tạm khóa quyền nghệ sĩ trước khi họ phát hành nhạc.
           </Text>
         </Space>
+
+        <Tag
+          style={{
+            margin: 0,
+            border: '1px solid oklch(78.5% 0.115 274.713)',
+            borderRadius: 12,
+            background: 'oklch(78.5% 0.115 274.713 / 0.15)',
+            color: 'oklch(78.5% 0.115 274.713)',
+            fontWeight: 700,
+          }}
+        >
+          {items.length} hồ sơ
+        </Tag>
       </div>
 
-      <div style={{ padding: 30 }}>
+      <div style={{ padding: 24 }}>
         <Space direction="vertical" size={22} style={{ width: '100%' }}>
-          <Space wrap style={{ width: '100%' }}>
+          <Space
+            wrap
+            style={{
+              width: '100%',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: 12,
+              padding: 12,
+              background: 'rgba(255, 255, 255, 0.035)',
+            }}
+          >
             <Input
               placeholder="Tìm theo tên, email, nghệ danh hoặc tiểu sử"
               value={query}
@@ -330,9 +368,10 @@ function AdminArtistApplicationsPageView() {
             </Button>
           </Space>
 
-          {error ? <Alert type="error" message={error} showIcon /> : null}
+          {error ? <Alert type="error" message={error} showIcon style={{ borderRadius: 10 }} /> : null}
 
           <Table
+            className="tmusic-admin-data-table"
             rowKey="_id"
             loading={loading}
             columns={columns}

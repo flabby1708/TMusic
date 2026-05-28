@@ -128,7 +128,7 @@ function AdminDashboardEditorPanel(props) {
         </div>
 
         {notice ? (
-          <Alert type="success" message={notice} showIcon style={{ marginBottom: 16, borderRadius: 16 }} />
+          <Alert type="success" message={notice} showIcon style={{ marginBottom: 16, borderRadius: 10 }} />
         ) : null}
 
         {isSongResource && editingId ? (
@@ -136,9 +136,9 @@ function AdminDashboardEditorPanel(props) {
             style={{
               marginBottom: 16,
               padding: 14,
-              borderRadius: 18,
+              borderRadius: 10,
               border: `1px solid ${colorBorderSecondary}`,
-              background: 'rgba(41, 212, 255, 0.08)',
+              background: 'oklch(78.5% 0.115 274.713 / 0.08)',
             }}
           >
             <Text style={{ color: colorTextSecondary, display: 'block', marginBottom: 4 }}>
@@ -158,9 +158,9 @@ function AdminDashboardEditorPanel(props) {
             style={{
               marginBottom: 16,
               padding: 14,
-              borderRadius: 18,
+              borderRadius: 10,
               border: `1px solid ${colorBorderSecondary}`,
-              background: 'rgba(98, 216, 255, 0.08)',
+              background: 'oklch(78.5% 0.115 274.713 / 0.08)',
             }}
           >
             <Text style={{ color: colorTextSecondary, display: 'block', marginBottom: 10 }}>
@@ -191,7 +191,7 @@ function AdminDashboardEditorPanel(props) {
                   value={formValues[field.name]}
                   onChange={(event) => handleChange(field.name, event.target.value)}
                   rows={4}
-                  style={{ ...inputStyle, borderRadius: 14 }}
+                  style={{ ...inputStyle, borderRadius: 8 }}
                 />
               ) : field.type === 'select' ? (
                 <Select
@@ -206,7 +206,7 @@ function AdminDashboardEditorPanel(props) {
                     type={field.type}
                     value={formValues[field.name]}
                     onChange={(event) => handleChange(field.name, event.target.value)}
-                    style={{ ...inputStyle, borderRadius: 14 }}
+                    style={{ ...inputStyle, borderRadius: 8 }}
                   />
 
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
@@ -245,7 +245,7 @@ function AdminDashboardEditorPanel(props) {
                     <div
                       style={{
                         overflow: 'hidden',
-                        borderRadius: 18,
+                        borderRadius: 10,
                         border: `1px solid ${colorBorderSecondary}`,
                         background: 'rgba(255, 255, 255, 0.03)',
                         padding: 14,
@@ -265,7 +265,7 @@ function AdminDashboardEditorPanel(props) {
                     type={field.type}
                     value={formValues[field.name]}
                     onChange={(event) => handleChange(field.name, event.target.value)}
-                    style={{ ...inputStyle, borderRadius: 14 }}
+                    style={{ ...inputStyle, borderRadius: 8 }}
                   />
 
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
@@ -300,7 +300,7 @@ function AdminDashboardEditorPanel(props) {
                     <div
                       style={{
                         overflow: 'hidden',
-                        borderRadius: 18,
+                        borderRadius: 10,
                         border: `1px solid ${colorBorderSecondary}`,
                         background: 'rgba(255, 255, 255, 0.03)',
                       }}
@@ -318,7 +318,7 @@ function AdminDashboardEditorPanel(props) {
                   type={field.type}
                   value={formValues[field.name]}
                   onChange={(event) => handleChange(field.name, event.target.value)}
-                  style={{ ...inputStyle, borderRadius: 14 }}
+                  style={{ ...inputStyle, borderRadius: 8 }}
                 />
               )}
 
@@ -342,14 +342,14 @@ function AdminDashboardEditorPanel(props) {
               type="primary"
               htmlType="submit"
               loading={saving}
-              style={{ flex: 1, borderRadius: 14, height: 44 }}
+              style={{ flex: 1, borderRadius: 8, height: 44 }}
             >
               {editingId ? 'Cập nhật' : 'Tạo mới'}
             </Button>
             <Button
               htmlType="button"
               onClick={handleReset}
-              style={{ flex: 1, borderRadius: 14, height: 44 }}
+              style={{ flex: 1, borderRadius: 8, height: 44 }}
             >
               Đặt lại
             </Button>

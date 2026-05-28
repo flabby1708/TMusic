@@ -212,7 +212,7 @@ export const fallbackCharts = [
 ]
 
 export const fallbackHomeContent = {
-  songs: fallbackTracks,
+  songs: [],
   artists: fallbackArtists,
   albums: fallbackAlbums,
   radios: fallbackRadios,

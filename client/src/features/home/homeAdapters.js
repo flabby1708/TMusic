@@ -2,13 +2,16 @@ import {
   fallbackAlbums,
   fallbackArtists,
   fallbackCharts,
-  fallbackHomeContent,
   fallbackRadios,
   fallbackTracks,
 } from './homeData.js'
 
 export function normalizeTrack(song, index) {
   const fallback = fallbackTracks[index % fallbackTracks.length]
+  const audioVariants = Array.isArray(song.audioVariants) ? song.audioVariants : []
+  const readyAudioVariant =
+    audioVariants.find((variant) => variant?.quality === 'normal' && variant?.status === 'ready' && variant?.url) ||
+    audioVariants.find((variant) => variant?.status === 'ready' && variant?.url)
 
   return {
     id: song._id || song.id || `fallback-track-${index}`,
@@ -17,11 +20,14 @@ export function normalizeTrack(song, index) {
     duration: song.duration || fallback.duration,
     explicit: song.explicit ?? false,
     coverUrl: song.coverUrl || '',
-    audioUrl: song.audioUrl || '',
-    audioVariants: Array.isArray(song.audioVariants) ? song.audioVariants : [],
+    audioUrl: song.audioUrl || readyAudioVariant?.url || '',
+    audioVariants,
     videoUrl: song.videoUrl || song.musicVideo?.url || '',
     tag: song.mood || fallback.tag,
     artwork: song.artwork || fallback.artwork,
+    sourceType: song.sourceType || '',
+    releaseStatus: song.releaseStatus || '',
+    processingStatus: song.processingStatus || '',
   }
 }
 
@@ -84,27 +90,18 @@ export function normalizeChart(chart, index) {
 }
 
 export function normalizeHomePayload(payload) {
+  const songs = Array.isArray(payload?.songs)
+    ? payload.songs
+        .filter((song) => song?.sourceType === 'artist' && song?.releaseStatus === 'published')
+        .map(normalizeTrack)
+    : []
+
   return {
     loading: false,
-    songs:
-      Array.isArray(payload?.songs) && payload.songs.length > 0
-        ? payload.songs.map(normalizeTrack)
-        : fallbackHomeContent.songs,
-    artists:
-      Array.isArray(payload?.artists) && payload.artists.length > 0
-        ? payload.artists.map(normalizeArtist)
-        : fallbackHomeContent.artists,
-    albums:
-      Array.isArray(payload?.albums) && payload.albums.length > 0
-        ? payload.albums.map(normalizeAlbum)
-        : fallbackHomeContent.albums,
-    radios:
-      Array.isArray(payload?.radios) && payload.radios.length > 0
-        ? payload.radios.map(normalizeRadio)
-        : fallbackHomeContent.radios,
-    charts:
-      Array.isArray(payload?.charts) && payload.charts.length > 0
-        ? payload.charts.map(normalizeChart)
-        : fallbackHomeContent.charts,
+    songs,
+    artists: Array.isArray(payload?.artists) ? payload.artists.map(normalizeArtist) : [],
+    albums: Array.isArray(payload?.albums) ? payload.albums.map(normalizeAlbum) : [],
+    radios: Array.isArray(payload?.radios) ? payload.radios.map(normalizeRadio) : [],
+    charts: Array.isArray(payload?.charts) ? payload.charts.map(normalizeChart) : [],
   }
 }

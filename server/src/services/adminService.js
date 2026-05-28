@@ -5,6 +5,7 @@ import Chart from '../models/Chart.js'
 import Podcast from '../models/Podcast.js'
 import Radio from '../models/Radio.js'
 import Song from '../models/Song.js'
+import User from '../models/User.js'
 import { destroyCloudinaryAsset, uploadCloudinaryFile } from '../config/cloudinary.js'
 
 const sortByOrder = { sortOrder: 1, createdAt: 1 }
@@ -395,6 +396,7 @@ const assignCoverFilesToAudio = (audioFiles = [], coverFiles = []) => {
 }
 
 const allowedSongReleaseStatuses = new Set(['draft', 'pending', 'published'])
+const allowedSourceTypes = new Set(['catalog', 'artist'])
 
 const normalizeSongReleaseStatus = (value) => {
   const releaseStatus = trimString(value, 'published') || 'published'
@@ -403,6 +405,12 @@ const normalizeSongReleaseStatus = (value) => {
 }
 
 const normalizeReleaseStatus = normalizeSongReleaseStatus
+
+const normalizeSourceType = (value) => {
+  const sourceType = trimString(value, 'catalog') || 'catalog'
+
+  return allowedSourceTypes.has(sourceType) ? sourceType : 'catalog'
+}
 
 const parseBooleanFlag = (value, fallback = false) => {
   if (typeof value === 'boolean') {
@@ -431,16 +439,20 @@ const createDefaultSongAudioVariant = (payload) => {
     return []
   }
 
+  const quality = ['normal', 'high'].includes(trimString(payload.audioQuality))
+    ? trimString(payload.audioQuality)
+    : 'normal'
+
   return [
     {
-      quality: 'normal',
+      quality,
       codec: trimString(payload.masterAudioFormat || 'mp3') || 'mp3',
       format: trimString(payload.masterAudioFormat || 'mp3') || 'mp3',
       bitrateKbps: 0,
       url: payload.audioUrl,
       publicId: trimString(payload.masterAudioPublicId),
       sizeBytes: toNonNegativeNumber(payload.masterAudioSizeBytes),
-      vipOnly: false,
+      vipOnly: quality === 'high',
       status: 'ready',
       errorMessage: '',
     },
@@ -497,6 +509,7 @@ const sanitizeSongPayload = (payload) => {
       masterAudioPublicId,
       masterAudioFormat,
       masterAudioSizeBytes,
+      audioQuality: payload.audioQuality,
     }),
     videoUrl,
     musicVideo: videoUrl
@@ -519,9 +532,9 @@ const sanitizeSongPayload = (payload) => {
           uploadedAt: null,
         },
     processingStatus: audioUrl ? 'ready' : 'draft',
-    sourceType: 'catalog',
+    sourceType: normalizeSourceType(payload.sourceType),
     releaseStatus: normalizeSongReleaseStatus(payload.releaseStatus),
-    ownerUserId: null,
+    ownerUserId: payload.ownerUserId || null,
   }
 }
 
@@ -569,6 +582,8 @@ const sanitizePodcastPayload = (payload) => {
         },
     sourcePage: trimString(payload.sourcePage),
     license: trimString(payload.license),
+    ownerUserId: payload.ownerUserId || null,
+    sourceType: normalizeSourceType(payload.sourceType),
     releaseStatus: normalizeReleaseStatus(payload.releaseStatus),
     sortOrder: parseSortOrder(payload.sortOrder),
   }
@@ -791,6 +806,51 @@ const resourceConfig = {
 
 export const getAdminResourceConfig = (resource) => resourceConfig[resource]
 
+const artistContentResources = new Set(['songs', 'podcasts'])
+
+const getArtistContentFilter = (resource) =>
+  artistContentResources.has(resource) ? { sourceType: 'artist' } : {}
+
+const getArtistContentSort = (resource) =>
+  artistContentResources.has(resource) ? { updatedAt: -1, createdAt: -1 } : sortByOrder
+
+const getOwnerLookup = async (items) => {
+  const ownerIds = [
+    ...new Set(
+      items
+        .map((item) => trimString(String(item.ownerUserId || '')))
+        .filter(Boolean),
+    ),
+  ]
+
+  if (ownerIds.length === 0) {
+    return new Map()
+  }
+
+  const users = await User.find({ _id: { $in: ownerIds } })
+    .select('displayName email artistProfile')
+    .lean()
+
+  return new Map(users.map((user) => [String(user._id), user]))
+}
+
+const attachArtistOwnerSummaries = async (items) => {
+  const ownerLookup = await getOwnerLookup(items)
+
+  return items.map((item) => {
+    const owner = ownerLookup.get(String(item.ownerUserId || '')) || null
+    const ownerStageName = trimString(owner?.artistProfile?.stageName)
+    const ownerName = ownerStageName || trimString(owner?.displayName) || trimString(owner?.email)
+
+    return {
+      ...item,
+      ownerName,
+      ownerStageName,
+      ownerEmail: trimString(owner?.email),
+    }
+  })
+}
+
 export const listAdminResourceItems = async (resource) => {
   const config = getAdminResourceConfig(resource)
 
@@ -798,10 +858,13 @@ export const listAdminResourceItems = async (resource) => {
     return null
   }
 
-  const items = await config.model.find().sort(sortByOrder).lean()
+  const items = await config.model
+    .find(getArtistContentFilter(resource))
+    .sort(getArtistContentSort(resource))
+    .lean()
 
   return {
-    items,
+    items: artistContentResources.has(resource) ? await attachArtistOwnerSummaries(items) : items,
   }
 }
 
@@ -857,13 +920,23 @@ const createImportedPodcastItem = async (payload) => {
   return created.item
 }
 
-export const importAdminSongs = async ({ body, audioFiles = [], coverFiles = [] } = {}) => {
+export const importAdminSongs = async ({
+  body,
+  audioFiles = [],
+  coverFiles = [],
+  ownerUser = null,
+  sourceType = 'catalog',
+  releaseStatus = 'published',
+  batchFolderPrefix = 'admin/songs/imports',
+} = {}) => {
   const defaultArtist = trimString(body?.defaultArtist)
   const mood = trimString(body?.mood, 'Chill') || 'Chill'
   const skipDuplicates = parseBooleanFlag(body?.skipDuplicates, true)
   const sortOrderStart = parseSortOrder(body?.sortOrderStart)
   const coverAssignments = assignCoverFilesToAudio(audioFiles, coverFiles)
-  const batchFolder = `admin/songs/imports/${Date.now()}`
+  const normalizedSourceType = normalizeSourceType(sourceType)
+  const ownerUserId = ownerUser?._id || ownerUser?.id || null
+  const batchFolder = `${batchFolderPrefix}/${ownerUserId || 'catalog'}/${Date.now()}`
   const results = []
 
   for (const [index, audioFile] of audioFiles.entries()) {
@@ -895,14 +968,15 @@ export const importAdminSongs = async ({ body, audioFiles = [], coverFiles = [] 
       const existingSong = await Song.findOne({
         title: identity.title,
         artist: identity.artist,
-        sourceType: 'catalog',
+        sourceType: normalizedSourceType,
+        ...(ownerUserId ? { ownerUserId } : {}),
       }).collation({ locale: 'en', strength: 2 })
 
       if (existingSong) {
         result.status = 'skipped'
         result.itemId = String(existingSong._id)
         result.reasonCode = 'duplicate_song'
-        result.message = 'Bỏ qua vì đã tồn tại bài hát cùng title + artist trong catalog.'
+        result.message = 'Bỏ qua vì đã tồn tại bài hát cùng title + artist.'
         results.push(result)
         continue
       }
@@ -961,6 +1035,9 @@ export const importAdminSongs = async ({ body, audioFiles = [], coverFiles = [] 
         masterAudioResourceType: trimString(uploadedAudio?.resource_type || 'video') || 'video',
         masterAudioOriginalFilename: trimString(audioFile.originalname),
         masterAudioSizeBytes: toNonNegativeNumber(uploadedAudio?.bytes ?? audioFile?.size),
+        ownerUserId,
+        sourceType: normalizedSourceType,
+        releaseStatus,
       })
 
       result.status = 'created'
@@ -999,12 +1076,22 @@ export const importAdminSongs = async ({ body, audioFiles = [], coverFiles = [] 
       defaultArtist,
       mood,
       sortOrderStart,
+      sourceType: normalizedSourceType,
+      releaseStatus,
     },
     results,
   }
 }
 
-export const importAdminPodcasts = async ({ body, audioFiles = [], coverFiles = [] } = {}) => {
+export const importAdminPodcasts = async ({
+  body,
+  audioFiles = [],
+  coverFiles = [],
+  ownerUser = null,
+  sourceType = 'catalog',
+  releaseStatus = 'published',
+  batchFolderPrefix = 'admin/podcasts/imports',
+} = {}) => {
   const defaultShowTitle = trimString(body?.defaultShowTitle)
   const host = trimString(body?.host)
   const category = trimString(body?.category, 'Podcast') || 'Podcast'
@@ -1013,7 +1100,9 @@ export const importAdminPodcasts = async ({ body, audioFiles = [], coverFiles = 
   const skipDuplicates = parseBooleanFlag(body?.skipDuplicates, true)
   const sortOrderStart = parseSortOrder(body?.sortOrderStart)
   const coverAssignments = assignCoverFilesToAudio(audioFiles, coverFiles)
-  const batchFolder = `admin/podcasts/imports/${Date.now()}`
+  const normalizedSourceType = normalizeSourceType(sourceType)
+  const ownerUserId = ownerUser?._id || ownerUser?.id || null
+  const batchFolder = `${batchFolderPrefix}/${ownerUserId || 'catalog'}/${Date.now()}`
   const results = []
 
   for (const [index, audioFile] of audioFiles.entries()) {
@@ -1046,13 +1135,15 @@ export const importAdminPodcasts = async ({ body, audioFiles = [], coverFiles = 
       const existingPodcast = await Podcast.findOne({
         title: identity.title,
         showTitle: identity.showTitle,
+        sourceType: normalizedSourceType,
+        ...(ownerUserId ? { ownerUserId } : {}),
       }).collation({ locale: 'en', strength: 2 })
 
       if (existingPodcast) {
         result.status = 'skipped'
         result.itemId = String(existingPodcast._id)
         result.reasonCode = 'duplicate_podcast'
-        result.message = 'Bo qua vi da ton tai podcast cung title + show trong catalog.'
+        result.message = 'Bỏ qua vì đã tồn tại podcast cùng title + show.'
         results.push(result)
         continue
       }
@@ -1115,21 +1206,23 @@ export const importAdminPodcasts = async ({ body, audioFiles = [], coverFiles = 
         audioSizeBytes: toNonNegativeNumber(uploadedAudio?.bytes ?? audioFile?.size),
         sourcePage,
         license,
-        releaseStatus: 'published',
+        ownerUserId,
+        sourceType: normalizedSourceType,
+        releaseStatus,
       })
 
       result.status = 'created'
       result.itemId = String(createdPodcast._id)
       result.message = matchedCoverFile
         ? coverAssignment?.strategy === 'order'
-          ? 'Import thanh cong, cover duoc gan theo thu tu file.'
-          : 'Import thanh cong voi cover khop theo ten file.'
-        : 'Import thanh cong.'
+          ? 'Import thành công, cover được gán theo thứ tự file.'
+          : 'Import thành công với cover khớp theo tên file.'
+        : 'Import thành công.'
       results.push(result)
     } catch (error) {
       await cleanupCloudinaryAssets(uploadedAssets.filter((asset) => asset.publicId))
       result.reasonCode = 'import_failed'
-      result.message = error instanceof Error ? error.message : 'Import podcast that bai.'
+      result.message = error instanceof Error ? error.message : 'Import podcast thất bại.'
       results.push(result)
     }
   }
@@ -1157,8 +1250,374 @@ export const importAdminPodcasts = async ({ body, audioFiles = [], coverFiles = 
       license,
       sourcePage,
       sortOrderStart,
+      sourceType: normalizedSourceType,
+      releaseStatus,
     },
     results,
+  }
+}
+
+export const importArtistSongs = (options = {}) =>
+  importAdminSongs({
+    ...options,
+    sourceType: 'artist',
+    releaseStatus: 'pending',
+    batchFolderPrefix: 'artist/songs/imports',
+  })
+
+export const importArtistPodcasts = (options = {}) =>
+  importAdminPodcasts({
+    ...options,
+    sourceType: 'artist',
+    releaseStatus: 'pending',
+    batchFolderPrefix: 'artist/podcasts/imports',
+  })
+
+export const createArtistSongSubmission = async ({
+  body,
+  ownerUser = null,
+  audioFile = null,
+  coverFile = null,
+  videoFile = null,
+} = {}) => {
+  const title = trimString(body?.title)
+  const fallbackArtist =
+    trimString(ownerUser?.artistProfile?.stageName) ||
+    trimString(ownerUser?.displayName) ||
+    'Nghệ sĩ'
+  const artist = trimString(body?.artist, fallbackArtist) || fallbackArtist
+
+  if (!title) {
+    return {
+      validationMessage: 'Tên bài hát là bắt buộc.',
+      item: null,
+    }
+  }
+
+  if (!audioFile?.path) {
+    return {
+      validationMessage: 'File audio là bắt buộc.',
+      item: null,
+    }
+  }
+
+  const ownerUserId = ownerUser?._id || ownerUser?.id || null
+  const batchFolder = `artist/songs/submissions/${ownerUserId || 'artist'}/${Date.now()}`
+  const uploadedAssets = []
+
+  try {
+    const uploadedAudio = await uploadCloudinaryFile({
+      filePath: audioFile.path,
+      folder: `${batchFolder}/audio`,
+      resourceType: 'video',
+    })
+    const uploadedAudioUrl = trimString(uploadedAudio?.secure_url || uploadedAudio?.url)
+
+    if (!uploadedAudioUrl) {
+      throw new Error(`Cloudinary did not return a valid audio URL for "${audioFile.originalname}".`)
+    }
+
+    uploadedAssets.push({
+      publicId: trimString(uploadedAudio?.public_id),
+      resourceType: trimString(uploadedAudio?.resource_type || 'video') || 'video',
+    })
+
+    let uploadedCover = null
+
+    if (coverFile?.path) {
+      uploadedCover = await uploadCloudinaryFile({
+        filePath: coverFile.path,
+        folder: `${batchFolder}/covers`,
+        resourceType: 'image',
+      })
+
+      if (!trimString(uploadedCover?.secure_url || uploadedCover?.url)) {
+        throw new Error(`Cloudinary did not return a valid cover URL for "${coverFile.originalname}".`)
+      }
+
+      uploadedAssets.push({
+        publicId: trimString(uploadedCover?.public_id),
+        resourceType: trimString(uploadedCover?.resource_type || 'image') || 'image',
+      })
+    }
+
+    let uploadedVideo = null
+
+    if (videoFile?.path) {
+      uploadedVideo = await uploadCloudinaryFile({
+        filePath: videoFile.path,
+        folder: `${batchFolder}/videos`,
+        resourceType: 'video',
+      })
+
+      if (!trimString(uploadedVideo?.secure_url || uploadedVideo?.url)) {
+        throw new Error(`Cloudinary did not return a valid video URL for "${videoFile.originalname}".`)
+      }
+
+      uploadedAssets.push({
+        publicId: trimString(uploadedVideo?.public_id),
+        resourceType: trimString(uploadedVideo?.resource_type || 'video') || 'video',
+      })
+    }
+
+    const audioDurationSeconds = toNonNegativeNumber(uploadedAudio?.duration)
+    const created = await createAdminResourceItem('songs', {
+      title,
+      artist,
+      duration:
+        trimString(body?.duration) ||
+        formatDurationFromSeconds(audioDurationSeconds) ||
+        '00:00',
+      mood: trimString(body?.mood, 'Original') || 'Original',
+      sortOrder: parseSortOrder(body?.sortOrder),
+      coverUrl: trimString(uploadedCover?.secure_url || uploadedCover?.url),
+      coverPublicId: trimString(uploadedCover?.public_id),
+      audioUrl: uploadedAudioUrl,
+      masterAudioPublicId: trimString(uploadedAudio?.public_id),
+      masterAudioDurationSeconds: audioDurationSeconds,
+      masterAudioFormat: trimString(uploadedAudio?.format) || path.extname(audioFile.originalname).replace('.', ''),
+      masterAudioResourceType: trimString(uploadedAudio?.resource_type || 'video') || 'video',
+      masterAudioOriginalFilename: trimString(audioFile.originalname),
+      masterAudioSizeBytes: toNonNegativeNumber(uploadedAudio?.bytes ?? audioFile?.size),
+      audioQuality: trimString(body?.audioQuality),
+      videoUrl: trimString(uploadedVideo?.secure_url || uploadedVideo?.url),
+      musicVideoPublicId: trimString(uploadedVideo?.public_id),
+      musicVideoFormat: trimString(uploadedVideo?.format) || path.extname(videoFile?.originalname || '').replace('.', ''),
+      musicVideoResourceType: trimString(uploadedVideo?.resource_type || 'video') || 'video',
+      musicVideoOriginalFilename: trimString(videoFile?.originalname),
+      musicVideoSizeBytes: toNonNegativeNumber(uploadedVideo?.bytes ?? videoFile?.size),
+      ownerUserId,
+      sourceType: 'artist',
+      releaseStatus: 'pending',
+    })
+
+    if (created.validationMessage) {
+      throw new Error(created.validationMessage)
+    }
+
+    return {
+      validationMessage: '',
+      item: created.item,
+      message: 'Bài hát đã được gửi vào hàng chờ admin duyệt.',
+    }
+  } catch (error) {
+    await cleanupCloudinaryAssets(uploadedAssets.filter((asset) => asset.publicId))
+
+    return {
+      validationMessage:
+        error instanceof Error ? error.message : 'Không thể gửi bài hát vào hàng chờ duyệt.',
+      item: null,
+    }
+  }
+}
+
+export const updateArtistSongSubmission = async ({
+  songId,
+  body,
+  ownerUser = null,
+  audioFile = null,
+  coverFile = null,
+  videoFile = null,
+} = {}) => {
+  const ownerUserId = ownerUser?._id || ownerUser?.id || null
+  const existingSong = await Song.findOne({
+    _id: songId,
+    ownerUserId,
+    sourceType: 'artist',
+  })
+
+  if (!existingSong) {
+    return {
+      validationMessage: '',
+      notFound: true,
+      item: null,
+    }
+  }
+
+  const title = trimString(body?.title, existingSong.title)
+  const fallbackArtist =
+    trimString(ownerUser?.artistProfile?.stageName) ||
+    trimString(ownerUser?.displayName) ||
+    existingSong.artist ||
+    'Nghệ sĩ'
+  const artist = trimString(body?.artist, existingSong.artist || fallbackArtist) || fallbackArtist
+
+  if (!title) {
+    return {
+      validationMessage: 'Tên bài hát là bắt buộc.',
+      item: null,
+    }
+  }
+
+  const batchFolder = `artist/songs/updates/${ownerUserId || 'artist'}/${songId}/${Date.now()}`
+  const uploadedAssets = []
+
+  try {
+    let uploadedAudio = null
+    let uploadedCover = null
+    let uploadedVideo = null
+
+    if (audioFile?.path) {
+      uploadedAudio = await uploadCloudinaryFile({
+        filePath: audioFile.path,
+        folder: `${batchFolder}/audio`,
+        resourceType: 'video',
+      })
+
+      if (!trimString(uploadedAudio?.secure_url || uploadedAudio?.url)) {
+        throw new Error(`Cloudinary did not return a valid audio URL for "${audioFile.originalname}".`)
+      }
+
+      uploadedAssets.push({
+        publicId: trimString(uploadedAudio?.public_id),
+        resourceType: trimString(uploadedAudio?.resource_type || 'video') || 'video',
+      })
+    }
+
+    if (coverFile?.path) {
+      uploadedCover = await uploadCloudinaryFile({
+        filePath: coverFile.path,
+        folder: `${batchFolder}/covers`,
+        resourceType: 'image',
+      })
+
+      if (!trimString(uploadedCover?.secure_url || uploadedCover?.url)) {
+        throw new Error(`Cloudinary did not return a valid cover URL for "${coverFile.originalname}".`)
+      }
+
+      uploadedAssets.push({
+        publicId: trimString(uploadedCover?.public_id),
+        resourceType: trimString(uploadedCover?.resource_type || 'image') || 'image',
+      })
+    }
+
+    if (videoFile?.path) {
+      uploadedVideo = await uploadCloudinaryFile({
+        filePath: videoFile.path,
+        folder: `${batchFolder}/videos`,
+        resourceType: 'video',
+      })
+
+      if (!trimString(uploadedVideo?.secure_url || uploadedVideo?.url)) {
+        throw new Error(`Cloudinary did not return a valid video URL for "${videoFile.originalname}".`)
+      }
+
+      uploadedAssets.push({
+        publicId: trimString(uploadedVideo?.public_id),
+        resourceType: trimString(uploadedVideo?.resource_type || 'video') || 'video',
+      })
+    }
+
+    const currentMasterAudio = existingSong.masterAudio || {}
+    const currentMusicVideo = existingSong.musicVideo || {}
+    const currentAudioQuality =
+      Array.isArray(existingSong.audioVariants) &&
+      existingSong.audioVariants.find((variant) => trimString(variant?.quality))?.quality
+    const audioDurationSeconds = toNonNegativeNumber(uploadedAudio?.duration)
+    const nextAudioUrl = trimString(uploadedAudio?.secure_url || uploadedAudio?.url) || existingSong.audioUrl || currentMasterAudio.url
+    const nextVideoUrl = trimString(uploadedVideo?.secure_url || uploadedVideo?.url) || existingSong.videoUrl || currentMusicVideo.url
+    const nextCoverUrl = trimString(uploadedCover?.secure_url || uploadedCover?.url) || existingSong.coverUrl
+    const nextDuration =
+      trimString(body?.duration) ||
+      (uploadedAudio ? formatDurationFromSeconds(audioDurationSeconds) : '') ||
+      existingSong.duration ||
+      '00:00'
+
+    const updated = await updateAdminResourceItem('songs', songId, {
+      title,
+      artist,
+      duration: nextDuration,
+      mood: trimString(body?.mood, existingSong.mood || 'Original') || 'Original',
+      sortOrder: body?.sortOrder ?? existingSong.sortOrder ?? 0,
+      coverUrl: nextCoverUrl,
+      coverPublicId: trimString(uploadedCover?.public_id) || existingSong.coverPublicId,
+      audioUrl: nextAudioUrl,
+      masterAudioPublicId: trimString(uploadedAudio?.public_id) || currentMasterAudio.publicId,
+      masterAudioDurationSeconds: audioDurationSeconds,
+      masterAudioFormat:
+        trimString(uploadedAudio?.format) ||
+        (audioFile?.originalname ? path.extname(audioFile.originalname).replace('.', '') : '') ||
+        currentMasterAudio.format,
+      masterAudioResourceType:
+        trimString(uploadedAudio?.resource_type || currentMasterAudio.resourceType || 'video') || 'video',
+      masterAudioOriginalFilename: trimString(audioFile?.originalname) || currentMasterAudio.originalFilename,
+      masterAudioSizeBytes: toNonNegativeNumber(uploadedAudio?.bytes ?? audioFile?.size ?? currentMasterAudio.sizeBytes),
+      audioQuality: trimString(body?.audioQuality) || currentAudioQuality || 'normal',
+      videoUrl: nextVideoUrl,
+      musicVideoPublicId: trimString(uploadedVideo?.public_id) || currentMusicVideo.publicId,
+      musicVideoFormat:
+        trimString(uploadedVideo?.format) ||
+        (videoFile?.originalname ? path.extname(videoFile.originalname).replace('.', '') : '') ||
+        currentMusicVideo.format,
+      musicVideoResourceType:
+        trimString(uploadedVideo?.resource_type || currentMusicVideo.resourceType || 'video') || 'video',
+      musicVideoOriginalFilename: trimString(videoFile?.originalname) || currentMusicVideo.originalFilename,
+      musicVideoSizeBytes: toNonNegativeNumber(uploadedVideo?.bytes ?? videoFile?.size ?? currentMusicVideo.sizeBytes),
+      ownerUserId,
+      sourceType: 'artist',
+      releaseStatus: 'pending',
+    })
+
+    if (updated?.validationMessage) {
+      throw new Error(updated.validationMessage)
+    }
+
+    return {
+      validationMessage: '',
+      notFound: false,
+      item: updated.item,
+      message: 'Bài hát đã được cập nhật và gửi lại vào hàng chờ admin duyệt.',
+    }
+  } catch (error) {
+    await cleanupCloudinaryAssets(uploadedAssets.filter((asset) => asset.publicId))
+
+    return {
+      validationMessage:
+        error instanceof Error ? error.message : 'Không thể cập nhật bài hát.',
+      item: null,
+    }
+  }
+}
+
+export const approveAdminArtistContentItem = async (resource, id) => {
+  const config = getAdminResourceConfig(resource)
+
+  if (!config || !artistContentResources.has(resource)) {
+    return null
+  }
+
+  const item = await config.model.findOne({
+    _id: id,
+    sourceType: 'artist',
+  })
+
+  if (!item) {
+    return {
+      validationMessage: '',
+      item: null,
+    }
+  }
+
+  if (resource === 'songs' && !trimString(item.audioUrl) && !trimString(item.masterAudio?.url)) {
+    return {
+      validationMessage: 'Bài hát chưa có file audio để duyệt.',
+      item: null,
+    }
+  }
+
+  if (resource === 'podcasts' && !trimString(item.audioUrl) && !trimString(item.audio?.url)) {
+    return {
+      validationMessage: 'Podcast chưa có file audio để duyệt.',
+      item: null,
+    }
+  }
+
+  item.releaseStatus = 'published'
+  await item.save()
+
+  return {
+    validationMessage: '',
+    item,
   }
 }
 
